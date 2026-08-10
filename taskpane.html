@@ -411,7 +411,7 @@
             }
         }
         // ==========================================
-        // SMART BIJOY-UNICODE ENGINE (Skips English)
+        // ADVANCED BIJOY-UNICODE ENGINE (Skips English)
         // ==========================================
 
         async function runSmartConverter(direction) {
@@ -427,47 +427,35 @@
                         return;
                     }
 
-                    // ইংরেজি এবং অন্যান্য স্পেশাল ক্যারেক্টার আলাদা করার লজিক
-                    // এটি টেক্সটকে খণ্ড খণ্ড করে ভাগ করবে, যাতে ইংরেজি অংশ কনভার্ট না হয়
-                    let textChunks = rawText.split(/([a-zA-Z0-9@#\$%\^&\*\(\)_\+\-\=\[\]\{\};':"\\|,\.<>\/\?]+)/g);
-                    
-                    let convertedChunks = [];
-
-                    for (let i = 0; i < textChunks.length; i++) {
-                        let chunk = textChunks[i];
-                        
-                        // যদি অংশটি ইংরেজি বা নাম্বার হয়, তবে সেটি স্কিপ করা হবে
-                        if (/^[a-zA-Z0-9@#\$%\^&\*\(\)_\+\-\=\[\]\{\};':"\\|,\.<>\/\?]+$/.test(chunk)) {
-                            convertedChunks.push({ text: chunk, isEnglish: true });
-                        } else {
-                            // শুধুমাত্র বাংলা অংশে কনভার্সন চলবে
-                            let convertedText = (direction === "UniToBijoy") 
-                                ? convertUnicodeToBijoy(chunk) 
-                                : convertBijoyToUnicode(chunk);
-                            convertedChunks.push({ text: convertedText, isEnglish: false });
-                        }
-                    }
-
-                    // কনভার্ট করা টেক্সটগুলো ডকুমেন্টে বসানো এবং ফন্ট ফিক্স করা
                     let anchorRange = selection.insertText("", "Replace");
 
-                    for (let i = 0; i < convertedChunks.length; i++) {
-                        let chunkObj = convertedChunks[i];
-                        if (chunkObj.text.length > 0) {
-                            let textRange = anchorRange.insertText(chunkObj.text, "Before");
-                            
-                            // ফন্ট ফিক্সিং লজিক
-                            if (chunkObj.isEnglish) {
-                                // ইংরেজি হলে ডিফল্ট ফন্ট (যেমন: Times New Roman বা Calibri) থাকবে
+                    if (direction === "UniToBijoy") {
+                        // Unicode ➔ Bijoy: শুধুমাত্র বাংলা ইউনিকোড রেঞ্জ ধরে কনভার্ট করবে। 
+                        // ফলে ইংরেজি শব্দ, স্পেস ও নাম্বার ১০০% অক্ষত থাকবে।
+                        let textChunks = rawText.split(/([^\u0980-\u09FF]+)/g);
+                        
+                        for (let i = 0; i < textChunks.length; i++) {
+                            let chunk = textChunks[i];
+                            if (!chunk) continue;
+
+                            if (/^[\u0980-\u09FF]+$/.test(chunk)) {
+                                let converted = convertUnicodeToBijoy(chunk);
+                                let textRange = anchorRange.insertText(converted, "Before");
+                                textRange.font.name = "SutonnyMJ";
                             } else {
-                                // বাংলা হলে ডিরেকশন অনুযায়ী ফন্ট চেঞ্জ হবে
-                                textRange.font.name = (direction === "UniToBijoy") ? "SutonnyMJ" : "Kalpurush";
+                                // ইংরেজি বা নাম্বার হলে ফন্ট পরিবর্তন হবে না
+                                anchorRange.insertText(chunk, "Before");
                             }
                         }
+                    } else {
+                        // Bijoy ➔ Unicode: বিজয় লেখা পুরোটাই কনভার্ট করতে হবে।
+                        let converted = convertBijoyToUnicode(rawText);
+                        let textRange = anchorRange.insertText(converted, "Before");
+                        textRange.font.name = "Kalpurush";
                     }
 
                     await context.sync();
-                    showStatus(`Successfully converted to ${direction === "UniToBijoy" ? "Bijoy" : "Unicode"}!`);
+                    showStatus(`Successfully converted!`);
                 });
             } catch (error) {
                 console.error(error);
@@ -479,91 +467,101 @@
         // --- Core Conversion Dictionaries ---
         
         function convertUnicodeToBijoy(text) {
-            if(!text) return "";
-            
-            // Standard Unicode to Bijoy pre-conversion mapping
+            if (!text) return "";
             let str = text;
-            str = str.replace(/ো/g, "ে+া");
-            str = str.replace(/ৌ/g, "ে+ৗ");
-            
-            // যুক্তাক্ষর ও কার ম্যাপ (Condensed standard rules)
-            const map = {
-                "অ": "A", "আ": "Av", "ই": "B", "ঈ": "C", "উ": "D", "ঊ": "E", "ঋ": "F", "এ": "G", "ঐ": "H", "ও": "I", "ঔ": "J",
-                "ক": "K", "খ": "L", "গ": "M", "ঘ": "N", "ঙ": "O", "চ": "P", "ছ": "Q", "জ": "R", "ঝ": "S", "ঞ": "T",
-                "ট": "U", "ঠ": "V", "ড": "W", "ঢ": "X", "ণ": "Y", "ত": "Z", "থ": "_", "দ": "`", "ধ": "a", "ন": "b",
-                "প": "c", "ফ": "d", "ব": "e", "ভ": "f", "ম": "g", "য": "h", "র": "i", "ল": "j", "শ": "k", "ষ": "l",
-                "স": "m", "হ": "n", "ড়": "o", "ঢ়": "p", "য়": "q",
-                "ৎ": "r", "ং": "s", "ঃ": "t", "ঁ": "u", "া": "v", "ি": "w", "ী": "x", "ু": "y", "ূ": "z", "ৃ": "&",
-                "ে": "†", "ৈ": "ˆ", "ো": "†v", "ৌ": "†`", "্": " ", "০": "0", "১": "1", "২": "2", "৩": "3", "৪": "4",
-                "৫": "5", "৬": "6", "৭": "7", "৮": "8", "৯": "9", "।": "|"
+
+            // ১. কার ভাঙা (ো, ৌ)
+            str = str.replace(/ো/g, 'ো');
+            str = str.replace(/ৌ/g, 'ৌ');
+
+            // ২. রেফ (র্)
+            str = str.replace(/র্/g, '©');
+            str = str.replace(/র+্/g, '©');
+
+            // ৩. যুক্তাক্ষর ম্যাপিং (Bijoy Specific)
+            const juktaMap = {
+                'ক্ষ': '¶', 'জ্ঞ': 'Á', 'ত্র': 'Î', 'শ্র': 'kÖ', 'ক্র': 'µ', 'গ্র': 'MÖ', 'প্র': 'cÖ', 'ড্র': 'W«',
+                'ট্র': 'U«', 'ফ্র': 'd«', 'ব্র': 'eª', 'ব্ল': 'eø', 'ক্ল': 'K¬', 'গ্ল': 'Mø', 'প্ল': 'cø', 'ফ্ল': 'd¬',
+                'ক্ত': '³', 'ব্দ': 'ã', 'দ্ধ': '×', 'ড্ড': 'Ç', 'ট্ট': 'Æ', 'ঙ্গ': '½', 'ঙ্ক': '¼', 'স্ফ': 'ù',
+                'স্থ': '¯’', 'স্ট': '÷', 'স্ন': 'mœ', 'স্ম': '¯§', 'স্ত': '¯Í', 'ম্প': '¤ú', 'ম্ব': '¤^', 'ম্ম': '¤§',
+                'ন্দ': '›`', 'ন্ধ': 'Ü', 'ন্ট': '›U', 'ন্ড': 'Û', 'ন্ত': 'šÍ', 'ন্থ': 'š’', 'ন্স': 'Ý', 'হ্ম': '¿'
             };
-
-            // Juktakkhor Handling (Basic block)
-            str = str.replace(/ক্স/g, "·");
-            str = str.replace(/জ্ঞ/g, "Á");
-            str = str.replace(/ত্র/g, "Î");
-            str = str.replace(/শ্র/g, "kÖ");
-            
-            // Character replacement
-            let result = "";
-            for (let i = 0; i < str.length; i++) {
-                let char = str[i];
-                if (map[char]) {
-                    result += map[char];
-                } else {
-                    result += char;
-                }
+            for (let [u, b] of Object.entries(juktaMap)) {
+                str = str.split(u).join(b);
             }
-            
-            // Post-conversion fixing for 'ি', 'ে', 'ৈ' (Pre-kars)
-            result = result.replace(/(.)w/g, "w$1"); // i-kar
-            result = result.replace(/(.)†/g, "†$1"); // e-kar
-            result = result.replace(/(.)ˆ/g, "ˆ$1"); // oi-kar
 
-            return result;
+            // ৪. সাধারণ অক্ষর ম্যাপিং
+            const map = {
+                'অ': 'A', 'আ': 'Av', 'ই': 'B', 'ঈ': 'C', 'উ': 'D', 'ঊ': 'E', 'ঋ': 'F', 'এ': 'G', 'ঐ': 'H', 'ও': 'I', 'ঔ': 'J',
+                'ক': 'K', 'খ': 'L', 'গ': 'M', 'ঘ': 'N', 'ঙ': 'O', 'চ': 'P', 'ছ': 'Q', 'জ': 'R', 'ঝ': 'S', 'ঞ': 'T',
+                'ট': 'U', 'ঠ': 'V', 'ড': 'W', 'ঢ': 'X', 'ণ': 'Y', 'ত': 'Z', 'থ': '_', 'দ': '`', 'ধ': 'a', 'ন': 'b',
+                'প': 'c', 'ফ': 'd', 'ব': 'e', 'ভ': 'f', 'ম': 'g', 'য': 'h', 'র': 'i', 'ল': 'j', 'শ': 'k', 'ষ': 'l',
+                'স': 'm', 'হ': 'n', 'ড়': 'o', 'ঢ়': 'p', 'য়': 'q', 'ৎ': 'r', 'ং': 's', 'ঃ': 't', 'ঁ': 'u',
+                'া': 'v', 'ি': 'w', 'ী': 'x', 'ু': 'y', 'ূ': 'z', 'ৃ': '&', 'ে': '†', 'ৈ': 'ˆ', 'ৗ': 'Š', '্': ' ',
+                '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9', '।': '|'
+            };
+            
+            let out = "";
+            for (let i = 0; i < str.length; i++) {
+                out += map[str[i]] || str[i];
+            }
+            str = out;
+
+            // ৫. Pre-kars (ি, ে, ৈ) কে ব্যঞ্জনবর্ণের আগে নিয়ে আসা
+            let allCons = "K-V_`a-rÿÁÎµ×ÇÆ½¼ù÷¿¨© Ö«ªø¬³ã¯’mœ§Í¤ú^›`ÜUÛšÝ"; 
+            let regex = new RegExp(`([${allCons}]+)(w|†|ˆ)`, 'g');
+            str = str.replace(regex, "$2$1");
+
+            // ৬. য-ফলা ফিক্স
+            str = str.replace(/ h/g, '¨');
+
+            return str;
         }
 
         function convertBijoyToUnicode(text) {
-            if(!text) return "";
-            
+            if (!text) return "";
             let str = text;
 
-            // Pre-kars fixing (Moving 'ি', 'ে', 'ৈ' to their correct position after consonant)
-            str = str.replace(/w(.)/g, "$1w"); // i-kar
-            str = str.replace(/†(.)/g, "$1†"); // e-kar
-            str = str.replace(/ˆ(.)/g, "$1ˆ"); // oi-kar
+            // ১. Pre-kars (w, †, ˆ) কে ব্যঞ্জনবর্ণের পরে নিয়ে যাওয়া
+            let allCons = "K-V_`a-rÿÁÎµ×ÇÆ½¼ù÷¿¨© Ö«ªø¬³ã¯’mœ§Í¤ú^›`ÜUÛšÝ";
+            let regex = new RegExp(`(w|†|ˆ)([${allCons}]+)`, 'g');
+            str = str.replace(regex, "$2$1");
 
-            const map = {
-                "A": "অ", "Av": "আ", "B": "ই", "C": "ঈ", "D": "উ", "E": "ঊ", "F": "ঋ", "G": "এ", "H": "ঐ", "I": "ও", "J": "ঔ",
-                "K": "ক", "L": "খ", "M": "গ", "N": "ঘ", "O": "ঙ", "P": "চ", "Q": "ছ", "R": "জ", "S": "ঝ", "T": "ঞ",
-                "U": "ট", "V": "ঠ", "W": "ড", "X": "ঢ", "Y": "ণ", "Z": "ত", "_": "থ", "`": "দ", "a": "ধ", "b": "ন",
-                "c": "প", "d": "ফ", "e": "ব", "f": "ভ", "g": "ম", "h": "য", "i": "র", "j": "ল", "k": "শ", "l": "ষ",
-                "m": "স", "n": "হ", "o": "ড়", "p": "ঢ়", "q": "য়",
-                "r": "ৎ", "s": "ং", "t": "ঃ", "u": "ঁ", "v": "া", "w": "ি", "x": "ী", "y": "ু", "z": "ূ", "&": "ৃ",
-                "†": "ে", "ˆ": "ৈ", " ": "্", "0": "০", "1": "১", "2": "২", "3": "৩", "4": "৪",
-                "5": "৫", "6": "৬", "7": "৭", "8": "৮", "9": "৯", "|": "।"
+            // ২. যুক্তাক্ষর ও স্পেশাল ক্যারেক্টার ম্যাপিং
+            const b2uJukta = {
+                '¶': 'ক্ষ', 'Á': 'জ্ঞ', 'Î': 'ত্র', 'kÖ': 'শ্র', 'µ': 'ক্র', 'MÖ': 'গ্র', 'cÖ': 'প্র', 'W«': 'ড্র',
+                'U«': 'ট্র', 'd«': 'ফ্র', 'eª': 'ব্র', 'eø': 'ব্ল', 'K¬': 'ক্ল', 'Mø': 'গ্ল', 'cø': 'প্ল', 'd¬': 'ফ্ল',
+                '³': 'ক্ত', 'ã': 'ব্দ', '×': 'দ্ধ', 'Ç': 'ড্ড', 'Æ': 'ট্ট', '½': 'ঙ্গ', '¼': 'ঙ্ক', 'ù': 'স্ফ',
+                '¯’': 'স্থ', '÷': 'স্ট', 'mœ': 'স্ন', '¯§': 'স্ম', '¯Í': 'স্ত', '¤ú': 'ম্প', '¤^': 'ম্ব', '¤§': 'ম্ম',
+                '›`': 'ন্দ', 'Ü': 'ন্ধ', '›U': 'ন্ট', 'Û': 'ন্ড', 'šÍ': 'ন্ত', 'š’': 'ন্থ', 'Ý': 'ন্স', '¿': 'হ্ম',
+                '©': 'র্', '¨': '্য'
             };
-
-            // Juktakkhor expansion
-            str = str.replace(/·/g, "ক্স");
-            str = str.replace(/Á/g, "জ্ঞ");
-            str = str.replace(/Î/g, "ত্র");
-            
-            let result = "";
-            for (let i = 0; i < str.length; i++) {
-                let char = str[i];
-                if (map[char]) {
-                    result += map[char];
-                } else {
-                    result += char;
-                }
+            for (let [b, u] of Object.entries(b2uJukta)) {
+                str = str.split(b).join(u);
             }
-            
-            // Post-conversion fixing
-            result = result.replace(/ে\+া/g, "ো");
-            result = result.replace(/ে\+ৗ/g, "ৌ");
 
-            return result;
+            // ৩. সাধারণ অক্ষর ম্যাপিং
+            const map = {
+                'A': 'অ', 'Av': 'আ', 'B': 'ই', 'C': 'ঈ', 'D': 'উ', 'E': 'ঊ', 'F': 'ঋ', 'G': 'এ', 'H': 'ঐ', 'I': 'ও', 'J': 'ঔ',
+                'K': 'ক', 'L': 'খ', 'M': 'গ', 'N': 'ঘ', 'O': 'ঙ', 'P': 'চ', 'Q': 'ছ', 'R': 'জ', 'S': 'ঝ', 'T': 'ঞ',
+                'U': 'ট', 'V': 'ঠ', 'W': 'ড', 'X': 'ঢ', 'Y': 'ণ', 'Z': 'ত', '_': 'থ', '`': 'দ', 'a': 'ধ', 'b': 'ন',
+                'c': 'প', 'd': 'ফ', 'e': 'ব', 'f': 'ভ', 'g': 'ম', 'h': 'য', 'i': 'র', 'j': 'ল', 'k': 'শ', 'l': 'ষ',
+                'm': 'স', 'n': 'হ', 'o': 'ড়', 'p': 'ঢ়', 'q': 'য়', 'r': 'ৎ', 's': 'ং', 't': 'ঃ', 'u': 'ঁ',
+                'v': 'া', 'w': 'ি', 'x': 'ী', 'y': 'ু', 'z': 'ূ', '&': 'ৃ', '†': 'ে', 'ˆ': 'ৈ', 'Š': 'ৗ', ' ': '্',
+                '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪', '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯', '|': '।'
+            };
+            let out = "";
+            for (let i = 0; i < str.length; i++) {
+                out += map[str[i]] || str[i];
+            }
+            str = out;
+
+            // ৪. পোস্ট-প্রসেসিং (ো-কার ফিক্স)
+            str = str.replace(/েৃ/g, 'ৃ'); 
+            str = str.replace(/ৌ/g, 'ৌ');
+            str = str.replace(/ো/g, 'ো');
+            
+            return str;
         }
     </script>
 </body>
