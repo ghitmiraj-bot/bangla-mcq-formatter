@@ -359,17 +359,14 @@
 
                     let matchingParagraphs = [];
 
-                    // ২. প্যারাগ্রাফ চেক করে ফিল্টার করা
+                    // প্যারাগ্রাফ চেক করে ফিল্টার করা
                     for (let i = 0; i < paragraphs.items.length; i++) {
                         let p = paragraphs.items[i];
                         
-                        // লাইন ব্রেক বা হোয়াইটস্পেস মুছে ফেলা হচ্ছে
                         let cleanText = p.text.replace(/[\s\u00A0\u200B\r\n]+$/, "");
 
                         if (cleanText.length > 2) {
                             let lastChar = cleanText.slice(-1);
-
-                            // ৩. নির্দিষ্ট ক্যারেক্টার চেক করা (?, ؟, —, -, :)
                             if (["?", "\u061F", "\u2014", "-", ":"].includes(lastChar)) {
                                 matchingParagraphs.push(p);
                             }
@@ -377,18 +374,21 @@
                     }
 
                     if (matchingParagraphs.length > 0) {
-                        // নাম্বারিং যেন ভেঙে না যায়, তাই প্রথম প্যারাগ্রাফে লিস্ট শুরু করে ID নেওয়া হচ্ছে
+                        // নতুন লিস্ট তৈরি করা
                         let list = matchingParagraphs[0].startNewList();
+                        
+                        // সমাধান: বুলেটের পরিবর্তে লিস্টের ধরন "Arabic" (1, 2, 3...) সেট করে দেওয়া হলো 
+                        list.setLevelNumbering(0, "Arabic");
                         list.load("id");
                         
-                        // প্রথম প্যারাগ্রাফের স্টাইলিং (0.31 inches = 22.32 points)
+                        // প্রথম প্যারাগ্রাফের স্টাইলিং
                         matchingParagraphs[0].font.bold = true;
                         matchingParagraphs[0].leftIndent = 22.32;
                         matchingParagraphs[0].firstLineIndent = -22.32;
                         
-                        await context.sync(); // লিস্ট ID পাওয়ার জন্য সিঙ্ক
+                        await context.sync();
 
-                        // ৪. বাকি প্যারাগ্রাফগুলোকে একই লিস্টে যুক্ত করে স্টাইল করা
+                        // বাকি প্যারাগ্রাফগুলোকে একই লিস্টে যুক্ত করে স্টাইল করা
                         for (let i = 1; i < matchingParagraphs.length; i++) {
                             matchingParagraphs[i].attachToList(list.id, 0);
                             matchingParagraphs[i].font.bold = true;
