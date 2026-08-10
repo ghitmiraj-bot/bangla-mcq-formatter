@@ -25,8 +25,9 @@
         </label>
     </div>
 
+    <!-- Instruction UI instead of Textarea -->
     <div class="flex-1 flex flex-col mb-4 items-center justify-center border-2 border-dashed border-[#1976D2] bg-[#E3F2FD] rounded-lg p-6 text-center">
-        <svg xmlns="http://www.w3.org/2001/svg" class="h-10 w-10 text-[#1976D2] mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-[#1976D2] mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
         </svg>
         <p class="text-sm font-semibold text-[#1976D2] mb-1">Select Text in Word</p>
@@ -43,22 +44,12 @@
         <button id="btnFormatQuestions" class="w-full bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm mt-2">
             Number & Bold Questions
         </button>
-        <div class="flex space-x-2 mt-2">
-            <button id="btnUniToBijoy" class="w-1/2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold py-2 px-2 rounded transition-colors text-xs shadow-sm">
-                Unicode ➔ Bijoy
-            </button>
-            <button id="btnBijoyToUni" class="w-1/2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold py-2 px-2 rounded transition-colors text-xs shadow-sm">
-                Bijoy ➔ Unicode
-            </button>
-        </div>
     </div>
     
     <div id="statusMsg" class="text-sm font-medium text-center hidden py-2 rounded"></div>
 
     <script>
-        // ==========================================
-        // PARSING & FORMATTING LOGIC
-        // ==========================================
+        // --- Core Parsing Logic (Translated from Python) ---
         const BANGLA_DIGITS = {'0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'};
         const OPTION_ORDER = ["ক", "খ", "গ", "ঘ"];
         const OPTION_EXPORT_MAP = {"ক": "K", "খ": "L", "গ": "M", "ঘ": "N"};
@@ -205,13 +196,12 @@
             el.style.display = 'block';
         }
 
+        // --- MS Word API Integration ---
         Office.onReady((info) => {
             if (info.host === Office.HostType.Word) {
                 document.getElementById("btnNormal").onclick = () => formatSelectedText("normal");
                 document.getElementById("btnSmart").onclick = () => formatSelectedText("smart");
                 document.getElementById("btnFormatQuestions").onclick = formatQuestionsMacro;
-                document.getElementById("btnUniToBijoy").onclick = () => runSmartConverter("UniToBijoy");
-                document.getElementById("btnBijoyToUni").onclick = () => runSmartConverter("BijoyToUni");
             }
         });
 
@@ -282,6 +272,7 @@
 
                     if (type === "smart") {
                         anchorRange.insertBreak("Page", "Before");
+                        
                         let ansHeaderPara = anchorRange.insertParagraph("সঠিক উত্তর ও ব্যাখ্যা", "Before");
                         ansHeaderPara.font.name = "Kalpurush";
                         ansHeaderPara.font.size = 12;
@@ -310,10 +301,18 @@
                     }
 
                     anchorRange.delete();
+
                     await context.sync();
                     showStatus(`Successfully formatted ${questions.length} questions!`);
                 });
-            } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
+            } catch (error) {
+                console.error(error);
+                let exactError = error.message || "Unknown Error";
+                if (error.debugInfo && error.debugInfo.errorLocation) {
+                    exactError += " (Location: " + error.debugInfo.errorLocation + ")";
+                }
+                showStatus("Error: " + exactError, true);
+            }
         }
 
         async function formatQuestionsMacro() {
@@ -324,27 +323,38 @@
                     paragraphs.load("items");
                     await context.sync();
 
-                    if (paragraphs.items.length === 0) { showStatus("Please select some text first.", true); return; }
-                    for (let i = 0; i < paragraphs.items.length; i++) { paragraphs.items[i].load("text"); }
+                    if (paragraphs.items.length === 0) {
+                        showStatus("Please select some text first.", true);
+                        return;
+                    }
+
+                    for (let i = 0; i < paragraphs.items.length; i++) {
+                        paragraphs.items[i].load("text");
+                    }
                     await context.sync();
 
                     let matchingParagraphs = [];
+
                     for (let i = 0; i < paragraphs.items.length; i++) {
                         let p = paragraphs.items[i];
                         let cleanText = p.text.replace(/[\s\u00A0\u200B\r\n]+$/, "");
+
                         if (cleanText.length > 2) {
                             let lastChar = cleanText.slice(-1);
-                            if (["?", "\u061F", "\u2014", "-", ":"].includes(lastChar)) { matchingParagraphs.push(p); }
+                            if (["?", "\u061F", "\u2014", "-", ":"].includes(lastChar)) {
+                                matchingParagraphs.push(p);
+                            }
                         }
                     }
 
                     if (matchingParagraphs.length > 0) {
                         let list = matchingParagraphs[0].startNewList();
-                        list.setLevelNumbering(0, "Arabic");
                         list.load("id");
+                        
                         matchingParagraphs[0].font.bold = true;
                         matchingParagraphs[0].leftIndent = 22.32;
                         matchingParagraphs[0].firstLineIndent = -22.32;
+                        
                         await context.sync();
 
                         for (let i = 1; i < matchingParagraphs.length; i++) {
@@ -353,228 +363,20 @@
                             matchingParagraphs[i].leftIndent = 22.32;
                             matchingParagraphs[i].firstLineIndent = -22.32;
                         }
+                        
                         await context.sync();
                     }
+
                     showStatus(`Task Completed! Total Questions Found: ${matchingParagraphs.length}`);
                 });
-            } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
-        }
-
-        // ==========================================
-        // SMART BIJOY-UNICODE CONVERTER ENGINE 
-        // WITH AI-AUTO DETECTION 
-        // ==========================================
-
-        function isUnicodeText(text) {
-            // যদি লেখায় ইউনিকোড বাংলার যেকোনো ক্যারেক্টার থাকে, তবে এটি ইউনিকোড টেক্সট
-            return /[\u0980-\u09FF]/.test(text);
-        }
-
-        async function runSmartConverter(direction) {
-            try {
-                await Word.run(async (context) => {
-                    const selection = context.document.getSelection();
-                    selection.load("text");
-                    await context.sync();
-
-                    const rawText = selection.text;
-                    if (!rawText || !rawText.trim()) {
-                        showStatus("Please select some text to convert!", true);
-                        return;
-                    }
-
-                    // অটো-ডিটেকশন: সিলেক্ট করা লেখাটি কি ইতোমধ্যে ইউনিকোড নাকি বিজয়?
-                    // যদি লেখায় স্ট্যান্ডার্ড ইউনিকোড বাংলা ক্যারেক্টার থাকে, তবে তা ইউনিকোড
-                    let isUnicode = /[\u0980-\u09FF]/.test(rawText);
-                    
-                    let targetDirection = direction;
-                    
-                    // বুদ্ধিমান সুরক্ষা: ইউজার যদি ইউনিকোড লেখার ওপর BijoyToUni চাপ দেয়, 
-                    // তবে বুঝতে হবে সে আসলে ইউনিকোডকে বিজয়ে রূপান্তর করতে চাচ্ছে (UniToBijoy)
-                    if (isUnicode && direction === "BijoyToUni") {
-                        targetDirection = "UniToBijoy";
-                    } 
-                    // আর যদি লেখাটি বিজয় ফন্টের হয় (যাতে ইউনিকোড ক্যারেক্টার নেই), 
-                    // এবং ইউজার UniToBijoy চাপ দেয়, তবে তাকে BijoyToUni ধরে নিতে হবে
-                    else if (!isUnicode && direction === "UniToBijoy") {
-                        targetDirection = "BijoyToUni";
-                    }
-
-                    let anchorRange = selection.insertText("", "Replace");
-
-                    if (targetDirection === "UniToBijoy") {
-                        let textChunks = rawText.split(/([a-zA-Z0-9\s\(\)\[\]\{\}\.,;:'"\!\?-]+)/g);
-
-                        for (let i = 0; i < textChunks.length; i++) {
-                            let chunk = textChunks[i];
-                            if (!chunk) continue;
-
-                            if (/^[a-zA-Z0-9\s\(\)\[\]\{\}\.,;:'"\!\?-]+$/.test(chunk)) {
-                                let textRange = anchorRange.insertText(chunk, "Before");
-                                textRange.font.name = "Times New Roman"; 
-                            } else {
-                                let converted = convertUnicodeToBijoy(chunk);
-                                let textRange = anchorRange.insertText(converted, "Before");
-                                textRange.font.name = "SutonnyMJ";
-                            }
-                        }
-                    } else {
-                        // Bijoy ➔ Unicode কনভার্সন
-                        let converted = convertBijoyToUnicode(rawText);
-                        let textRange = anchorRange.insertText(converted, "Before");
-                        textRange.font.name = "Kalpurush";
-                    }
-
-                    await context.sync();
-                    showStatus(`Converted successfully!`);
-                });
-            } catch (error) { 
-                showStatus("Error: " + (error.message || "Unknown"), true); 
-            }
-        }
-        // --- Core Conversion Dictionaries ---
-        
-        function convertUnicodeToBijoy(text) {
-            if (!text) return "";
-            let str = text;
-
-            // ১. অদৃশ্য ক্যারেক্টার রিমুভ 
-            str = str.replace(/[\u200B-\u200D\uFEFF]/g, '');
-
-            // ২. ো-কার এবং ৌ-কার সঠিক নিয়মে ভাঙা
-            str = str.replace(/ো/g, 'ো');
-            str = str.replace(/ৌ/g, 'ৌ');
-
-            let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ"; 
-
-            // ৩. রেফ (র্) কে ব্যঞ্জনবর্ণ ও যুক্তাক্ষরের শেষে বসানো
-            let regexReph = new RegExp("র\u09CD([" + cons + "](?:\u09CD[" + cons + "])*)", "g");
-            str = str.replace(regexReph, "$1©");
-
-            // ৪. প্রি-কার (ি, ে, ৈ) কে ব্যঞ্জনবর্ণ ও যুক্তাক্ষরের সামনে নিয়ে আসা
-            let regexPreKar = new RegExp("([" + cons + "](?:\u09CD[" + cons + "])*(?:©)?)(ি|ে|ৈ)", "g");
-            str = str.replace(regexPreKar, "$2$1");
-
-            // ৫. যুক্তাক্ষর ম্যাপিং (Extensive Pro Dictionary)
-            const u2bJukta = {
-                'ক্ক':'°', 'ক্ট':'±', 'ক্ত':'³', 'ক্ব':'K¡', 'ক্স':'·', 'ক্ষ':'¶', 'জ্ঞ':'Á',
-                'ঙ্গ':'½', 'ঙ্ক':'¼', 'ট্ট':'Æ', 'ড্ড':'Ç', 'ণ্ট':'È', 'ণ্ঠ':'É', 'ণ্ড':'Ð',
-                'ত্ত':'Ë', 'ত্থ':'Ì', 'ত্র':'Î', 'দ্দ':'Ï', 'দ্ধ':'×', 'দ্ব':'Ø', 'দ্ম':'Ù',
-                'ন্দ':'›`', 'ন্ধ':'Ü', 'ন্ন':'bœ', 'ন্ব':'b¦', 'ন্ম':'b¥', 'ম্প':'¤ú', 'ম্ব':'¤^', 'ম্ম':'¤§',
-                'স্ট':'÷', 'ষ্ট':'ó', 'ষ্ঠ':'ô', 'ষ্ণ':'ò', 'ষ্প':'®ú', 'ষ্ফ':'®ù', 'ষ্ম':'®§',
-                'স্ক':'¯‹', 'স্খ':'¯Œ', 'স্থ':'¯’', 'স্ন':'mœ', 'স্প':'¯ú', 'স্ফ':'ù', 'স্ম':'¯§', 'স্ব':'¯^', 'স্ত':'¯Í',
-                'হ্ম':'¿', 'হু':'û', 'হৃ':'ü', 'হ্ন':'ý', 'হ্ব':'nŸ', 'প্ত':'ß', 'ব্দ':'ã', 'ব্ধ':'ä',
-                'শ্র':'kÖ', 'ক্র':'µ', 'গ্র':'MÖ', 'প্র':'cÖ', 'ড্র':'W«', 'ট্র':'U«', 'ফ্র':'d«', 'ব্র':'eª',
-                'ব্ল':'eø', 'ক্ল':'K¬', 'গ্ল':'Mø', 'প্ল':'cø', 'ফ্ল':'d¬',
-                'ঞ্চ':'Â', 'ঞ্ছ':'Ã', 'ঞ্জ':'Ä',
-                'রু':'iæ', 'রূ':'i~', 'শু':'ï', 'গু':'¸', 'ন্তু':'š‘', 'স্তু':'¯‘',
-                'চ্চ':'”', 'চ্ছ':'•', 'জ্জ':'¾', 'ঝ্ঝ':'S&S', 'দ্ঘ':'`&N', 'ন্ত':'šÍ', 'ন্থ':'š’',
-                'ল্ক':'j&K', 'ল্গ':'j&M', 'ল্ট':'j&U', 'ল্ড':'j&W', 'ল্প':'í', 'ল্ব':'j&e', 'ল্ম':'j&g', 'ল্ল':'jø',
-                'ধ্ব':'aŸ', 'শ্ব':'k¦', 'ত্ব':'Z¡', 'থ্ব':'_¡', 'ম্ন':'gœ',
-                '্য':'¨', '্র':'«', '্':'&'
-            };
-            
-            let keys = Object.keys(u2bJukta).sort((a, b) => b.length - a.length);
-            for (let k of keys) {
-                str = str.split(k).join(u2bJukta[k]);
-            }
-
-            // ৬. সাধারণ অক্ষর ম্যাপিং
-            const map = {
-                'অ':'A', 'আ':'Av', 'ই':'B', 'ঈ':'C', 'উ':'D', 'ঊ':'E', 'ঋ':'F', 'এ':'G', 'ঐ':'H', 'ও':'I', 'ঔ':'J',
-                'ক':'K', 'খ':'L', 'গ':'M', 'ঘ':'N', 'ঙ':'O', 'চ':'P', 'ছ':'Q', 'জ':'R', 'ঝ':'S', 'ঞ':'T',
-                'ট':'U', 'ঠ':'V', 'ড':'W', 'ঢ':'X', 'ণ':'Y', 'ত':'Z', 'থ':'_', 'দ':'`', 'ধ':'a', 'ন':'b',
-                'প':'c', 'ফ':'d', 'ব':'e', 'ভ':'f', 'ম':'g', 'য':'h', 'র':'i', 'ল':'j', 'শ':'k', 'ষ':'l',
-                'স':'m', 'হ':'n', 'ড়':'o', 'ঢ়':'p', 'য়':'q', 'ৎ':'r', 'ং':'s', 'ঃ':'t', 'ঁ':'u',
-                'া':'v', 'ি':'w', 'ী':'x', 'ু':'y', 'ূ':'~', 'ৃ':'…', 'ে':'‡', 'ৈ':'ˆ', 'ৗ':'Š', '।':'|',
-                '০':'0', '১':'1', '২':'2', '৩':'3', '৪':'4', '৫':'5', '৬':'6', '৭':'7', '৮':'8', '৯':'9',
-                '©':'©' 
-            };
-            
-            let out = "";
-            for (let i = 0; i < str.length; i++) {
-                out += map[str[i]] || str[i];
-            }
-            
-            return out;
-        }
-
-        function convertBijoyToUnicode(text) {
-            if (!text) return "";
-            
-            // টেক্সটকে বাংলা এবং ইংরেজির টুকরোতে ভাগ করা, যেন ইংরেজি লেখা বা নাম্বার কনভার্ট না হয়
-            let chunks = text.split(/([a-zA-Z0-9\s\(\)\[\]\{\}\.,;:'"\!\?-]+)/g);
-            let result = "";
-
-            for (let c = 0; c < chunks.length; c++) {
-                let chunk = chunks[c];
-                if (!chunk) continue;
-
-                // যদি অংশটি ইংরেজি বা নাম্বার বা স্পেশাল সাইন হয়, তবে সেটি হুবহু রেখে দেওয়া হবে
-                if (/^[a-zA-Z0-9\s\(\)\[\]\{\}\.,;:'"\!\?-]+$/.test(chunk)) {
-                    result += chunk;
-                } else {
-                    // শুধুমাত্র বাংলা অংশটুকুর ওপর বিজয় থেকে ইউনিকোড কনভার্সন চলবে
-                    let str = chunk;
-                    str = str.replace(/[\u200B-\u200D\uFEFF\+]/g, '');
-
-                    const b2uJukta = {
-                        '°':'ক্ক', '±':'ক্ট', '³':'ক্ত', 'K¡':'ক্ব', '·':'ক্স', '¶':'ক্ষ', 'Á':'জ্ঞ',
-                        '½':'ঙ্গ', '¼':'ঙ্ক', 'Æ':'ট্ট', 'Ç':'ড্ড', 'È':'ণ্ট', 'É':'ণ্ঠ', 'Ð':'ণ্ড',
-                        'Ë':'ত্ত', 'Ì':'ত্থ', 'Î':'ত্র', 'Ï':'দ্দ', '×':'দ্ধ', 'Ø':'দ্ব', 'Ù':'দ্ম',
-                        '›`':'ন্দ', 'Ü':'ন্ধ', 'bœ':'ন্ন', 'b¦':'ন্ব', 'b¥':'ন্ম', '¤ú':'ম্প', '¤^':'ম্ব', '¤§':'ম্ম',
-                        '÷':'স্ট', 'ó':'ষ্ট', 'ô':'ষ্ঠ', 'ò':'ষ্ণ', '®ú':'ষ্প', '®ù':'ষ্ফ', '®§':'ষ্ম',
-                        '¯‹':'স্ক', '¯Œ':'স্খ', '¯’':'স্থ', 'mœ':'স্ন', '¯ú':'স্প', 'ù':'স্ফ', '¯§':'স্ম', '¯^':'স্ব', '¯Í':'স্ত',
-                        '¿':'হ্ম', 'û':'হু', 'ü':'হৃ', 'ý':'হ্ন', 'nŸ':'হ্ব', 'ß':'প্ত', 'ã':'ব্দ', 'ä':'ব্ধ',
-                        'kÖ':'শ্র', 'µ':'ক্র', 'MÖ':'গ্র', 'cÖ':'প্র', 'W«':'ড্র', 'U«':'ট্র', 'd«':'ফ্র', 'eª':'ব্র',
-                        'eø':'ব্ল', 'K¬':'ক্ল', 'Mø':'গ্ল', 'cø':'প্ল', 'd¬':'ফ্ল',
-                        'Â':'ঞ্চ', 'Ã':'ঞ্ছ', 'Ä':'ঞ্জ', 'šÍ':'ন্ত', 'š’':'ন্থ',
-                        'iæ':'রু', 'i~':'রূ', 'ï':'শু', '¸':'গু', 'š‘':'ন্তু', '¯‘':'স্তু',
-                        'í':'ল্প', 'jø':'ল্ল', '”':'চ্চ', '•':'চ্ছ', '¾':'জ্জ',
-                        'aŸ':'ধ্ব', 'k¦':'শ্ব', 'Z¡':'ত্ব', '_¡':'থ্ব', 'gœ':'ম্ন',
-                        '¨':'্য', '«':'্র', '&':'্'
-                    };
-                    
-                    let keys = Object.keys(b2uJukta).sort((a, b) => b.length - a.length);
-                    for (let k of keys) {
-                        str = str.split(k).join(b2uJukta[k]);
-                    }
-
-                    const b2u = {
-                        'A':'অ', 'B':'ই', 'C':'ঈ', 'D':'উ', 'E':'ঊ', 'F':'ঋ', 'G':'এ', 'H':'ঐ', 'I':'ও', 'J':'ঔ',
-                        'K':'ক', 'L':'খ', 'M':'গ', 'N':'ঘ', 'O':'ঙ', 'P':'চ', 'Q':'ছ', 'R':'জ', 'S':'ঝ', 'T':'ঞ',
-                        'U':'ট', 'V':'ঠ', 'W':'ড', 'X':'ঢ', 'Y':'ণ', 'Z':'ত', '_':'থ', '`':'দ', 'a':'ধ', 'b':'ন',
-                        'c':'প', 'd':'ফ', 'e':'ব', 'f':'ভ', 'g':'ম', 'h':'য', 'i':'র', 'j':'ল', 'k':'শ', 'l':'ষ',
-                        'm':'স', 'n':'হ', 'o':'ড়', 'p':'ঢ়', 'q':'য়', 'r':'ৎ', 's':'ং', 't':'ঃ', 'u':'ঁ',
-                        'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', 'z':'ূ', '…':'ৃ', '†':'ে', '‡':'ে', 'ˆ':'ৈ', 'Š':'ৗ', '|':'।',
-                        '0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'
-                    };
-                    
-                    str = str.replace(/Av/g, 'আ');
-                    
-                    let out = "";
-                    for (let i = 0; i < str.length; i++) {
-                        out += b2u[str[i]] || str[i];
-                    }
-                    str = out;
-
-                    let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ";
-                    let regexOrder = new RegExp("([িেৈ])?([" + cons + "](?:\u09CD[" + cons + "])*)(©)?([াীুূৃৗ])?", "g");
-                    
-                    str = str.replace(regexOrder, function(match, preKar, cluster, ref, postKar) {
-                        return (ref ? "র্" : "") + cluster + (preKar || "") + (postKar || "");
-                    });
-
-                    str = str.replace(/অা/g, 'আ');
-                    str = str.replace(/েৃ/g, 'ৃ'); 
-                    str = str.replace(/ৌ/g, 'ৌ');
-                    str = str.replace(/ো/g, 'ো');
-
-                    result += str;
+            } catch (error) {
+                console.error(error);
+                let exactError = error.message || "Unknown Error";
+                if (error.debugInfo && error.debugInfo.errorLocation) {
+                    exactError += " (Location: " + error.debugInfo.errorLocation + ")";
                 }
+                showStatus("Error: " + exactError, true);
             }
-            
-            return result;
         }
     </script>
 </body>
