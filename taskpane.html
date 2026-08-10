@@ -411,7 +411,7 @@
             }
         }
         // ==========================================
-        // ULTIMATE BIJOY-UNICODE ENGINE 
+        // ULTIMATE BIJOY-UNICODE ENGINE (V3)
         // ==========================================
 
         async function runSmartConverter(direction) {
@@ -438,16 +438,16 @@
                             if (!chunk) continue;
 
                             if (/^[a-zA-Z0-9\(\)\[\]\{\}]+$/.test(chunk)) {
-                                // ইংরেজি টেক্সটের জন্য ফন্ট লক করে দেওয়া হলো
+                                // ইংরেজি টেক্সটের জন্য Times New Roman ফন্ট
                                 let textRange = anchorRange.insertText(chunk, "Before");
-                                textRange.font.name = "Calibri"; // Word cannot override this now
-                                textRange.font.size = 11;
+                                textRange.font.name = "Times New Roman"; 
+                                textRange.font.size = 12;
                             } else {
                                 // বাংলা টেক্সট কনভার্সন
                                 let converted = convertUnicodeToBijoy(chunk);
                                 let textRange = anchorRange.insertText(converted, "Before");
                                 textRange.font.name = "SutonnyMJ";
-                                textRange.font.size = 11;
+                                textRange.font.size = 12;
                             }
                         }
                     } else {
@@ -458,13 +458,13 @@
 
                             if (/^[a-zA-Z0-9\(\)\[\]\{\}]+$/.test(chunk)) {
                                 let textRange = anchorRange.insertText(chunk, "Before");
-                                textRange.font.name = "Calibri";
-                                textRange.font.size = 11;
+                                textRange.font.name = "Times New Roman";
+                                textRange.font.size = 12;
                             } else {
                                 let converted = convertBijoyToUnicode(chunk);
                                 let textRange = anchorRange.insertText(converted, "Before");
                                 textRange.font.name = "Kalpurush";
-                                textRange.font.size = 11;
+                                textRange.font.size = 12;
                             }
                         }
                     }
@@ -485,14 +485,14 @@
             if (!text) return "";
             let str = text;
 
-            // ১. কার ফিক্স (No Plus Signs!)
+            // ১. কার ফিক্স
             str = str.replace(/ো/g, 'ো');
             str = str.replace(/ৌ/g, 'ৌ');
 
             // ২. রেফ (র্) ফিক্স
             str = str.replace(/র্/g, '©');
 
-            // ৩. যুক্তাক্ষর ম্যাপিং (Extended for Business/Academic terms)
+            // ৩. যুক্তাক্ষর ম্যাপিং
             const u2bJukta = {
                 'ম্প': '¤ú', 'ম্ব': '¤^', 'ম্ম': '¤§', 'ন্ন': 'bœ', 'ত্ত': 'Ë', 'ত্ব': 'Z¡', 
                 'স্ট': '÷', 'ষ্ট': 'ó', 'ষ্ঠ': 'ô', 'ষ্ণ': 'ò', 'ষ্প': '®ú', 'ষ্ফ': '®ù', 'ষ্ম': '®§',
@@ -511,14 +511,14 @@
                 str = str.split(u).join(b);
             }
 
-            // ৪. সাধারণ অক্ষর ম্যাপিং
+            // ৪. সাধারণ অক্ষর ম্যাপিং (ূ এবং ে আপডেট করা হয়েছে)
             const map = {
                 'অ':'A', 'আ':'Av', 'ই':'B', 'ঈ':'C', 'উ':'D', 'ঊ':'E', 'ঋ':'F', 'এ':'G', 'ঐ':'H', 'ও':'I', 'ঔ':'J',
                 'ক':'K', 'খ':'L', 'গ':'M', 'ঘ':'N', 'ঙ':'O', 'চ':'P', 'ছ':'Q', 'জ':'R', 'ঝ':'S', 'ঞ':'T',
                 'ট':'U', 'ঠ':'V', 'ড':'W', 'ঢ':'X', 'ণ':'Y', 'ত':'Z', 'থ':'_', 'দ':'`', 'ধ':'a', 'ন':'b',
                 'প':'c', 'ফ':'d', 'ব':'e', 'ভ':'f', 'ম':'g', 'য':'h', 'র':'i', 'ল':'j', 'শ':'k', 'ষ':'l',
                 'স':'m', 'হ':'n', 'ড়':'o', 'ঢ়':'p', 'য়':'q', 'ৎ':'r', 'ং':'s', 'ঃ':'t', 'ঁ':'u',
-                'া':'v', 'ি':'w', 'ী':'x', 'ু':'y', 'ূ':'z', 'ৃ':'…', 'ে':'†', 'ৈ':'ˆ', 'ৗ':'Š', '।':'|',
+                'া':'v', 'ি':'w', 'ী':'x', 'ু':'y', 'ূ':'~', 'ৃ':'…', 'ে':'‡', 'ৈ':'ˆ', 'ৗ':'Š', '।':'|',
                 '০':'0', '১':'1', '২':'2', '৩':'3', '৪':'4', '৫':'5', '৬':'6', '৭':'7', '৮':'8', '৯':'9'
             };
             let out = "";
@@ -527,8 +527,8 @@
             }
             str = out;
 
-            // ৫. কার রি-অ্যারেঞ্জমেন্ট (w, †, ˆ)
-            let regex = /([^ \n\r\t\.,;:'"!\?A-Jv-zŠw†ˆ|]+)(w|†|ˆ)/g;
+            // ৫. কার রি-অ্যারেঞ্জমেন্ট (w, ‡, ˆ)
+            let regex = /([^ \n\r\t\.,;:'"!\?A-Jv-xŠw‡ˆ|~]+)(w|‡|ˆ)/g;
             str = str.replace(regex, "$2$1");
 
             return str;
@@ -538,11 +538,8 @@
             if (!text) return "";
             let str = text;
 
-            // Error correction for old manual + signs (if any exist in the doc)
-            str = str.replace(/\+/g, '');
-
-            // ১. কার রি-অ্যারেঞ্জমেন্ট (w, †, ˆ)
-            let regex = /(w|†|ˆ)([^ \n\r\t\.,;:'"!\?A-Jv-zŠw†ˆ|]+)/g;
+            // ১. কার রি-অ্যারেঞ্জমেন্ট (w, †, ‡, ˆ)
+            let regex = /(w|†|‡|ˆ)([^ \n\r\t\.,;:'"!\?A-Jv-xŠw†‡ˆ|~]+)/g;
             str = str.replace(regex, "$2$1");
 
             // ২. যুক্তাক্ষর ম্যাপিং 
@@ -563,14 +560,14 @@
                 str = str.split(b).join(u);
             }
 
-            // ৩. সাধারণ অক্ষর ম্যাপিং
+            // ৩. সাধারণ অক্ষর ম্যাপিং (ূ এবং ে আপডেট করা হয়েছে)
             const b2u = {
                 'A':'অ', 'B':'ই', 'C':'ঈ', 'D':'উ', 'E':'ঊ', 'F':'ঋ', 'G':'এ', 'H':'ঐ', 'I':'ও', 'J':'ঔ',
                 'K':'ক', 'L':'খ', 'M':'গ', 'N':'ঘ', 'O':'ঙ', 'P':'চ', 'Q':'ছ', 'R':'জ', 'S':'ঝ', 'T':'ঞ',
                 'U':'ট', 'V':'ঠ', 'W':'ড', 'X':'ঢ', 'Y':'ণ', 'Z':'ত', '_':'থ', '`':'দ', 'a':'ধ', 'b':'ন',
                 'c':'প', 'd':'ফ', 'e':'ব', 'f':'ভ', 'g':'ম', 'h':'য', 'i':'র', 'j':'ল', 'k':'শ', 'l':'ষ',
                 'm':'স', 'n':'হ', 'o':'ড়', 'p':'ঢ়', 'q':'য়', 'r':'ৎ', 's':'ং', 't':'ঃ', 'u':'ঁ',
-                'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', 'z':'ূ', '…':'ৃ', '†':'ে', 'ˆ':'ৈ', 'Š':'ৗ', '|':'।',
+                'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', 'z':'ূ', '…':'ৃ', '†':'ে', '‡':'ে', 'ˆ':'ৈ', 'Š':'ৗ', '|':'।',
                 '0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'
             };
             
