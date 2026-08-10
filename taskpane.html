@@ -383,20 +383,26 @@
                         return;
                     }
 
-                    // Auto-Correction System (প্রতিরক্ষামূলক ব্যবস্থা)
-                    let textIsUnicode = isUnicodeText(rawText);
-                    let actualDirection = direction;
+                    // অটো-ডিটেকশন: সিলেক্ট করা লেখাটি কি ইতোমধ্যে ইউনিকোড নাকি বিজয়?
+                    // যদি লেখায় স্ট্যান্ডার্ড ইউনিকোড বাংলা ক্যারেক্টার থাকে, তবে তা ইউনিকোড
+                    let isUnicode = /[\u0980-\u09FF]/.test(rawText);
                     
-                    if (direction === "BijoyToUni" && textIsUnicode) {
-                        actualDirection = "UniToBijoy"; // ভুল করে BijoyToUni চাপলেও এটি কাজ করবে
-                    } else if (direction === "UniToBijoy" && !textIsUnicode) {
-                        actualDirection = "BijoyToUni"; 
+                    let targetDirection = direction;
+                    
+                    // বুদ্ধিমান সুরক্ষা: ইউজার যদি ইউনিকোড লেখার ওপর BijoyToUni চাপ দেয়, 
+                    // তবে বুঝতে হবে সে আসলে ইউনিকোডকে বিজয়ে রূপান্তর করতে চাচ্ছে (UniToBijoy)
+                    if (isUnicode && direction === "BijoyToUni") {
+                        targetDirection = "UniToBijoy";
+                    } 
+                    // আর যদি লেখাটি বিজয় ফন্টের হয় (যাতে ইউনিকোড ক্যারেক্টার নেই), 
+                    // এবং ইউজার UniToBijoy চাপ দেয়, তবে তাকে BijoyToUni ধরে নিতে হবে
+                    else if (!isUnicode && direction === "UniToBijoy") {
+                        targetDirection = "BijoyToUni";
                     }
 
                     let anchorRange = selection.insertText("", "Replace");
 
-                    if (actualDirection === "UniToBijoy") {
-                        // ইংরেজি শব্দ ও সংখ্যা আলাদা করে রাখা
+                    if (targetDirection === "UniToBijoy") {
                         let textChunks = rawText.split(/([a-zA-Z0-9\s\(\)\[\]\{\}\.,;:'"\!\?-]+)/g);
 
                         for (let i = 0; i < textChunks.length; i++) {
@@ -413,18 +419,19 @@
                             }
                         }
                     } else {
-                        // Bijoy ➔ Unicode: বিজয়ে ইংরেজি অক্ষরই বাংলা, তাই স্প্লিট করা যাবে না
+                        // Bijoy ➔ Unicode কনভার্সন
                         let converted = convertBijoyToUnicode(rawText);
                         let textRange = anchorRange.insertText(converted, "Before");
                         textRange.font.name = "Kalpurush";
                     }
 
                     await context.sync();
-                    showStatus(`Converted perfectly!`);
+                    showStatus(`Converted successfully!`);
                 });
-            } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
+            } catch (error) { 
+                showStatus("Error: " + (error.message || "Unknown"), true); 
+            }
         }
-
         // --- Core Conversion Dictionaries ---
         
         function convertUnicodeToBijoy(text) {
