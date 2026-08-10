@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bangla MCQ Formatter</title>
+    <!-- Office.js for MS Word Integration -->
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <!-- Tailwind CSS for Modern UI matching your Python App -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    </style>
+</head>
+<body class="bg-[#F4F6F9] text-gray-800 h-screen flex flex-col p-4">
+
+    <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
+        <h1 class="text-lg font-bold text-[#1976D2] mb-1">Bangla MCQ Formatter</h1>
+        <p class="text-xs text-gray-500 mb-4">Format directly from your selection</p>
+        
+        <label class="flex items-center space-x-2 cursor-pointer mb-2">
+            <input type="checkbox" id="shuffleCheck" class="form-checkbox h-4 w-4 text-[#1976D2] rounded border-gray-300" checked>
+            <span class="text-sm font-medium text-gray-700">Randomize Options</span>
+        </label>
+    </div>
+
+    <!-- Instruction UI instead of Textarea -->
+    <div class="flex-1 flex flex-col mb-4 items-center justify-center border-2 border-dashed border-[#1976D2] bg-[#E3F2FD] rounded-lg p-6 text-center">
+        <svg xmlns="http://www.w3.org/2001/svg" class="h-10 w-10 text-[#1976D2] mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+        <p class="text-sm font-semibold text-[#1976D2] mb-1">Select Text in Word</p>
+        <p class="text-xs text-gray-600">Highlight the raw questions in your document, then click a format button below.</p>
+    </div>
+
+    <div class="flex flex-col space-y-2 mb-2">
+        <button id="btnNormal" class="w-full bg-[#1976D2] hover:bg-[#1565C0] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm">
+            Format Selected (Normal MCQ)
+        </button>
+        <button id="btnSmart" class="w-full bg-[#10B981] hover:bg-[#059669] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm">
+            Format Selected (Smart MCQ)
+        </button>
+        <button id="btnFormatQuestions" class="w-full bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm mt-2">
+            Number & Bold Questions
+        </button>
+    </div>
+    
+    <div id="statusMsg" class="text-sm font-medium text-center hidden py-2 rounded"></div>
+
+    <script>
+        // --- Core Parsing Logic (Translated from Python) ---
+        const BANGLA_DIGITS = {'0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'};
+        const OPTION_ORDER = ["ক", "খ", "গ", "ঘ"];
+        const OPTION_EXPORT_MAP = {"ক": "K", "খ": "L", "গ": "M", "ঘ": "N"};
+        const ANSWER_EXPORT_MAP = {"ক": "P", "খ": "Q", "গ": "R", "ঘ": "S"};
+
+        function toBanglaNumber(n) {
+            return n.toString().replace(/[0-9]/g, w => BANGLA_DIGITS[w]);
+        }
+
+        function normalizeAnswerLabel(label) {
+            const ENG_TO_BN = {
+                "A": "ক", "B": "খ", "C": "গ", "D": "ঘ",
+                "a": "ক", "b": "খ", "c": "গ", "d": "ঘ",
+                "K": "ক", "L": "খ", "M": "গ", "N": "ঘ",
+                "k": "ক", "l": "খ", "m": "গ", "n": "ঘ",
+            };
+            return ENG_TO_BN[label] || label;
+        }
+
+        function isQuestionLine(line) {
+            // Added '।' to also support Bengali dari after numbers
+            if (/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.*)$/.test(line)) return true;
+            if (/^.+[?؟]\s*$/.test(line)) return true;
+            return false;
+        }
+
+        function parseQuestions(text) {
+            let lines = text.split(/[\r\n\v]+/);
+            let questions = [];
+            let current = null;
+
+            function flush() {
+                if (current && current.question && current.options.length > 0) {
+                    questions.push(current);
+                }
+                current = null;
+            }
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (!line) continue;
+
+                // আপডেট: ব্যাখ্যা কোলন (:) এবং হাইফেন/ড্যাশ (-, —) দুটোই সাপোর্ট করবে
+                let expMatch = line.match(/^\s*(?:ব্যাখ্যা|Explanation)\s*[:：\-\u2013\u2014]\s*(.+)$/i);
+                if (expMatch && current) {
+                    current.explanation = expMatch[1].trim();
+                    continue;
+                }
+                if (/^\s*ব্যাখ্যা\s*[:：\-\u2013\u2014]/.test(line) && current) {
+                    let parts = line.split(/ব্যাখ্যা\s*[:：\-\u2013\u2014]/);
+                    if (parts.length > 1) current.explanation = parts[1].trim();
+                    continue;
+                }
+
+                // Check Answer
+                let ansMatch = line.match(/^\s*(?:সঠিক উত্তর|উত্তর|Ans|Answer)\s*[:：]?\s*(.*)$/i);
+                if (ansMatch && current) {
+                    let ansExtr = ansMatch[1].match(/[\(\[]?([ক-ঘA-DK-Na-dk-n])[\)\]]?/);
+                    if (ansExtr) {
+                        current.answer = normalizeAnswerLabel(ansExtr[1]);
+                        current.original_answer = current.answer;
+                    }
+                    continue;
+                }
+
+                // Check Question
+                if (isQuestionLine(line)) {
+                    flush();
+                    let qMatch = line.match(/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.*)$/);
+                    let qText = qMatch ? qMatch[1].trim() : line;
+                    current = { question: qText, options: [], answer: null, explanation: null, original_answer: null };
+                    continue;
+                }
+
+                if (!current) continue;
+
+                // Check Options
+                let optMatch1 = line.match(/^\s*\(([কখঘগ])\)\s*(.+?)$/);
+                if (optMatch1) {
+                    current.options.push([normalizeAnswerLabel(optMatch1[1]), optMatch1[2].trim()]);
+                    continue;
+                }
+                let optMatch2 = line.match(/^\s*\(?([কখঘগA-DKLMNa-dklmn])\)?\s*[\.।:]?\s*(.+?)\s*$/);
+                if (optMatch2) {
+                    current.options.push([normalizeAnswerLabel(optMatch2[1]), optMatch2[2].trim()]);
+                    continue;
+                }
+
+                // Inline Explanation fallback (আপডেট করা হয়েছে)
+                if (line.includes("ব্যাখ্যা") && current) {
+                    let parts = line.split(/ব্যাখ্যা\s*[:：\-\u2013\u2014]/);
+                    if (parts.length > 1) {
+                        if (!current.explanation) current.explanation = parts[1].trim();
+                        if (current.options.length > 0) {
+                            current.options[current.options.length - 1][1] += " " + parts[0].trim();
+                        }
+                    }
+                    continue;
+                }
+
+                // Append to last option or question
+                if (current.options.length > 0) {
+                    current.options[current.options.length - 1][1] += " " + line;
+                } else {
+                    current.question += " " + line;
+                }
+            }
+            flush();
+            return questions;
+        }
+
+        function shuffleOptions(question) {
+            if (!question.options || question.options.length < 2 || !question.answer) return question;
+            let originalAns = question.original_answer || question.answer;
+            let correctText = null;
+            
+            for (let i = 0; i < question.options.length; i++) {
+                if (question.options[i][0] === originalAns) {
+                    correctText = question.options[i][1]; break;
+                }
+            }
+            
+            if (!correctText) return question;
+
+            let shuffled = question.options.slice();
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+
+            let newOptions = [];
+            let newAnswer = null;
+
+            for (let i = 0; i < shuffled.length; i++) {
+                let newLabel = OPTION_ORDER[i] || shuffled[i][0];
+                newOptions.push([newLabel, shuffled[i][1]]);
+                if (shuffled[i][1] === correctText) {
+                    newAnswer = newLabel;
+                }
+            }
+            question.options = newOptions;
+            question.answer = newAnswer;
+            return question;
+        }
+
+        function showStatus(msg, isError = false) {
+            const el = document.getElementById("statusMsg");
+            el.textContent = msg;
+            el.className = `text-sm font-medium text-center py-2 rounded mt-2 block ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+            setTimeout(() => { el.style.display = 'none'; el.className = 'hidden'; }, 4000);
+            el.style.display = 'block';
+        }
+
+        // --- MS Word API Integration ---
+        Office.onReady((info) => {
+            if (info.host === Office.HostType.Word) {
+                document.getElementById("btnNormal").onclick = () => formatSelectedText("normal");
+                document.getElementById("btnSmart").onclick = () => formatSelectedText("smart");
+                document.getElementById("btnFormatQuestions").onclick = formatQuestionsMacro;
+            }
+        });
+
+        async function formatSelectedText(type) {
+            try {
+                await Word.run(async (context) => {
+                    // 1. Get user selection
+                    const selection = context.document.getSelection();
+                    selection.load("text");
+                    await context.sync();
+
+                    const text = selection.text;
+                    if (!text || !text.trim()) {
+                        showStatus("Please select some text in the document first!", true);
+                        return;
+                    }
+
+                    // 2. Parse the selected text
+                    let questions = parseQuestions(text);
+                    if (questions.length === 0) {
+                        showStatus("No valid questions found in selection!", true);
+                        return;
+                    }
+
+                    if (document.getElementById("shuffleCheck").checked) {
+                        questions = questions.map(q => shuffleOptions(q));
+                    }
+
+                    // 3. Create a safe anchor point
+                    let anchorRange = selection.insertText(" ", "Replace");
+
+                    // 4. Insert formatted data right before the anchor
+                    for (let i = 0; i < questions.length; i++) {
+                        let q = questions[i];
+                        let safeQuestion = q.question.replace(/[\r\n\v]/g, "").trim();
+                        
+                        let qPara = anchorRange.insertParagraph(`${toBanglaNumber(i + 1)}. ${safeQuestion}`, "Before");
+                        qPara.font.name = "Kalpurush";
+                        qPara.font.size = 10.5;
+                        qPara.alignment = "Justified";
+
+                        for (let j = 0; j < Math.min(4, q.options.length); j++) {
+                            let optLabel = OPTION_ORDER[j];
+                            let textVal = q.options[j][1].replace(/[\r\n\v]/g, "").trim();
+                            let marker = OPTION_EXPORT_MAP[optLabel] || optLabel;
+
+                            // আপডেট: এখানে স্পেস বাদ দিয়ে শুধু অপশন মার্কারটুকু BanglaOMR ফন্টে রাখা হয়েছে
+                            let optPara = anchorRange.insertParagraph(marker, "Before");
+                            optPara.alignment = "Justified";
+                            optPara.font.name = "BanglaOMR";
+                            optPara.font.size = 9;
+
+                            // আপডেট: স্পেসটিকে মূল অপশন টেক্সটের শুরুতে যুক্ত করে পুরোটা Kalpurush করা হয়েছে
+                            let textRange = optPara.insertText(` ${textVal}`, "End");
+                            textRange.font.name = "Kalpurush";
+                            textRange.font.size = 10.5;
+
+                            if (type === "normal" && j === 3 && q.answer) {
+                                let ansMarker = ANSWER_EXPORT_MAP[q.answer] || q.answer;
+                                optPara.insertText("\t", "End");
+                                let ansRange = optPara.insertText(ansMarker, "End");
+                                ansRange.font.name = "ProshnaP";
+                                ansRange.font.size = 10;
+                            }
+                        }
+
+                        if (type === "normal" && q.explanation) {
+                            let safeExp = q.explanation.replace(/[\r\n\v]/g, "").trim();
+                            let expPara = anchorRange.insertParagraph(`ব্যাখ্যা: ${safeExp}`, "Before");
+                            expPara.font.name = "Kalpurush";
+                            expPara.font.size = 10.5;
+                        }
+                    }
+
+                    if (type === "smart") {
+                        anchorRange.insertBreak("Page", "Before");
+                        
+                        let ansHeaderPara = anchorRange.insertParagraph("সঠিক উত্তর ও ব্যাখ্যা", "Before");
+                        ansHeaderPara.font.name = "Kalpurush";
+                        ansHeaderPara.font.size = 12;
+                        ansHeaderPara.alignment = "Centered";
+                        
+                        for (let i = 0; i < questions.length; i++) {
+                            let q = questions[i];
+                            let ansPara = anchorRange.insertParagraph(`${toBanglaNumber(i + 1)}. সঠিক উত্তর: `, "Before");
+                            ansPara.font.name = "Kalpurush";
+                            ansPara.font.size = 10.5;
+
+                            if (q.answer) {
+                                let ansMarker = ANSWER_EXPORT_MAP[q.answer] || q.answer;
+                                let ansRange = ansPara.insertText(ansMarker, "End");
+                                ansRange.font.name = "ProshnaP";
+                                ansRange.font.size = 10;
+                            }
+
+                            if (q.explanation) {
+                                let safeExp = q.explanation.replace(/[\r\n\v]/g, "").trim();
+                                let expPara = anchorRange.insertParagraph(`ব্যাখ্যা: ${safeExp}`, "Before");
+                                expPara.font.name = "Kalpurush";
+                                expPara.font.size = 10.5;
+                            }
+                        }
+                    }
+
+                    // 5. Clean up the temporary anchor
+                    anchorRange.delete();
+
+                    await context.sync();
+                    showStatus(`Successfully formatted ${questions.length} questions!`);
+                });
+            } catch (error) {
+                console.error(error);
+                let exactError = error.message || "Unknown Error";
+                if (error.debugInfo && error.debugInfo.errorLocation) {
+                    exactError += " (Location: " + error.debugInfo.errorLocation + ")";
+                }
+                showStatus("Error: " + exactError, true);
+            }
+        }
+        async function formatQuestionsMacro() {
+            try {
+                await Word.run(async (context) => {
+                    const selection = context.document.getSelection();
+                    const paragraphs = selection.paragraphs;
+                    paragraphs.load("items");
+                    await context.sync();
+
+                    if (paragraphs.items.length === 0) {
+                        showStatus("Please select some text first.", true);
+                        return;
+                    }
+
+                    // সব প্যারাগ্রাফের টেক্সট আগে লোড করে নিচ্ছি
+                    for (let i = 0; i < paragraphs.items.length; i++) {
+                        paragraphs.items[i].load("text");
+                    }
+                    await context.sync();
+
+                    let matchingParagraphs = [];
+
+                    // ২. প্যারাগ্রাফ চেক করে ফিল্টার করা
+                    for (let i = 0; i < paragraphs.items.length; i++) {
+                        let p = paragraphs.items[i];
+                        
+                        // লাইন ব্রেক বা হোয়াইটস্পেস মুছে ফেলা হচ্ছে
+                        let cleanText = p.text.replace(/[\s\u00A0\u200B\r\n]+$/, "");
+
+                        if (cleanText.length > 2) {
+                            let lastChar = cleanText.slice(-1);
+
+                            // ৩. নির্দিষ্ট ক্যারেক্টার চেক করা (?, ؟, —, -, :)
+                            if (["?", "\u061F", "\u2014", "-", ":"].includes(lastChar)) {
+                                matchingParagraphs.push(p);
+                            }
+                        }
+                    }
+
+                    if (matchingParagraphs.length > 0) {
+                        // নাম্বারিং যেন ভেঙে না যায়, তাই প্রথম প্যারাগ্রাফে লিস্ট শুরু করে ID নেওয়া হচ্ছে
+                        let list = matchingParagraphs[0].startNewList();
+                        list.load("id");
+                        
+                        // প্রথম প্যারাগ্রাফের স্টাইলিং (0.31 inches = 22.32 points)
+                        matchingParagraphs[0].font.bold = true;
+                        matchingParagraphs[0].leftIndent = 22.32;
+                        matchingParagraphs[0].firstLineIndent = -22.32;
+                        
+                        await context.sync(); // লিস্ট ID পাওয়ার জন্য সিঙ্ক
+
+                        // ৪. বাকি প্যারাগ্রাফগুলোকে একই লিস্টে যুক্ত করে স্টাইল করা
+                        for (let i = 1; i < matchingParagraphs.length; i++) {
+                            matchingParagraphs[i].attachToList(list.id, 0);
+                            matchingParagraphs[i].font.bold = true;
+                            matchingParagraphs[i].leftIndent = 22.32;
+                            matchingParagraphs[i].firstLineIndent = -22.32;
+                        }
+                        
+                        await context.sync();
+                    }
+
+                    showStatus(`Task Completed! Total Questions Found: ${matchingParagraphs.length}`);
+                });
+            } catch (error) {
+                console.error(error);
+                let exactError = error.message || "Unknown Error";
+                if (error.debugInfo && error.debugInfo.errorLocation) {
+                    exactError += " (Location: " + error.debugInfo.errorLocation + ")";
+                }
+                showStatus("Error: " + exactError, true);
+            }
+        }
+    </script>
+</body>
+</html>
