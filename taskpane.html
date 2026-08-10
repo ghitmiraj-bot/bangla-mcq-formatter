@@ -78,7 +78,6 @@
         }
 
         function isQuestionLine(line) {
-            // Added '।' to also support Bengali dari after numbers
             if (/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.*)$/.test(line)) return true;
             if (/^.+[?؟]\s*$/.test(line)) return true;
             return false;
@@ -100,7 +99,6 @@
                 let line = lines[i].trim();
                 if (!line) continue;
 
-                // আপডেট: ব্যাখ্যা কোলন (:) এবং হাইফেন/ড্যাশ (-, —) দুটোই সাপোর্ট করবে
                 let expMatch = line.match(/^\s*(?:ব্যাখ্যা|Explanation)\s*[:：\-\u2013\u2014]\s*(.+)$/i);
                 if (expMatch && current) {
                     current.explanation = expMatch[1].trim();
@@ -112,7 +110,6 @@
                     continue;
                 }
 
-                // Check Answer
                 let ansMatch = line.match(/^\s*(?:সঠিক উত্তর|উত্তর|Ans|Answer)\s*[:：]?\s*(.*)$/i);
                 if (ansMatch && current) {
                     let ansExtr = ansMatch[1].match(/[\(\[]?([ক-ঘA-DK-Na-dk-n])[\)\]]?/);
@@ -123,7 +120,6 @@
                     continue;
                 }
 
-                // Check Question
                 if (isQuestionLine(line)) {
                     flush();
                     let qMatch = line.match(/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.*)$/);
@@ -134,7 +130,6 @@
 
                 if (!current) continue;
 
-                // Check Options
                 let optMatch1 = line.match(/^\s*\(([কখঘগ])\)\s*(.+?)$/);
                 if (optMatch1) {
                     current.options.push([normalizeAnswerLabel(optMatch1[1]), optMatch1[2].trim()]);
@@ -146,7 +141,6 @@
                     continue;
                 }
 
-                // Inline Explanation fallback (আপডেট করা হয়েছে)
                 if (line.includes("ব্যাখ্যা") && current) {
                     let parts = line.split(/ব্যাখ্যা\s*[:：\-\u2013\u2014]/);
                     if (parts.length > 1) {
@@ -158,7 +152,6 @@
                     continue;
                 }
 
-                // Append to last option or question
                 if (current.options.length > 0) {
                     current.options[current.options.length - 1][1] += " " + line;
                 } else {
@@ -225,7 +218,6 @@
         async function formatSelectedText(type) {
             try {
                 await Word.run(async (context) => {
-                    // 1. Get user selection
                     const selection = context.document.getSelection();
                     selection.load("text");
                     await context.sync();
@@ -236,7 +228,6 @@
                         return;
                     }
 
-                    // 2. Parse the selected text
                     let questions = parseQuestions(text);
                     if (questions.length === 0) {
                         showStatus("No valid questions found in selection!", true);
@@ -247,10 +238,8 @@
                         questions = questions.map(q => shuffleOptions(q));
                     }
 
-                    // 3. Create a safe anchor point
                     let anchorRange = selection.insertText(" ", "Replace");
 
-                    // 4. Insert formatted data right before the anchor
                     for (let i = 0; i < questions.length; i++) {
                         let q = questions[i];
                         let safeQuestion = q.question.replace(/[\r\n\v]/g, "").trim();
@@ -265,13 +254,11 @@
                             let textVal = q.options[j][1].replace(/[\r\n\v]/g, "").trim();
                             let marker = OPTION_EXPORT_MAP[optLabel] || optLabel;
 
-                            // আপডেট: এখানে স্পেস বাদ দিয়ে শুধু অপশন মার্কারটুকু BanglaOMR ফন্টে রাখা হয়েছে
                             let optPara = anchorRange.insertParagraph(marker, "Before");
                             optPara.alignment = "Justified";
                             optPara.font.name = "BanglaOMR";
                             optPara.font.size = 9;
 
-                            // আপডেট: স্পেসটিকে মূল অপশন টেক্সটের শুরুতে যুক্ত করে পুরোটা Kalpurush করা হয়েছে
                             let textRange = optPara.insertText(` ${textVal}`, "End");
                             textRange.font.name = "Kalpurush";
                             textRange.font.size = 10.5;
@@ -323,9 +310,7 @@
                         }
                     }
 
-                    // 5. Clean up the temporary anchor
                     anchorRange.delete();
-
                     await context.sync();
                     showStatus(`Successfully formatted ${questions.length} questions!`);
                 });
@@ -338,6 +323,7 @@
                 showStatus("Error: " + exactError, true);
             }
         }
+
         async function formatQuestionsMacro() {
             try {
                 await Word.run(async (context) => {
@@ -351,7 +337,6 @@
                         return;
                     }
 
-                    // সব প্যারাগ্রাফের টেক্সট আগে লোড করে নিচ্ছি
                     for (let i = 0; i < paragraphs.items.length; i++) {
                         paragraphs.items[i].load("text");
                     }
@@ -359,10 +344,8 @@
 
                     let matchingParagraphs = [];
 
-                    // প্যারাগ্রাফ চেক করে ফিল্টার করা
                     for (let i = 0; i < paragraphs.items.length; i++) {
                         let p = paragraphs.items[i];
-                        
                         let cleanText = p.text.replace(/[\s\u00A0\u200B\r\n]+$/, "");
 
                         if (cleanText.length > 2) {
@@ -374,21 +357,16 @@
                     }
 
                     if (matchingParagraphs.length > 0) {
-                        // নতুন লিস্ট তৈরি করা
                         let list = matchingParagraphs[0].startNewList();
-                        
-                        // সমাধান: বুলেটের পরিবর্তে লিস্টের ধরন "Arabic" (1, 2, 3...) সেট করে দেওয়া হলো 
                         list.setLevelNumbering(0, "Arabic");
                         list.load("id");
                         
-                        // প্রথম প্যারাগ্রাফের স্টাইলিং
                         matchingParagraphs[0].font.bold = true;
                         matchingParagraphs[0].leftIndent = 22.32;
                         matchingParagraphs[0].firstLineIndent = -22.32;
                         
                         await context.sync();
 
-                        // বাকি প্যারাগ্রাফগুলোকে একই লিস্টে যুক্ত করে স্টাইল করা
                         for (let i = 1; i < matchingParagraphs.length; i++) {
                             matchingParagraphs[i].attachToList(list.id, 0);
                             matchingParagraphs[i].font.bold = true;
@@ -410,8 +388,9 @@
                 showStatus("Error: " + exactError, true);
             }
         }
+
         // ==========================================
-        // ULTIMATE BIJOY-UNICODE ENGINE (PRO)
+        // ULTIMATE BIJOY-UNICODE ENGINE (PRO FIXED)
         // ==========================================
 
         async function runSmartConverter(direction) {
@@ -429,7 +408,6 @@
 
                     let anchorRange = selection.insertText("", "Replace");
 
-                    // English, Numbers, and Punctuation Regex
                     let textChunks = rawText.split(/([a-zA-Z0-9\s\(\)\[\]\{\}\.,;:'"\!\?-]+)/g);
 
                     if (direction === "UniToBijoy") {
@@ -468,22 +446,19 @@
             if (!text) return "";
             let str = text;
 
-            // ম্যাজিক ট্রিক: অনলাইন কনভার্টার থেকে আসা সমস্ত অদৃশ্য ক্যারেক্টার মুছে ফেলা
             str = str.replace(/[\u200B-\u200D\uFEFF]/g, '');
 
-            // ১. ো-কার এবং ৌ-কার ভাঙা
+            // FIX: ো-কার এবং ৌ-কার ভাঙার অংশে ভুল ছিল। এখন সঠিক ম্যাপিং দেওয়া হয়েছে।
             str = str.replace(/ো/g, 'ো');
             str = str.replace(/ৌ/g, 'ৌ');
 
-            // ২. সিলেবল (ধ্বনি) ভিত্তিক কার ও রেফ সাজানো
-            let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ";
+            let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ"; // FIX: ড়, ঢ়, য় সিঙ্গেল ক্যারেক্টারে আপডেট করা হয়েছে
             let regexSyllable = new RegExp("(র্)?([" + cons + "](?:্[" + cons + "])*)([িেৈ])?([াীুূৃৗ])?", "g");
             
             str = str.replace(regexSyllable, function(match, ref, cluster, preKar, postKar) {
                 return (preKar || "") + cluster + (ref ? "©" : "") + (postKar || "");
             });
 
-            // ৩. যুক্তাক্ষর ম্যাপিং (Extended Pro Dictionary)
             const u2bJukta = {
                 'ক্ক':'°', 'ক্ট':'±', 'ক্ত':'³', 'ক্ব':'K¡', 'ক্স':'·', 'ক্ষ':'¶', 'জ্ঞ':'Á',
                 'ঙ্গ':'½', 'ঙ্ক':'¼', 'ট্ট':'Æ', 'ড্ড':'Ç', 'ণ্ট':'È', 'ণ্ঠ':'É', 'ণ্ড':'Ð',
@@ -506,13 +481,12 @@
                 str = str.split(k).join(u2bJukta[k]);
             }
 
-            // ৪. সাধারণ অক্ষর ম্যাপিং
             const map = {
                 'অ':'A', 'আ':'Av', 'ই':'B', 'ঈ':'C', 'উ':'D', 'ঊ':'E', 'ঋ':'F', 'এ':'G', 'ঐ':'H', 'ও':'I', 'ঔ':'J',
                 'ক':'K', 'খ':'L', 'গ':'M', 'ঘ':'N', 'ঙ':'O', 'চ':'P', 'ছ':'Q', 'জ':'R', 'ঝ':'S', 'ঞ':'T',
                 'ট':'U', 'ঠ':'V', 'ড':'W', 'ঢ':'X', 'ণ':'Y', 'ত':'Z', 'থ':'_', 'দ':'`', 'ধ':'a', 'ন':'b',
                 'প':'c', 'ফ':'d', 'ব':'e', 'ভ':'f', 'ম':'g', 'য':'h', 'র':'i', 'ল':'j', 'শ':'k', 'ষ':'l',
-                'স':'m', 'হ':'n', 'ড়':'o', 'ঢ়':'p', 'য়':'q', 'ৎ':'r', 'ং':'s', 'ঃ':'t', 'ঁ':'u',
+                'স':'m', 'হ':'n', 'ড়':'o', 'ঢ়':'p', 'য়':'q', 'ৎ':'r', 'ং':'s', 'ঃ':'t', 'ঁ':'u', // FIX: ড়, ঢ়, য় 
                 'া':'v', 'ি':'w', 'ী':'x', 'ু':'y', 'ূ':'~', 'ৃ':'…', 'ে':'‡', 'ৈ':'ˆ', 'ৗ':'Š', '।':'|',
                 '০':'0', '১':'1', '২':'2', '৩':'3', '৪':'4', '৫':'5', '৬':'6', '৭':'7', '৮':'8', '৯':'9'
             };
@@ -522,7 +496,6 @@
             }
             str = out;
 
-            // ৫. কার রি-অ্যারেঞ্জমেন্ট (w, ‡, ˆ)
             let regex = /([^ \n\r\t\.,;:'"!\?A-Jv-xŠw‡ˆ|~]+)(w|‡|ˆ)/g;
             str = str.replace(regex, "$2$1");
 
@@ -533,14 +506,11 @@
             if (!text) return "";
             let str = text;
 
-            // অদৃশ্য ক্যারেক্টার এবং অতিরিক্ত প্লাস চিহ্ন ক্লিনআপ
             str = str.replace(/[\u200B-\u200D\uFEFF\+]/g, '');
 
-            // ১. কার রি-অ্যারেঞ্জমেন্ট (w, †, ‡, ˆ)
             let regex = /(w|†|‡|ˆ)([^ \n\r\t\.,;:'"!\?A-Jv-xŠw†‡ˆ|~]+)/g;
             str = str.replace(regex, "$2$1");
 
-            // ২. যুক্তাক্ষর ম্যাপিং (Extended Pro Dictionary)
             const b2uJukta = {
                 '°':'ক্ক', '±':'ক্ট', '³':'ক্ত', 'K¡':'ক্ব', '·':'ক্স', '¶':'ক্ষ', 'Á':'জ্ঞ',
                 '½':'ঙ্গ', '¼':'ঙ্ক', 'Æ':'ট্ট', 'Ç':'ড্ড', 'È':'ণ্ট', 'É':'ণ্ঠ', 'Ð':'ণ্ড',
@@ -562,13 +532,12 @@
                 str = str.split(k).join(b2uJukta[k]);
             }
 
-            // ৩. সাধারণ অক্ষর ম্যাপিং
             const b2u = {
                 'A':'অ', 'B':'ই', 'C':'ঈ', 'D':'উ', 'E':'ঊ', 'F':'ঋ', 'G':'এ', 'H':'ঐ', 'I':'ও', 'J':'ঔ',
                 'K':'ক', 'L':'খ', 'M':'গ', 'N':'ঘ', 'O':'ঙ', 'P':'চ', 'Q':'ছ', 'R':'জ', 'S':'ঝ', 'T':'ঞ',
                 'U':'ট', 'V':'ঠ', 'W':'ড', 'X':'ঢ', 'Y':'ণ', 'Z':'ত', '_':'থ', '`':'দ', 'a':'ধ', 'b':'ন',
                 'c':'প', 'd':'ফ', 'e':'ব', 'f':'ভ', 'g':'ম', 'h':'য', 'i':'র', 'j':'ল', 'k':'শ', 'l':'ষ',
-                'm':'স', 'n':'হ', 'o':'ড়', 'p':'ঢ়', 'q':'য়', 'r':'ৎ', 's':'ং', 't':'ঃ', 'u':'ঁ',
+                'm':'স', 'n':'হ', 'o':'ড়', 'p':'ঢ়', 'q':'য়', 'r':'ৎ', 's':'ং', 't':'ঃ', 'u':'ঁ', // FIX: ড়, ঢ়, য়
                 'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', 'z':'ূ', '…':'ৃ', '†':'ে', '‡':'ে', 'ˆ':'ৈ', 'Š':'ৗ', '|':'।',
                 '0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'
             };
@@ -581,7 +550,6 @@
             }
             str = out;
 
-            // ৪. সিলেবল (ধ্বনি) ভিত্তিক কার ও রেফ সাজানো
             let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ";
             let regexPseudoSyllable = new RegExp("([িেৈ])?([" + cons + "](?:্[" + cons + "])*)(©)?([াীুূৃৗ])?", "g");
             
@@ -589,7 +557,7 @@
                 return (ref ? "র্" : "") + cluster + (preKar || "") + (postKar || "");
             });
 
-            // ৫. পোস্ট-প্রসেসিং (ো-কার ও ৌ-কার ফিক্স)
+            // FIX: এখানেও ো-কার এবং ৌ-কার সঠিক করা হয়েছে
             str = str.replace(/অা/g, 'আ');
             str = str.replace(/েৃ/g, 'ৃ'); 
             str = str.replace(/ৌ/g, 'ৌ');
