@@ -25,7 +25,6 @@
         </label>
     </div>
 
-    <!-- Instruction UI instead of Textarea -->
     <div class="flex-1 flex flex-col mb-4 items-center justify-center border-2 border-dashed border-[#1976D2] bg-[#E3F2FD] rounded-lg p-6 text-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-[#1976D2] mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -44,7 +43,6 @@
         <button id="btnFormatQuestions" class="w-full bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm mt-2">
             Number & Bold Questions
         </button>
-        <!-- Converter Buttons Restored -->
         <div class="flex space-x-2 mt-2">
             <button id="btnUniToBijoy" class="w-1/2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold py-2 px-2 rounded transition-colors text-xs shadow-sm">
                 Unicode ➔ Bijoy
@@ -207,7 +205,6 @@
             el.style.display = 'block';
         }
 
-        // --- MS Word API Integration ---
         Office.onReady((info) => {
             if (info.host === Office.HostType.Word) {
                 document.getElementById("btnNormal").onclick = () => formatSelectedText("normal");
@@ -317,9 +314,7 @@
                     await context.sync();
                     showStatus(`Successfully formatted ${questions.length} questions!`);
                 });
-            } catch (error) {
-                showStatus("Error: " + (error.message || "Unknown"), true);
-            }
+            } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
         async function formatQuestionsMacro() {
@@ -330,38 +325,26 @@
                     paragraphs.load("items");
                     await context.sync();
 
-                    if (paragraphs.items.length === 0) {
-                        showStatus("Please select some text first.", true);
-                        return;
-                    }
-
-                    for (let i = 0; i < paragraphs.items.length; i++) {
-                        paragraphs.items[i].load("text");
-                    }
+                    if (paragraphs.items.length === 0) { showStatus("Please select some text first.", true); return; }
+                    for (let i = 0; i < paragraphs.items.length; i++) { paragraphs.items[i].load("text"); }
                     await context.sync();
 
                     let matchingParagraphs = [];
-
                     for (let i = 0; i < paragraphs.items.length; i++) {
                         let p = paragraphs.items[i];
                         let cleanText = p.text.replace(/[\s\u00A0\u200B\r\n]+$/, "");
-
                         if (cleanText.length > 2) {
                             let lastChar = cleanText.slice(-1);
-                            if (["?", "\u061F", "\u2014", "-", ":"].includes(lastChar)) {
-                                matchingParagraphs.push(p);
-                            }
+                            if (["?", "\u061F", "\u2014", "-", ":"].includes(lastChar)) { matchingParagraphs.push(p); }
                         }
                     }
 
                     if (matchingParagraphs.length > 0) {
                         let list = matchingParagraphs[0].startNewList();
                         list.load("id");
-                        
                         matchingParagraphs[0].font.bold = true;
                         matchingParagraphs[0].leftIndent = 22.32;
                         matchingParagraphs[0].firstLineIndent = -22.32;
-                        
                         await context.sync();
 
                         for (let i = 1; i < matchingParagraphs.length; i++) {
@@ -370,19 +353,15 @@
                             matchingParagraphs[i].leftIndent = 22.32;
                             matchingParagraphs[i].firstLineIndent = -22.32;
                         }
-                        
                         await context.sync();
                     }
-
                     showStatus(`Task Completed! Total Questions Found: ${matchingParagraphs.length}`);
                 });
-            } catch (error) {
-                showStatus("Error: " + (error.message || "Unknown"), true);
-            }
+            } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
         // ==========================================
-        // SMART BIJOY-UNICODE CONVERTER ENGINE 
+        // ADVANCED SMART CONVERTER ENGINE 
         // ==========================================
 
         async function runSmartConverter(direction) {
@@ -398,47 +377,68 @@
                         return;
                     }
 
+                    // Auto Detection
                     let isUnicode = /[\u0980-\u09FF]/.test(rawText);
                     let targetDirection = direction;
                     
-                    if (isUnicode && direction === "BijoyToUni") {
-                        targetDirection = "UniToBijoy";
-                    } else if (!isUnicode && direction === "UniToBijoy") {
-                        targetDirection = "BijoyToUni";
-                    }
+                    if (isUnicode && direction === "BijoyToUni") targetDirection = "UniToBijoy";
+                    else if (!isUnicode && direction === "UniToBijoy") targetDirection = "BijoyToUni";
 
                     let anchorRange = selection.insertText("", "Replace");
 
                     if (targetDirection === "UniToBijoy") {
-                        // ইংরেজি লেখাকে অক্ষত রাখার জন্য স্প্লিট করা হলো
-                        let textChunks = rawText.split(/([a-zA-Z0-9\s\(\)\[\]\{\}\.,;:'"\!\?-]+)/g);
+                        // ইউনিকোড ➔ বিজয়: ইংরেজি লেখা ও সংখ্যাকে স্প্লিট করে Times New Roman করা হচ্ছে
+                        let textChunks = rawText.split(/([a-zA-Z0-9]+)/g);
 
                         for (let i = 0; i < textChunks.length; i++) {
                             let chunk = textChunks[i];
                             if (!chunk) continue;
 
-                            if (/^[a-zA-Z0-9\s\(\)\[\]\{\}\.,;:'"\!\?-]+$/.test(chunk)) {
+                            if (/^[a-zA-Z0-9]+$/.test(chunk)) {
                                 let textRange = anchorRange.insertText(chunk, "Before");
                                 textRange.font.name = "Times New Roman"; 
                             } else {
+                                // স্পেস, যতিচিহ্ন এবং বাংলা লেখা SutonnyMJ ফন্ট পাবে
                                 let converted = convertUnicodeToBijoy(chunk);
                                 let textRange = anchorRange.insertText(converted, "Before");
                                 textRange.font.name = "SutonnyMJ";
                             }
                         }
                     } else {
-                        // Bijoy ➔ Unicode কনভার্সন 
-                        let converted = convertBijoyToUnicode(rawText);
-                        let textRange = anchorRange.insertText(converted, "Before");
-                        textRange.font.name = "Kalpurush";
+                        // বিজয় ➔ ইউনিকোড: ইংরেজি লেখাকে রক্ষা করতে ব্র্যাকেট/কোটেশনের প্রটেকশন ব্যবহার
+                        let protectedEng = [];
+                        let protectRegex = /(\([A-Za-z0-9\s\-\.\_]+\)|\[[A-Za-z0-9\s\-\.\_]+\]|"[A-Za-z0-9\s\-\.\_]+"|'[A-Za-z0-9\s\-\.\_]+')/g;
+                        
+                        let safeText = rawText.replace(protectRegex, function(match) {
+                            protectedEng.push(match);
+                            return "▲" + (protectedEng.length - 1) + "▲";
+                        });
+
+                        let converted = convertBijoyToUnicode(safeText);
+
+                        // প্রটেক্ট করা ইংরেজি লেখাগুলোকে ফন্টসহ পুনরায় জায়গামতো বসানো
+                        let textChunks = converted.split(/(▲\d+▲)/g);
+
+                        for (let i = 0; i < textChunks.length; i++) {
+                            let chunk = textChunks[i];
+                            if (!chunk) continue;
+
+                            let match = chunk.match(/^▲(\d+)▲$/);
+                            if (match) {
+                                let engText = protectedEng[parseInt(match[1])];
+                                let textRange = anchorRange.insertText(engText, "Before");
+                                textRange.font.name = "Times New Roman";
+                            } else {
+                                let textRange = anchorRange.insertText(chunk, "Before");
+                                textRange.font.name = "Kalpurush";
+                            }
+                        }
                     }
 
                     await context.sync();
                     showStatus(`Converted successfully!`);
                 });
-            } catch (error) { 
-                showStatus("Error: " + (error.message || "Unknown"), true); 
-            }
+            } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
         // --- Core Conversion Dictionaries ---
@@ -448,7 +448,6 @@
             let str = text;
 
             str = str.replace(/[\u200B-\u200D\uFEFF]/g, '');
-
             str = str.replace(/ো/g, 'ো');
             str = str.replace(/ৌ/g, 'ৌ');
 
@@ -490,7 +489,7 @@
                 'প':'c', 'ফ':'d', 'ব':'e', 'ভ':'f', 'ম':'g', 'য':'h', 'র':'i', 'ল':'j', 'শ':'k', 'ষ':'l',
                 'স':'m', 'হ':'n', 'ড়':'o', 'ঢ়':'p', 'য়':'q', 'ৎ':'r', 'ং':'s', 'ঃ':'t', 'ঁ':'u',
                 'া':'v', 'ি':'w', 'ী':'x', 'ু':'y', 'ূ':'~', 'ৃ':'…', 'ে':'‡', 'ৈ':'ˆ', 'ৗ':'Š', '।':'|',
-                '০':'0', '১':'1', '২':'2', '৩':'3', '৪':'4', '৫':'5', '৬':'6', '৭':'৭', '৮':'8', '৯':'9',
+                '০':'0', '১':'1', '২':'2', '৩':'3', '৪':'4', '৫':'5', '৬':'6', '৭':'7', '৮':'8', '৯':'9',
                 '©':'©' 
             };
             
@@ -498,21 +497,12 @@
             for (let i = 0; i < str.length; i++) {
                 out += map[str[i]] || str[i];
             }
-            
             return out;
         }
 
         function convertBijoyToUnicode(text) {
             if (!text) return "";
             let str = text;
-
-            // ব্র্যাকেট বা কোটেশনের ভেতরের ইংরেজি লেখাকে সেভ করে রাখা
-            let protectedEng = [];
-            let protectRegex = /(\([A-Za-z0-9\s\-\.\_]+\)|\[[A-Za-z0-9\s\-\.\_]+\]|"[A-Za-z0-9\s\-\.\_]+"|'[A-Za-z0-9\s\-\.\_]+')/g;
-            str = str.replace(protectRegex, function(match) {
-                protectedEng.push(match);
-                return "▲" + (protectedEng.length - 1) + "▲"; 
-            });
 
             str = str.replace(/[\u200B-\u200D\uFEFF\+]/g, '');
 
@@ -557,22 +547,17 @@
             str = out;
 
             let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ";
-            let regexPreKar = new RegExp("(ি|ে|ৈ)([" + cons + "](?:\u09CD[" + cons + "])*)", "g");
-            str = str.replace(regexPreKar, "$2$1");
-
-            let regexReph = new RegExp("([" + cons + "](?:\u09CD[" + cons + "])*)©", "g");
-            str = str.replace(regexReph, "র্$1");
+            let regexOrder = new RegExp("([িেৈ])?([" + cons + "](?:\u09CD[" + cons + "])*)(©)?([াীুূৃৗ])?", "g");
+            
+            str = str.replace(regexOrder, function(match, preKar, cluster, ref, postKar) {
+                return (ref ? "র্" : "") + cluster + (preKar || "") + (postKar || "");
+            });
 
             str = str.replace(/অা/g, 'আ');
             str = str.replace(/েৃ/g, 'ৃ'); 
             str = str.replace(/ৌ/g, 'ৌ');
             str = str.replace(/ো/g, 'ো');
             
-            // সেভ করে রাখা ইংরেজি লেখাকে আগের জায়গায় বসানো
-            str = str.replace(/▲(\d+)▲/g, function(match, index) {
-                return protectedEng[parseInt(index)];
-            });
-
             return str;
         }
     </script>
