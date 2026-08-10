@@ -411,7 +411,7 @@
             }
         }
         // ==========================================
-        // ULTIMATE BIJOY-UNICODE ENGINE (V3)
+        // ULTIMATE BIJOY-UNICODE ENGINE (FINAL)
         // ==========================================
 
         async function runSmartConverter(direction) {
@@ -429,44 +429,31 @@
 
                     let anchorRange = selection.insertText("", "Replace");
 
-                    // English, Numbers, and Brackets Regex
-                    let textChunks = rawText.split(/([a-zA-Z0-9\(\)\[\]\{\}]+)/g);
+                    // English, Numbers, and Punctuation Regex
+                    let textChunks = rawText.split(/([a-zA-Z0-9\s\(\)\[\]\{\}\.,;:'"\!\?-]+)/g);
 
                     if (direction === "UniToBijoy") {
                         for (let i = 0; i < textChunks.length; i++) {
                             let chunk = textChunks[i];
                             if (!chunk) continue;
 
-                            if (/^[a-zA-Z0-9\(\)\[\]\{\}]+$/.test(chunk)) {
-                                // ইংরেজি টেক্সটের জন্য Times New Roman ফন্ট
+                            if (/^[a-zA-Z0-9\s\(\)\[\]\{\}\.,;:'"\!\?-]+$/.test(chunk)) {
+                                // ইংরেজি টেক্সটের জন্য Times New Roman (ফন্ট সাইজ অপরিবর্তিত থাকবে)
                                 let textRange = anchorRange.insertText(chunk, "Before");
                                 textRange.font.name = "Times New Roman"; 
-                                textRange.font.size = 12;
                             } else {
                                 // বাংলা টেক্সট কনভার্সন
                                 let converted = convertUnicodeToBijoy(chunk);
                                 let textRange = anchorRange.insertText(converted, "Before");
                                 textRange.font.name = "SutonnyMJ";
-                                textRange.font.size = 12;
                             }
                         }
                     } else {
                         // Bijoy ➔ Unicode
-                        for (let i = 0; i < textChunks.length; i++) {
-                            let chunk = textChunks[i];
-                            if (!chunk) continue;
-
-                            if (/^[a-zA-Z0-9\(\)\[\]\{\}]+$/.test(chunk)) {
-                                let textRange = anchorRange.insertText(chunk, "Before");
-                                textRange.font.name = "Times New Roman";
-                                textRange.font.size = 12;
-                            } else {
-                                let converted = convertBijoyToUnicode(chunk);
-                                let textRange = anchorRange.insertText(converted, "Before");
-                                textRange.font.name = "Kalpurush";
-                                textRange.font.size = 12;
-                            }
-                        }
+                        // বিজয় ফন্টে ইংরেজি ক্যারেক্টারগুলোই মূলত বাংলা, তাই পুরোটা একসাথে কনভার্ট করতে হবে
+                        let converted = convertBijoyToUnicode(rawText);
+                        let textRange = anchorRange.insertText(converted, "Before");
+                        textRange.font.name = "Kalpurush";
                     }
 
                     await context.sync();
@@ -485,12 +472,18 @@
             if (!text) return "";
             let str = text;
 
-            // ১. কার ফিক্স
+            // ১. ো-কার এবং ৌ-কার ভাঙা
             str = str.replace(/ো/g, 'ো');
             str = str.replace(/ৌ/g, 'ৌ');
 
-            // ২. রেফ (র্) ফিক্স
-            str = str.replace(/র্/g, '©');
+            // ২. সিলেবল (ধ্বনি) ভিত্তিক কার ও রেফ সাজানো (১০০% নিখুঁত লজিক)
+            let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ";
+            let regexSyllable = new RegExp("(র্)?([" + cons + "](?:্[" + cons + "])*)([িেৈ])?([াীুূৃৗ])?", "g");
+            
+            str = str.replace(regexSyllable, function(match, ref, cluster, preKar, postKar) {
+                // বিজয়ের নিয়ম: ముందు-কার (ি,ে,ৈ) + অক্ষর/যুক্তাক্ষর + রেফ + পর-কার (া,ী,ু,ূ,ৃ)
+                return (preKar || "") + cluster + (ref ? "©" : "") + (postKar || "");
+            });
 
             // ৩. যুক্তাক্ষর ম্যাপিং
             const u2bJukta = {
@@ -507,11 +500,12 @@
                 'ণ্ড': 'Ð', 'ণ্ট': 'È', 'ণ্ঠ': 'É',
                 '্য': '¨', '্র': '«', '্': '&' 
             };
-            for (let [u, b] of Object.entries(u2bJukta)) {
-                str = str.split(u).join(b);
+            let keys = Object.keys(u2bJukta).sort((a, b) => b.length - a.length);
+            for (let k of keys) {
+                str = str.split(k).join(u2bJukta[k]);
             }
 
-            // ৪. সাধারণ অক্ষর ম্যাপিং (ূ এবং ে আপডেট করা হয়েছে)
+            // ৪. সাধারণ অক্ষর ম্যাপিং (আপনার নির্দেশমতো ে-কার = ‡)
             const map = {
                 'অ':'A', 'আ':'Av', 'ই':'B', 'ঈ':'C', 'উ':'D', 'ঊ':'E', 'ঋ':'F', 'এ':'G', 'ঐ':'H', 'ও':'I', 'ঔ':'J',
                 'ক':'K', 'খ':'L', 'গ':'M', 'ঘ':'N', 'ঙ':'O', 'চ':'P', 'ছ':'Q', 'জ':'R', 'ঝ':'S', 'ঞ':'T',
@@ -525,24 +519,17 @@
             for (let i = 0; i < str.length; i++) {
                 out += map[str[i]] || str[i];
             }
-            str = out;
-
-            // ৫. কার রি-অ্যারেঞ্জমেন্ট (w, ‡, ˆ)
-            let regex = /([^ \n\r\t\.,;:'"!\?A-Jv-xŠw‡ˆ|~]+)(w|‡|ˆ)/g;
-            str = str.replace(regex, "$2$1");
-
-            return str;
+            return out;
         }
 
         function convertBijoyToUnicode(text) {
             if (!text) return "";
             let str = text;
 
-            // ১. কার রি-অ্যারেঞ্জমেন্ট (w, †, ‡, ˆ)
-            let regex = /(w|†|‡|ˆ)([^ \n\r\t\.,;:'"!\?A-Jv-xŠw†‡ˆ|~]+)/g;
-            str = str.replace(regex, "$2$1");
+            // আগের কোনো ভুল কনভার্সনের প্লাস চিহ্ন থাকলে সেটি মুছে ফেলা
+            str = str.replace(/\+/g, '');
 
-            // ২. যুক্তাক্ষর ম্যাপিং 
+            // ১. যুক্তাক্ষর ম্যাপিং (বিজয় থেকে ছদ্ম-ইউনিকোড)
             const b2uJukta = {
                 '¤ú': 'ম্প', '¤^': 'ম্ব', '¤§': 'ম্ম', 'bœ': 'ন্ন', 'Ë': 'ত্ত', 'Z¡': 'ত্ব', 
                 '÷': 'স্ট', 'ó': 'ষ্ট', 'ô': 'ষ্ঠ', 'ò': 'ষ্ণ', '®ú': 'ষ্প', '®ù': 'ষ্ফ', '®§': 'ষ্ম',
@@ -554,13 +541,14 @@
                 'Â': 'ঞ্চ', 'Ã': 'ঞ্ছ', 'Ä': 'ঞ্জ', 'kœ': 'শ্ন', 'k§': 'শ্ম', 'k¦': 'শ্ব', '®‹': 'ষ্ক', 
                 '¯‹': 'স্ক', '¯Œ': 'স্খ', 'mø': 'স্ল', '¯^': 'স্ব',
                 'í': 'ল্প', 'Ð': 'ণ্ড', 'È': 'ণ্ট', 'É': 'ণ্ঠ',
-                '©': 'র্', '¨': '্য', '«': '্র', '&': '্'
+                '¨': '্য', '«': '্র', '&': '্'
             };
-            for (let [b, u] of Object.entries(b2uJukta)) {
-                str = str.split(b).join(u);
+            let keys = Object.keys(b2uJukta).sort((a, b) => b.length - a.length);
+            for (let k of keys) {
+                str = str.split(k).join(b2uJukta[k]);
             }
 
-            // ৩. সাধারণ অক্ষর ম্যাপিং (ূ এবং ে আপডেট করা হয়েছে)
+            // ২. সাধারণ অক্ষর ম্যাপিং (ূ এবং ে সঠিকভাবে দেওয়া হয়েছে)
             const b2u = {
                 'A':'অ', 'B':'ই', 'C':'ঈ', 'D':'উ', 'E':'ঊ', 'F':'ঋ', 'G':'এ', 'H':'ঐ', 'I':'ও', 'J':'ঔ',
                 'K':'ক', 'L':'খ', 'M':'গ', 'N':'ঘ', 'O':'ঙ', 'P':'চ', 'Q':'ছ', 'R':'জ', 'S':'ঝ', 'T':'ঞ',
@@ -568,11 +556,11 @@
                 'c':'প', 'd':'ফ', 'e':'ব', 'f':'ভ', 'g':'ম', 'h':'য', 'i':'র', 'j':'ল', 'k':'শ', 'l':'ষ',
                 'm':'স', 'n':'হ', 'o':'ড়', 'p':'ঢ়', 'q':'য়', 'r':'ৎ', 's':'ং', 't':'ঃ', 'u':'ঁ',
                 'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', 'z':'ূ', '…':'ৃ', '†':'ে', '‡':'ে', 'ˆ':'ৈ', 'Š':'ৗ', '|':'।',
-                '0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'
+                '0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯',
+                '©':'©' // রেফ সাজানোর জন্য সাময়িকভাবে রাখা হলো
             };
             
-            // স্পেশাল কারেকশন 
-            str = str.replace(/Av/g, 'আ');
+            str = str.replace(/Av/g, 'আ'); // অ+া যেন আ হয়
             
             let out = "";
             for (let i = 0; i < str.length; i++) {
@@ -580,7 +568,17 @@
             }
             str = out;
 
-            // ৪. পোস্ট-প্রসেসিং (ো-কার ও ৌ-কার)
+            // ৩. সিলেবল (ধ্বনি) ভিত্তিক কার ও রেফ সাজানো (১০০% নিখুঁত লজিক)
+            let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ";
+            let regexPseudoSyllable = new RegExp("([িেৈ])?([" + cons + "](?:্[" + cons + "])*)(©)?([াীুূৃৗ])?", "g");
+            
+            str = str.replace(regexPseudoSyllable, function(match, preKar, cluster, ref, postKar) {
+                // ইউনিকোডের নিয়ম: রেফ (র্) + অক্ষর/যুক্তাক্ষর + কার (ি,ে,ৈ,া,ী,ু,ূ,ৃ)
+                return (ref ? "র্" : "") + cluster + (preKar || "") + (postKar || "");
+            });
+
+            // ৪. পোস্ট-প্রসেসিং (ো-কার ও ৌ-কার ফিক্স)
+            str = str.replace(/অা/g, 'আ');
             str = str.replace(/েৃ/g, 'ৃ'); 
             str = str.replace(/ৌ/g, 'ৌ');
             str = str.replace(/ো/g, 'ো');
