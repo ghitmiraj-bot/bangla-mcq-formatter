@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bangla MCQ Formatter</title>
-    <!-- Office.js for MS Word Integration -->
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-    <!-- Tailwind CSS for Modern UI matching your Python App -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     </style>
@@ -43,6 +40,7 @@
         <button id="btnFormatQuestions" class="w-full bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm mt-2">
             Number & Bold Questions
         </button>
+        <!-- Converter Buttons -->
         <div class="flex space-x-2 mt-2">
             <button id="btnUniToBijoy" class="w-1/2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold py-2 px-2 rounded transition-colors text-xs shadow-sm">
                 Unicode ➔ Bijoy
@@ -173,7 +171,6 @@
                     correctText = question.options[i][1]; break;
                 }
             }
-            
             if (!correctText) return question;
 
             let shuffled = question.options.slice();
@@ -361,7 +358,7 @@
         }
 
         // ==========================================
-        // ULTIMATE FIXED SMART CONVERTER ENGINE
+        // SMART BIJOY-UNICODE CONVERTER ENGINE 
         // ==========================================
 
         async function runSmartConverter(direction) {
@@ -386,13 +383,53 @@
                     let anchorRange = selection.insertText("", "Replace");
 
                     if (targetDirection === "UniToBijoy") {
-                        let converted = convertUnicodeToBijoy(rawText);
-                        let textRange = anchorRange.insertText(converted, "Before");
-                        textRange.font.name = "SutonnyMJ";
+                        // ইংরেজি লেখা ও সংখ্যাকে স্প্লিট করা হচ্ছে
+                        let textChunks = rawText.split(/([a-zA-Z0-9]+)/g);
+
+                        for (let i = 0; i < textChunks.length; i++) {
+                            let chunk = textChunks[i];
+                            if (!chunk) continue;
+
+                            // শুধুমাত্র a-z, A-Z এবং 0-9 কে ইংরেজি হিসেবে ধরে Times New Roman করা হবে
+                            if (/^[a-zA-Z0-9]+$/.test(chunk)) {
+                                let textRange = anchorRange.insertText(chunk, "Before");
+                                textRange.font.name = "Times New Roman"; 
+                            } else {
+                                // স্পেস, যতিচিহ্ন এবং বাংলা লেখা SutonnyMJ ফন্ট পাবে
+                                let converted = convertUnicodeToBijoy(chunk);
+                                let textRange = anchorRange.insertText(converted, "Before");
+                                textRange.font.name = "SutonnyMJ";
+                            }
+                        }
                     } else {
-                        let converted = convertBijoyToUnicode(rawText);
-                        let textRange = anchorRange.insertText(converted, "Before");
-                        textRange.font.name = "Kalpurush";
+                        // বিজয় ➔ ইউনিকোড কনভার্সন
+                        let protectedEng = [];
+                        // ব্র্যাকেট বা কোটেশনের ভেতরে থাকা লেখাকে অক্ষত রাখা হবে
+                        let protectRegex = /(\([A-Za-z0-9\s\-\.\_]+\)|\[[A-Za-z0-9\s\-\.\_]+\]|"[A-Za-z0-9\s\-\.\_]+"|'[A-Za-z0-9\s\-\.\_]+')/g;
+                        
+                        let safeText = rawText.replace(protectRegex, function(match) {
+                            protectedEng.push(match);
+                            return "▲" + (protectedEng.length - 1) + "▲";
+                        });
+
+                        let converted = convertBijoyToUnicode(safeText);
+
+                        let textChunks = converted.split(/(▲\d+▲)/g);
+
+                        for (let i = 0; i < textChunks.length; i++) {
+                            let chunk = textChunks[i];
+                            if (!chunk) continue;
+
+                            let match = chunk.match(/^▲(\d+)▲$/);
+                            if (match) {
+                                let engText = protectedEng[parseInt(match[1])];
+                                let textRange = anchorRange.insertText(engText, "Before");
+                                textRange.font.name = "Times New Roman";
+                            } else {
+                                let textRange = anchorRange.insertText(chunk, "Before");
+                                textRange.font.name = "Kalpurush";
+                            }
+                        }
                     }
 
                     await context.sync();
@@ -401,6 +438,8 @@
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
+        // --- Core Conversion Dictionaries ---
+        
         function convertUnicodeToBijoy(text) {
             if (!text) return "";
             let str = text;
@@ -417,6 +456,7 @@
             let regexPreKar = new RegExp("([" + cons + "](?:\u09CD[" + cons + "])*(?:©)?)(ি|ে|ৈ)", "g");
             str = str.replace(regexPreKar, "$2$1");
 
+            // যুক্তবর্ণ ম্যাপিং: 'চ্চ' ('”'), 'চ্ছ' ('•'), 'জ্জ' ('¾') অরিজিনাল ম্যাপে রিস্টোর করা হয়েছে
             const u2bJukta = {
                 'ক্ক':'°', 'ক্ট':'±', 'ক্ত':'³', 'ক্ব':'K¡', 'ক্স':'·', 'ক্ষ':'¶', 'জ্ঞ':'Á',
                 'ঙ্গ':'½', 'ঙ্ক':'¼', 'ট্ট':'Æ', 'ড্ড':'Ç', 'ণ্ট':'È', 'ণ্ঠ':'É', 'ণ্ড':'Ð',
@@ -429,7 +469,7 @@
                 'ব্ল':'eø', 'ক্ল':'K¬', 'গ্ল':'Mø', 'প্ল':'cø', 'ফ্ল':'d¬',
                 'ঞ্চ':'Â', 'ঞ্ছ':'Ã', 'ঞ্জ':'Ä',
                 'রু':'iæ', 'রূ':'i~', 'শু':'ï', 'গু':'¸', 'ন্তু':'š‘', 'স্তু':'¯‘',
-                'চ্চ':'”', 'চ্ছ':'•', 'জ্জ':'¾', 'ঝ্ঝ':'S&S', 'দ্ঘ':'`&N', 'ন্ত':'šÍ', 'ন্থ':'š’',
+                'চ্চ':'”', 'চ্ছ':'•', 'জ্জ':'¾', 
                 'ল্ক':'j&K', 'ল্গ':'j&M', 'ল্ট':'j&U', 'ল্ড':'j&W', 'ল্প':'í', 'ল্ব':'j&e', 'ল্ম':'j&g', 'ল্ল':'jø',
                 'ধ্ব':'aŸ', 'শ্ব':'k¦', 'ত্ব':'Z¡', 'থ্ব':'_¡', 'ম্ন':'gœ',
                 '্য':'¨', '্র':'«', '্':'&'
