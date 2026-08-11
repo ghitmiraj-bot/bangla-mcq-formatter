@@ -111,7 +111,7 @@
         }
 
         // ==========================================
-        // AI API INTEGRATION (AUTO-DISCOVERY ENGINE)
+        // AI API INTEGRATION (STABLE FALLBACK ENGINE)
         // ==========================================
         async function callGeminiAPI(systemPrompt, userText) {
             const apiKey = localStorage.getItem('gemini_api_key');
@@ -119,55 +119,43 @@
                 throw new Error("API Key is missing! Please enter and save your Gemini API Key first.");
             }
 
+            // সরাসরি সবচেয়ে স্ট্যাবল মডেলটি ব্যবহার করা হলো
+            const modelName = "gemini-1.5-flash";
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{
+                    parts: [{ text: systemPrompt + "\n\nHere is the text to process:\n" + userText }]
+                }],
+                generationConfig: {
+                    temperature: 0.1, // নিখুঁত আউটপুটের জন্য
+                    topK: 1,
+                    topP: 1
+                }
+            };
+
+            let response;
             try {
-                // ধাপ ১: গুগলের সার্ভার থেকে অ্যাভেইলেবল মডেলের লিস্ট বের করা
-                const modelListUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-                const modelResponse = await fetch(modelListUrl);
-                
-                if (!modelResponse.ok) {
-                    throw new Error("Failed to connect to Google API. Please check your internet or API Key.");
-                }
-                
-                const modelData = await modelResponse.json();
-                
-                // যে মডেলগুলো 'generateContent' সাপোর্ট করে শুধু সেগুলো ফিল্টার করা
-                const validModels = modelData.models.filter(m => 
-                    m.supportedGenerationMethods && 
-                    m.supportedGenerationMethods.includes("generateContent")
-                );
-
-                if (validModels.length === 0) {
-                    throw new Error("No supported AI models found for this API Key.");
-                }
-
-                // সবচেয়ে ভালো মডেলটি স্বয়ংক্রিয়ভাবে বেছে নেওয়া (Flash মডেলগুলো দ্রুত হয়)
-                let targetModel = validModels.find(m => m.name.includes('gemini-1.5-flash'))?.name 
-                               || validModels.find(m => m.name.includes('flash'))?.name 
-                               || validModels[0].name;
-
-                // ধাপ ২: সিলেক্ট করা মডেল দিয়ে কনটেন্ট জেনারেট করা
-                const url = `https://generativelanguage.googleapis.com/v1beta/${targetModel}:generateContent?key=${apiKey}`;
-                
-                const payload = {
-                    contents: [{
-                        parts: [{ text: systemPrompt + "\n\nHere is the text to process:\n" + userText }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.1, // নিখুঁত আউটপুটের জন্য
-                        topK: 1,
-                        topP: 1
-                    }
-                };
-
-                const response = await fetch(url, {
+                response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
+                // যদি flash মডেল কোনো কারণে ফেইল করে, তবে স্বয়ংক্রিয়ভাবে pro মডেলে ট্রাই করবে
+                if (!response.ok) {
+                    console.log("Primary model failed, attempting fallback to Pro model...");
+                    const fallbackUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+                    response = await fetch(fallbackUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error?.message || "Generation failed.");
+                    throw new Error(errorData.error?.message || "Failed to connect to AI API.");
                 }
 
                 const data = await response.json();
@@ -241,13 +229,6 @@
                     // Apply font formatting
                     anchorRange.font.name = targetFont;
                     anchorRange.font.size = 11;
-                    
-                    // If formatting MCQ, try to make English words Times New Roman
-                    if (action === 'format_mcq' || action === 'bijoy_to_uni') {
-                        // This is a native Word.js limitation - we set the whole block to Kalpurush
-                        // To perfectly isolate English in Word.js after AI returns a single block requires complex RegEx search within the Word document object.
-                        // For now, the whole block gets the Bangla font, which usually displays English fine, or the user can select all -> Times New Roman as secondary font.
-                    }
 
                     await context.sync();
                     showStatus('Task completed perfectly by AI!');
