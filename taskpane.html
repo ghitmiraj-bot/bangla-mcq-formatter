@@ -111,7 +111,7 @@
         }
 
         // ==========================================
-        // ULTIMATE DYNAMIC AI SCANNER ENGINE
+        // SMART FREE-TIER AI SCANNER ENGINE
         // ==========================================
         async function callGeminiAPI(systemPrompt, userText) {
             const apiKey = localStorage.getItem('gemini_api_key');
@@ -120,7 +120,6 @@
             }
 
             try {
-                // ধাপ ১: ইউজারের API Key দিয়ে অ্যাভেইলেবল মডেলের লিস্ট বের করা
                 const modelListUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
                 const modelResponse = await fetch(modelListUrl);
                 
@@ -130,7 +129,7 @@
                 
                 const modelData = await modelResponse.json();
                 
-                // ধাপ ২: শুধু সেই মডেলগুলো ফিল্টার করা যেগুলো generateContent সাপোর্ট করে এবং 2.5 বাদে (কারণ 2.5-এ Interactions API এরর দেয়)
+                // শুধুমাত্র generateContent সাপোর্ট করে এমন মডেল ফিল্টার করা (2.5 বাদ দিয়ে)
                 const validModels = modelData.models.filter(m => 
                     m.supportedGenerationMethods && 
                     m.supportedGenerationMethods.includes("generateContent") &&
@@ -141,14 +140,12 @@
                     throw new Error("No usable AI models found for this API Key.");
                 }
 
-                // ধাপ ৩: লিস্ট থেকে আপনার অ্যাকাউন্টের জন্য সবচেয়ে বেস্ট মডেলটি খুঁজে বের করা
-                let targetModel = validModels.find(m => m.name.includes('gemini-1.5-flash')) ||
-                                  validModels.find(m => m.name.includes('gemini-1.5-pro')) ||
-                                  validModels.find(m => m.name.includes('gemini-1.0-pro')) ||
-                                  validModels.find(m => m.name.includes('gemini-pro')) ||
+                // পেইড Pro মডেল ব্লক করে শুধুমাত্র ফ্রি Flash মডেলগুলো বেছে নেওয়া হচ্ছে
+                let targetModel = validModels.find(m => m.name.includes('flash') && !m.name.includes('pro')) || 
+                                  validModels.find(m => m.name.includes('flash')) || 
+                                  validModels.find(m => !m.name.includes('pro')) || 
                                   validModels[0];
 
-                // ধাপ ৪: সিলেক্ট করা মডেল দিয়ে রিকোয়েস্ট পাঠানো (targetModel.name-এর ভেতরেই 'models/' লেখাটি থাকে)
                 const url = `https://generativelanguage.googleapis.com/v1beta/${targetModel.name}:generateContent?key=${apiKey}`;
                 
                 const payload = {
@@ -170,6 +167,11 @@
 
                 if (!response.ok) {
                     const errorData = await response.json();
+                    
+                    // কোটা এরর চেক করা হচ্ছে
+                    if (errorData.error?.message?.includes("Quota exceeded")) {
+                        throw new Error("Free limit exceeded for this model! Please wait a minute or create a new API Key.");
+                    }
                     throw new Error(errorData.error?.message || "Generation failed.");
                 }
 
