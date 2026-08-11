@@ -111,7 +111,7 @@
         }
 
         // ==========================================
-        // AI API INTEGRATION (GOOGLE GEMINI)
+        // AI API INTEGRATION (AUTO-DISCOVERY ENGINE)
         // ==========================================
         async function callGeminiAPI(systemPrompt, userText) {
             const apiKey = localStorage.getItem('gemini_api_key');
@@ -119,33 +119,64 @@
                 throw new Error("API Key is missing! Please enter and save your Gemini API Key first.");
             }
 
-            // আপডেট: বন্ধ হয়ে যাওয়া 1.5 বা 2.0 এর বদলে গুগলের লেটেস্ট 2.5 Flash মডেল ব্যবহার করা হলো
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-            
-            const payload = {
-                contents: [{
-                    parts: [{ text: systemPrompt + "\n\nHere is the text to process:\n" + userText }]
-                }],
-                generationConfig: {
-                    temperature: 0.1, // Low temperature for maximum accuracy
-                    topK: 1,
-                    topP: 1
+            try {
+                // ধাপ ১: গুগলের সার্ভার থেকে অ্যাভেইলেবল মডেলের লিস্ট বের করা
+                const modelListUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+                const modelResponse = await fetch(modelListUrl);
+                
+                if (!modelResponse.ok) {
+                    throw new Error("Failed to connect to Google API. Please check your internet or API Key.");
                 }
-            };
+                
+                const modelData = await modelResponse.json();
+                
+                // যে মডেলগুলো 'generateContent' সাপোর্ট করে শুধু সেগুলো ফিল্টার করা
+                const validModels = modelData.models.filter(m => 
+                    m.supportedGenerationMethods && 
+                    m.supportedGenerationMethods.includes("generateContent")
+                );
 
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+                if (validModels.length === 0) {
+                    throw new Error("No supported AI models found for this API Key.");
+                }
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error?.message || "Failed to connect to AI API.");
+                // সবচেয়ে ভালো মডেলটি স্বয়ংক্রিয়ভাবে বেছে নেওয়া (Flash মডেলগুলো দ্রুত হয়)
+                let targetModel = validModels.find(m => m.name.includes('gemini-1.5-flash'))?.name 
+                               || validModels.find(m => m.name.includes('flash'))?.name 
+                               || validModels[0].name;
+
+                // ধাপ ২: সিলেক্ট করা মডেল দিয়ে কনটেন্ট জেনারেট করা
+                const url = `https://generativelanguage.googleapis.com/v1beta/${targetModel}:generateContent?key=${apiKey}`;
+                
+                const payload = {
+                    contents: [{
+                        parts: [{ text: systemPrompt + "\n\nHere is the text to process:\n" + userText }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.1, // নিখুঁত আউটপুটের জন্য
+                        topK: 1,
+                        topP: 1
+                    }
+                };
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error?.message || "Generation failed.");
+                }
+
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+
+            } catch (error) {
+                console.error("AI Error:", error);
+                throw new Error(error.message || "An unexpected error occurred with the AI.");
             }
-
-            const data = await response.json();
-            return data.candidates[0].content.parts[0].text;
         }
 
         // ==========================================
