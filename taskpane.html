@@ -361,7 +361,7 @@
         }
 
         // ==========================================
-        // ADVANCED SMART CONVERTER ENGINE 
+        // ULTIMATE FIXED SMART CONVERTER ENGINE
         // ==========================================
 
         async function runSmartConverter(direction) {
@@ -377,7 +377,6 @@
                         return;
                     }
 
-                    // Auto Detection
                     let isUnicode = /[\u0980-\u09FF]/.test(rawText);
                     let targetDirection = direction;
                     
@@ -387,52 +386,13 @@
                     let anchorRange = selection.insertText("", "Replace");
 
                     if (targetDirection === "UniToBijoy") {
-                        // ইউনিকোড ➔ বিজয়: ইংরেজি লেখা ও সংখ্যাকে স্প্লিট করে Times New Roman করা হচ্ছে
-                        let textChunks = rawText.split(/([a-zA-Z0-9]+)/g);
-
-                        for (let i = 0; i < textChunks.length; i++) {
-                            let chunk = textChunks[i];
-                            if (!chunk) continue;
-
-                            if (/^[a-zA-Z0-9]+$/.test(chunk)) {
-                                let textRange = anchorRange.insertText(chunk, "Before");
-                                textRange.font.name = "Times New Roman"; 
-                            } else {
-                                // স্পেস, যতিচিহ্ন এবং বাংলা লেখা SutonnyMJ ফন্ট পাবে
-                                let converted = convertUnicodeToBijoy(chunk);
-                                let textRange = anchorRange.insertText(converted, "Before");
-                                textRange.font.name = "SutonnyMJ";
-                            }
-                        }
+                        let converted = convertUnicodeToBijoy(rawText);
+                        let textRange = anchorRange.insertText(converted, "Before");
+                        textRange.font.name = "SutonnyMJ";
                     } else {
-                        // বিজয় ➔ ইউনিকোড: ইংরেজি লেখাকে রক্ষা করতে ব্র্যাকেট/কোটেশনের প্রটেকশন ব্যবহার
-                        let protectedEng = [];
-                        let protectRegex = /(\([A-Za-z0-9\s\-\.\_]+\)|\[[A-Za-z0-9\s\-\.\_]+\]|"[A-Za-z0-9\s\-\.\_]+"|'[A-Za-z0-9\s\-\.\_]+')/g;
-                        
-                        let safeText = rawText.replace(protectRegex, function(match) {
-                            protectedEng.push(match);
-                            return "▲" + (protectedEng.length - 1) + "▲";
-                        });
-
-                        let converted = convertBijoyToUnicode(safeText);
-
-                        // প্রটেক্ট করা ইংরেজি লেখাগুলোকে ফন্টসহ পুনরায় জায়গামতো বসানো
-                        let textChunks = converted.split(/(▲\d+▲)/g);
-
-                        for (let i = 0; i < textChunks.length; i++) {
-                            let chunk = textChunks[i];
-                            if (!chunk) continue;
-
-                            let match = chunk.match(/^▲(\d+)▲$/);
-                            if (match) {
-                                let engText = protectedEng[parseInt(match[1])];
-                                let textRange = anchorRange.insertText(engText, "Before");
-                                textRange.font.name = "Times New Roman";
-                            } else {
-                                let textRange = anchorRange.insertText(chunk, "Before");
-                                textRange.font.name = "Kalpurush";
-                            }
-                        }
+                        let converted = convertBijoyToUnicode(rawText);
+                        let textRange = anchorRange.insertText(converted, "Before");
+                        textRange.font.name = "Kalpurush";
                     }
 
                     await context.sync();
@@ -441,8 +401,6 @@
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
-        // --- Core Conversion Dictionaries ---
-        
         function convertUnicodeToBijoy(text) {
             if (!text) return "";
             let str = text;
