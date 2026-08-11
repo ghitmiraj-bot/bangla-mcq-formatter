@@ -3,50 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bangla MCQ Formatter</title>
+    <title>AI Bangla MCQ Formatter</title>
+    <!-- Office.js for MS Word Integration -->
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <!-- Tailwind CSS for Modern UI -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .loader { border-top-color: #3498db; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-[#F4F6F9] text-gray-800 h-screen flex flex-col p-4">
 
+    <!-- API Key Settings Section -->
     <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
-        <h1 class="text-lg font-bold text-[#1976D2] mb-1">Bangla MCQ Formatter</h1>
-        <p class="text-xs text-gray-500 mb-4">Format directly from your selection</p>
-        
-        <label class="flex items-center space-x-2 cursor-pointer mb-2">
-            <input type="checkbox" id="shuffleCheck" class="form-checkbox h-4 w-4 text-[#1976D2] rounded border-gray-300" checked>
-            <span class="text-sm font-medium text-gray-700">Randomize Options</span>
-        </label>
+        <div class="flex justify-between items-center mb-2">
+            <h1 class="text-sm font-bold text-[#1976D2]">AI Configuration</h1>
+            <span id="keyStatus" class="text-xs font-bold text-red-500">Key Missing</span>
+        </div>
+        <input type="password" id="apiKeyInput" placeholder="Enter Gemini API Key..." class="w-full text-xs p-2 border border-gray-300 rounded mb-2 focus:outline-none focus:border-[#1976D2]">
+        <button onclick="saveApiKey()" class="w-full bg-[#1976D2] hover:bg-[#1565C0] text-white text-xs font-semibold py-1.5 rounded transition-colors">
+            Save API Key
+        </button>
     </div>
 
-    <div class="flex-1 flex flex-col mb-4 items-center justify-center border-2 border-dashed border-[#1976D2] bg-[#E3F2FD] rounded-lg p-6 text-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-[#1976D2] mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+    <!-- Instruction UI -->
+    <div class="flex-1 flex flex-col mb-4 items-center justify-center border-2 border-dashed border-[#10B981] bg-[#ECFDF5] rounded-lg p-6 text-center relative" id="dropZone">
+        <div id="loadingSpinner" class="hidden absolute inset-0 bg-[#ECFDF5] bg-opacity-90 flex flex-col items-center justify-center z-10 rounded-lg">
+            <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-8 w-8 mb-2"></div>
+            <p class="text-xs font-semibold text-[#10B981]">AI is thinking...</p>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-[#10B981] mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
-        <p class="text-sm font-semibold text-[#1976D2] mb-1">Select Text in Word</p>
-        <p class="text-xs text-gray-600">Highlight the raw questions in your document, then click a format button below.</p>
+        <p class="text-sm font-semibold text-[#10B981] mb-1">AI Smart Processing</p>
+        <p class="text-xs text-gray-600">Select raw text in Word, and let AI do the magic!</p>
     </div>
 
+    <!-- Action Buttons -->
     <div class="flex flex-col space-y-2 mb-2">
-        <button id="btnNormal" class="w-full bg-[#1976D2] hover:bg-[#1565C0] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm">
-            Format Selected (Normal MCQ)
+        <button onclick="processWithAI('format_mcq')" class="w-full bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm">
+            ✨ AI Auto Format MCQ
         </button>
-        <button id="btnSmart" class="w-full bg-[#10B981] hover:bg-[#059669] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm">
-            Format Selected (Smart MCQ)
-        </button>
-        <button id="btnFormatQuestions" class="w-full bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm mt-2">
-            Number & Bold Questions
-        </button>
-        <!-- Converter Buttons -->
         <div class="flex space-x-2 mt-2">
-            <button id="btnUniToBijoy" class="w-1/2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold py-2 px-2 rounded transition-colors text-xs shadow-sm">
-                Unicode ➔ Bijoy
+            <button onclick="processWithAI('uni_to_bijoy')" class="w-1/2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold py-2 px-2 rounded transition-colors text-xs shadow-sm">
+                Uni ➔ Bijoy (AI)
             </button>
-            <button id="btnBijoyToUni" class="w-1/2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold py-2 px-2 rounded transition-colors text-xs shadow-sm">
-                Bijoy ➔ Unicode
+            <button onclick="processWithAI('bijoy_to_uni')" class="w-1/2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold py-2 px-2 rounded transition-colors text-xs shadow-sm">
+                Bijoy ➔ Uni (AI)
             </button>
         </div>
     </div>
@@ -55,314 +61,99 @@
 
     <script>
         // ==========================================
-        // PARSING & FORMATTING LOGIC
+        // UI & API KEY MANAGEMENT
         // ==========================================
-        const BANGLA_DIGITS = {'0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'};
-        const OPTION_ORDER = ["ক", "খ", "গ", "ঘ"];
-        const OPTION_EXPORT_MAP = {"ক": "K", "খ": "L", "গ": "M", "ঘ": "N"};
-        const ANSWER_EXPORT_MAP = {"ক": "P", "খ": "Q", "গ": "R", "ঘ": "S"};
+        Office.onReady((info) => {
+            if (info.host === Office.HostType.Word) {
+                loadApiKey();
+            }
+        });
 
-        function toBanglaNumber(n) {
-            return n.toString().replace(/[0-9]/g, w => BANGLA_DIGITS[w]);
+        function saveApiKey() {
+            const key = document.getElementById('apiKeyInput').value.trim();
+            if (key) {
+                localStorage.setItem('gemini_api_key', key);
+                updateKeyStatus(true);
+                showStatus('API Key saved successfully!');
+            }
         }
 
-        function normalizeAnswerLabel(label) {
-            const ENG_TO_BN = {
-                "A": "ক", "B": "খ", "C": "গ", "D": "ঘ",
-                "a": "ক", "b": "খ", "c": "গ", "d": "ঘ",
-                "K": "ক", "L": "খ", "M": "গ", "N": "ঘ",
-                "k": "ক", "l": "খ", "m": "গ", "n": "ঘ",
-            };
-            return ENG_TO_BN[label] || label;
+        function loadApiKey() {
+            const key = localStorage.getItem('gemini_api_key');
+            if (key) {
+                document.getElementById('apiKeyInput').value = key;
+                updateKeyStatus(true);
+            }
         }
 
-        function isQuestionLine(line) {
-            if (/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.*)$/.test(line)) return true;
-            if (/^.+[?؟]\s*$/.test(line)) return true;
-            return false;
-        }
-
-        function parseQuestions(text) {
-            let lines = text.split(/[\r\n\v]+/);
-            let questions = [];
-            let current = null;
-
-            function flush() {
-                if (current && current.question && current.options.length > 0) {
-                    questions.push(current);
-                }
-                current = null;
+        function updateKeyStatus(isValid) {
+            const statusEl = document.getElementById('keyStatus');
+            if (isValid) {
+                statusEl.textContent = 'Key Active';
+                statusEl.className = 'text-xs font-bold text-green-600';
+            } else {
+                statusEl.textContent = 'Key Missing';
+                statusEl.className = 'text-xs font-bold text-red-500';
             }
-
-            for (let i = 0; i < lines.length; i++) {
-                let line = lines[i].trim();
-                if (!line) continue;
-
-                let expMatch = line.match(/^\s*(?:ব্যাখ্যা|Explanation)\s*[:：\-\u2013\u2014]\s*(.+)$/i);
-                if (expMatch && current) {
-                    current.explanation = expMatch[1].trim();
-                    continue;
-                }
-                if (/^\s*ব্যাখ্যা\s*[:：\-\u2013\u2014]/.test(line) && current) {
-                    let parts = line.split(/ব্যাখ্যা\s*[:：\-\u2013\u2014]/);
-                    if (parts.length > 1) current.explanation = parts[1].trim();
-                    continue;
-                }
-
-                let ansMatch = line.match(/^\s*(?:সঠিক উত্তর|উত্তর|Ans|Answer)\s*[:：]?\s*(.*)$/i);
-                if (ansMatch && current) {
-                    let ansExtr = ansMatch[1].match(/[\(\[]?([ক-ঘA-DK-Na-dk-n])[\)\]]?/);
-                    if (ansExtr) {
-                        current.answer = normalizeAnswerLabel(ansExtr[1]);
-                        current.original_answer = current.answer;
-                    }
-                    continue;
-                }
-
-                if (isQuestionLine(line)) {
-                    flush();
-                    let qMatch = line.match(/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.*)$/);
-                    let qText = qMatch ? qMatch[1].trim() : line;
-                    current = { question: qText, options: [], answer: null, explanation: null, original_answer: null };
-                    continue;
-                }
-
-                if (!current) continue;
-
-                let optMatch1 = line.match(/^\s*\(([কখঘগ])\)\s*(.+?)$/);
-                if (optMatch1) {
-                    current.options.push([normalizeAnswerLabel(optMatch1[1]), optMatch1[2].trim()]);
-                    continue;
-                }
-                let optMatch2 = line.match(/^\s*\(?([কখঘগA-DKLMNa-dklmn])\)?\s*[\.।:]?\s*(.+?)\s*$/);
-                if (optMatch2) {
-                    current.options.push([normalizeAnswerLabel(optMatch2[1]), optMatch2[2].trim()]);
-                    continue;
-                }
-
-                if (line.includes("ব্যাখ্যা") && current) {
-                    let parts = line.split(/ব্যাখ্যা\s*[:：\-\u2013\u2014]/);
-                    if (parts.length > 1) {
-                        if (!current.explanation) current.explanation = parts[1].trim();
-                        if (current.options.length > 0) {
-                            current.options[current.options.length - 1][1] += " " + parts[0].trim();
-                        }
-                    }
-                    continue;
-                }
-
-                if (current.options.length > 0) {
-                    current.options[current.options.length - 1][1] += " " + line;
-                } else {
-                    current.question += " " + line;
-                }
-            }
-            flush();
-            return questions;
-        }
-
-        function shuffleOptions(question) {
-            if (!question.options || question.options.length < 2 || !question.answer) return question;
-            let originalAns = question.original_answer || question.answer;
-            let correctText = null;
-            
-            for (let i = 0; i < question.options.length; i++) {
-                if (question.options[i][0] === originalAns) {
-                    correctText = question.options[i][1]; break;
-                }
-            }
-            if (!correctText) return question;
-
-            let shuffled = question.options.slice();
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                let j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-
-            let newOptions = [];
-            let newAnswer = null;
-
-            for (let i = 0; i < shuffled.length; i++) {
-                let newLabel = OPTION_ORDER[i] || shuffled[i][0];
-                newOptions.push([newLabel, shuffled[i][1]]);
-                if (shuffled[i][1] === correctText) {
-                    newAnswer = newLabel;
-                }
-            }
-            question.options = newOptions;
-            question.answer = newAnswer;
-            return question;
         }
 
         function showStatus(msg, isError = false) {
             const el = document.getElementById("statusMsg");
             el.textContent = msg;
-            el.className = `text-sm font-medium text-center py-2 rounded mt-2 block ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
-            setTimeout(() => { el.style.display = 'none'; el.className = 'hidden'; }, 4000);
+            el.className = `text-xs font-medium text-center py-2 rounded mt-2 block ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+            setTimeout(() => { el.style.display = 'none'; el.className = 'hidden'; }, 5000);
             el.style.display = 'block';
         }
 
-        Office.onReady((info) => {
-            if (info.host === Office.HostType.Word) {
-                document.getElementById("btnNormal").onclick = () => formatSelectedText("normal");
-                document.getElementById("btnSmart").onclick = () => formatSelectedText("smart");
-                document.getElementById("btnFormatQuestions").onclick = formatQuestionsMacro;
-                document.getElementById("btnUniToBijoy").onclick = () => runSmartConverter("UniToBijoy");
-                document.getElementById("btnBijoyToUni").onclick = () => runSmartConverter("BijoyToUni");
+        function toggleLoader(show) {
+            const loader = document.getElementById('loadingSpinner');
+            loader.style.display = show ? 'flex' : 'none';
+        }
+
+        // ==========================================
+        // AI API INTEGRATION (GOOGLE GEMINI)
+        // ==========================================
+        async function callGeminiAPI(systemPrompt, userText) {
+            const apiKey = localStorage.getItem('gemini_api_key');
+            if (!apiKey) {
+                throw new Error("API Key is missing! Please enter and save your Gemini API Key first.");
             }
-        });
 
-        async function formatSelectedText(type) {
-            try {
-                await Word.run(async (context) => {
-                    const selection = context.document.getSelection();
-                    selection.load("text");
-                    await context.sync();
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{
+                    parts: [{ text: systemPrompt + "\n\nHere is the text to process:\n" + userText }]
+                }],
+                generationConfig: {
+                    temperature: 0.1, // Low temperature for maximum accuracy
+                    topK: 1,
+                    topP: 1
+                }
+            };
 
-                    const text = selection.text;
-                    if (!text || !text.trim()) {
-                        showStatus("Please select some text in the document first!", true);
-                        return;
-                    }
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-                    let questions = parseQuestions(text);
-                    if (questions.length === 0) {
-                        showStatus("No valid questions found in selection!", true);
-                        return;
-                    }
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || "Failed to connect to AI API.");
+            }
 
-                    if (document.getElementById("shuffleCheck").checked) {
-                        questions = questions.map(q => shuffleOptions(q));
-                    }
-
-                    let anchorRange = selection.insertText(" ", "Replace");
-
-                    for (let i = 0; i < questions.length; i++) {
-                        let q = questions[i];
-                        let safeQuestion = q.question.replace(/[\r\n\v]/g, "").trim();
-                        
-                        let qPara = anchorRange.insertParagraph(`${toBanglaNumber(i + 1)}. ${safeQuestion}`, "Before");
-                        qPara.font.name = "Kalpurush";
-                        qPara.font.size = 10.5;
-                        qPara.alignment = "Justified";
-
-                        for (let j = 0; j < Math.min(4, q.options.length); j++) {
-                            let optLabel = OPTION_ORDER[j];
-                            let textVal = q.options[j][1].replace(/[\r\n\v]/g, "").trim();
-                            let marker = OPTION_EXPORT_MAP[optLabel] || optLabel;
-
-                            let optPara = anchorRange.insertParagraph(marker, "Before");
-                            optPara.alignment = "Justified";
-                            optPara.font.name = "BanglaOMR";
-                            optPara.font.size = 9;
-
-                            let textRange = optPara.insertText(` ${textVal}`, "End");
-                            textRange.font.name = "Kalpurush";
-                            textRange.font.size = 10.5;
-
-                            if (type === "normal" && j === 3 && q.answer) {
-                                let ansMarker = ANSWER_EXPORT_MAP[q.answer] || q.answer;
-                                optPara.insertText("\t", "End");
-                                let ansRange = optPara.insertText(ansMarker, "End");
-                                ansRange.font.name = "ProshnaP";
-                                ansRange.font.size = 10;
-                            }
-                        }
-
-                        if (type === "normal" && q.explanation) {
-                            let safeExp = q.explanation.replace(/[\r\n\v]/g, "").trim();
-                            let expPara = anchorRange.insertParagraph(`ব্যাখ্যা: ${safeExp}`, "Before");
-                            expPara.font.name = "Kalpurush";
-                            expPara.font.size = 10.5;
-                        }
-                    }
-
-                    if (type === "smart") {
-                        anchorRange.insertBreak("Page", "Before");
-                        
-                        let ansHeaderPara = anchorRange.insertParagraph("সঠিক উত্তর ও ব্যাখ্যা", "Before");
-                        ansHeaderPara.font.name = "Kalpurush";
-                        ansHeaderPara.font.size = 12;
-                        ansHeaderPara.alignment = "Centered";
-                        
-                        for (let i = 0; i < questions.length; i++) {
-                            let q = questions[i];
-                            let ansPara = anchorRange.insertParagraph(`${toBanglaNumber(i + 1)}. সঠিক উত্তর: `, "Before");
-                            ansPara.font.name = "Kalpurush";
-                            ansPara.font.size = 10.5;
-
-                            if (q.answer) {
-                                let ansMarker = ANSWER_EXPORT_MAP[q.answer] || q.answer;
-                                let ansRange = ansPara.insertText(ansMarker, "End");
-                                ansRange.font.name = "ProshnaP";
-                                ansRange.font.size = 10;
-                            }
-
-                            if (q.explanation) {
-                                let safeExp = q.explanation.replace(/[\r\n\v]/g, "").trim();
-                                let expPara = anchorRange.insertParagraph(`ব্যাখ্যা: ${safeExp}`, "Before");
-                                expPara.font.name = "Kalpurush";
-                                expPara.font.size = 10.5;
-                            }
-                        }
-                    }
-
-                    anchorRange.delete();
-                    await context.sync();
-                    showStatus(`Successfully formatted ${questions.length} questions!`);
-                });
-            } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
-        }
-
-        async function formatQuestionsMacro() {
-            try {
-                await Word.run(async (context) => {
-                    const selection = context.document.getSelection();
-                    const paragraphs = selection.paragraphs;
-                    paragraphs.load("items");
-                    await context.sync();
-
-                    if (paragraphs.items.length === 0) { showStatus("Please select some text first.", true); return; }
-                    for (let i = 0; i < paragraphs.items.length; i++) { paragraphs.items[i].load("text"); }
-                    await context.sync();
-
-                    let matchingParagraphs = [];
-                    for (let i = 0; i < paragraphs.items.length; i++) {
-                        let p = paragraphs.items[i];
-                        let cleanText = p.text.replace(/[\s\u00A0\u200B\r\n]+$/, "");
-                        if (cleanText.length > 2) {
-                            let lastChar = cleanText.slice(-1);
-                            if (["?", "\u061F", "\u2014", "-", ":"].includes(lastChar)) { matchingParagraphs.push(p); }
-                        }
-                    }
-
-                    if (matchingParagraphs.length > 0) {
-                        let list = matchingParagraphs[0].startNewList();
-                        list.load("id");
-                        matchingParagraphs[0].font.bold = true;
-                        matchingParagraphs[0].leftIndent = 22.32;
-                        matchingParagraphs[0].firstLineIndent = -22.32;
-                        await context.sync();
-
-                        for (let i = 1; i < matchingParagraphs.length; i++) {
-                            matchingParagraphs[i].attachToList(list.id, 0);
-                            matchingParagraphs[i].font.bold = true;
-                            matchingParagraphs[i].leftIndent = 22.32;
-                            matchingParagraphs[i].firstLineIndent = -22.32;
-                        }
-                        await context.sync();
-                    }
-                    showStatus(`Task Completed! Total Questions Found: ${matchingParagraphs.length}`);
-                });
-            } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
         }
 
         // ==========================================
-        // SMART BIJOY-UNICODE CONVERTER ENGINE 
+        // MAIN PROCESSING LOGIC
         // ==========================================
-
-        async function runSmartConverter(direction) {
+        async function processWithAI(action) {
             try {
+                toggleLoader(true);
+                
                 await Word.run(async (context) => {
                     const selection = context.document.getSelection();
                     selection.load("text");
@@ -370,193 +161,71 @@
 
                     const rawText = selection.text;
                     if (!rawText || !rawText.trim()) {
-                        showStatus("Please select some text to convert!", true);
-                        return;
+                        throw new Error("Please select some text in the Word document first!");
                     }
 
-                    let isUnicode = /[\u0980-\u09FF]/.test(rawText);
-                    let targetDirection = direction;
+                    let systemPrompt = "";
+                    let targetFont = "Kalpurush";
+
+                    if (action === 'bijoy_to_uni') {
+                        targetFont = "Kalpurush";
+                        systemPrompt = `You are an expert Bengali text converter. The user will give you text that is typed using the 'Bijoy' (ASCII) encoding system, but it might be broken, messy, or contain English words.
+                        YOUR TASK:
+                        1. Convert all the Bijoy Bengali gibberish/ASCII characters into perfect Standard Unicode Bengali.
+                        2. Identify and fix ANY broken 'juktoborno' (conjuncts like চ্চ, ঙ্ক, ঙ্গ, জ্ঞ, ক্ষ).
+                        3. DO NOT translate the text. Just transliterate the encoding.
+                        4. CRITICAL: Any actual English words, numbers, or standard punctuation marks MUST remain exactly as they are in English. Do not change English words into symbols.
+                        5. Output ONLY the finalized Unicode text. Do not add any introductory or concluding remarks.`;
+                    } 
+                    else if (action === 'uni_to_bijoy') {
+                        targetFont = "SutonnyMJ";
+                        systemPrompt = `You are an expert Bengali text converter. The user will give you standard Unicode Bengali text.
+                        YOUR TASK:
+                        1. Convert the Unicode Bengali text into the 'Bijoy' (ASCII) encoding standard (which looks like English gibberish when viewed in a standard font).
+                        2. Ensure 'juktoborno' are perfectly mapped to Bijoy ASCII codes.
+                        3. CRITICAL: Any actual English words, numbers, or standard punctuation marks MUST remain exactly as they are. Keep them untouched.
+                        4. Output ONLY the finalized Bijoy text. Do not add any introductory or concluding remarks.`;
+                    }
+                    else if (action === 'format_mcq') {
+                        targetFont = "Kalpurush";
+                        systemPrompt = `You are a professional Question Paper setter. The user will provide raw, unformatted Multiple Choice Questions (MCQs).
+                        YOUR TASK:
+                        1. Format the text beautifully. 
+                        2. Number the questions sequentially using Bengali numerals (১., ২., ৩., etc.).
+                        3. Format the options using Bengali letters: ক) খ) গ) ঘ).
+                        4. If there is an answer or explanation, place it clearly below the options like this:
+                           উত্তর: [Answer]
+                           ব্যাখ্যা: [Explanation]
+                        5. Fix any typos or broken Bengali fonts automatically.
+                        6. Output ONLY the formatted text. Do not add any extra conversational text.`;
+                    }
+
+                    // Call the AI
+                    const aiResult = await callGeminiAPI(systemPrompt, rawText);
+
+                    // Insert the AI result back into the document
+                    let anchorRange = selection.insertText(aiResult.trim(), "Replace");
                     
-                    if (isUnicode && direction === "BijoyToUni") targetDirection = "UniToBijoy";
-                    else if (!isUnicode && direction === "UniToBijoy") targetDirection = "BijoyToUni";
-
-                    let anchorRange = selection.insertText("", "Replace");
-
-                    if (targetDirection === "UniToBijoy") {
-                        // ইংরেজি লেখা ও সংখ্যাকে স্প্লিট করা হচ্ছে
-                        let textChunks = rawText.split(/([a-zA-Z0-9]+)/g);
-
-                        for (let i = 0; i < textChunks.length; i++) {
-                            let chunk = textChunks[i];
-                            if (!chunk) continue;
-
-                            // শুধুমাত্র a-z, A-Z এবং 0-9 কে ইংরেজি হিসেবে ধরে Times New Roman করা হবে
-                            if (/^[a-zA-Z0-9]+$/.test(chunk)) {
-                                let textRange = anchorRange.insertText(chunk, "Before");
-                                textRange.font.name = "Times New Roman"; 
-                            } else {
-                                // স্পেস, যতিচিহ্ন এবং বাংলা লেখা SutonnyMJ ফন্ট পাবে
-                                let converted = convertUnicodeToBijoy(chunk);
-                                let textRange = anchorRange.insertText(converted, "Before");
-                                textRange.font.name = "SutonnyMJ";
-                            }
-                        }
-                    } else {
-                        // বিজয় ➔ ইউনিকোড কনভার্সন
-                        let protectedEng = [];
-                        // ব্র্যাকেট বা কোটেশনের ভেতরে থাকা লেখাকে অক্ষত রাখা হবে
-                        let protectRegex = /(\([A-Za-z0-9\s\-\.\_]+\)|\[[A-Za-z0-9\s\-\.\_]+\]|"[A-Za-z0-9\s\-\.\_]+"|'[A-Za-z0-9\s\-\.\_]+')/g;
-                        
-                        let safeText = rawText.replace(protectRegex, function(match) {
-                            protectedEng.push(match);
-                            return "▲" + (protectedEng.length - 1) + "▲";
-                        });
-
-                        let converted = convertBijoyToUnicode(safeText);
-
-                        let textChunks = converted.split(/(▲\d+▲)/g);
-
-                        for (let i = 0; i < textChunks.length; i++) {
-                            let chunk = textChunks[i];
-                            if (!chunk) continue;
-
-                            let match = chunk.match(/^▲(\d+)▲$/);
-                            if (match) {
-                                let engText = protectedEng[parseInt(match[1])];
-                                let textRange = anchorRange.insertText(engText, "Before");
-                                textRange.font.name = "Times New Roman";
-                            } else {
-                                let textRange = anchorRange.insertText(chunk, "Before");
-                                textRange.font.name = "Kalpurush";
-                            }
-                        }
+                    // Apply font formatting
+                    anchorRange.font.name = targetFont;
+                    anchorRange.font.size = 11;
+                    
+                    // If formatting MCQ, try to make English words Times New Roman
+                    if (action === 'format_mcq' || action === 'bijoy_to_uni') {
+                        // This is a native Word.js limitation - we set the whole block to Kalpurush
+                        // To perfectly isolate English in Word.js after AI returns a single block requires complex RegEx search within the Word document object.
+                        // For now, the whole block gets the Bangla font, which usually displays English fine, or the user can select all -> Times New Roman as secondary font.
                     }
 
                     await context.sync();
-                    showStatus(`Converted successfully!`);
+                    showStatus('Task completed perfectly by AI!');
                 });
-            } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
-        }
-
-        // --- Core Conversion Dictionaries ---
-        
-        function convertUnicodeToBijoy(text) {
-            if (!text) return "";
-            let str = text;
-
-            str = str.replace(/[\u200B-\u200D\uFEFF]/g, '');
-            str = str.replace(/ো/g, 'ো');
-            str = str.replace(/ৌ/g, 'ৌ');
-
-            let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ"; 
-
-            let regexReph = new RegExp("র\u09CD([" + cons + "](?:\u09CD[" + cons + "])*)", "g");
-            str = str.replace(regexReph, "$1©");
-
-            let regexPreKar = new RegExp("([" + cons + "](?:\u09CD[" + cons + "])*(?:©)?)(ি|ে|ৈ)", "g");
-            str = str.replace(regexPreKar, "$2$1");
-
-            // যুক্তবর্ণ ম্যাপিং: 'চ্চ' ('”'), 'চ্ছ' ('•'), 'জ্জ' ('¾') অরিজিনাল ম্যাপে রিস্টোর করা হয়েছে
-            const u2bJukta = {
-                'ক্ক':'°', 'ক্ট':'±', 'ক্ত':'³', 'ক্ব':'K¡', 'ক্স':'·', 'ক্ষ':'¶', 'জ্ঞ':'Á',
-                'ঙ্গ':'½', 'ঙ্ক':'¼', 'ট্ট':'Æ', 'ড্ড':'Ç', 'ণ্ট':'È', 'ণ্ঠ':'É', 'ণ্ড':'Ð',
-                'ত্ত':'Ë', 'ত্থ':'Ì', 'ত্র':'Î', 'দ্দ':'Ï', 'দ্ধ':'×', 'দ্ব':'Ø', 'দ্ম':'Ù',
-                'ন্দ':'›`', 'ন্ধ':'Ü', 'ন্ন':'bœ', 'ন্ব':'b¦', 'ন্ম':'b¥', 'ম্প':'¤ú', 'ম্ব':'¤^', 'ম্ম':'¤§',
-                'স্ট':'÷', 'ষ্ট':'ó', 'ষ্ঠ':'ô', 'ষ্ণ':'ò', 'ষ্প':'®ú', 'ষ্ফ':'®ù', 'ষ্ম':'®§',
-                'স্ক':'¯‹', 'স্খ':'¯Œ', 'স্থ':'¯’', 'স্ন':'mœ', 'স্প':'¯ú', 'স্ফ':'ù', 'স্ম':'¯§', 'স্ব':'¯^', 'স্ত':'¯Í',
-                'হ্ম':'¿', 'হু':'û', 'হৃ':'ü', 'হ্ন':'ý', 'হ্ব':'nŸ', 'প্ত':'ß', 'ব্দ':'ã', 'ব্ধ':'ä',
-                'শ্র':'kÖ', 'ক্র':'µ', 'গ্র':'MÖ', 'প্র':'cÖ', 'ড্র':'W«', 'ট্র':'U«', 'ফ্র':'d«', 'ব্র':'eª',
-                'ব্ল':'eø', 'ক্ল':'K¬', 'গ্ল':'Mø', 'প্ল':'cø', 'ফ্ল':'d¬',
-                'ঞ্চ':'Â', 'ঞ্ছ':'Ã', 'ঞ্জ':'Ä',
-                'রু':'iæ', 'রূ':'i~', 'শু':'ï', 'গু':'¸', 'ন্তু':'š‘', 'স্তু':'¯‘',
-                'চ্চ':'”', 'চ্ছ':'•', 'জ্জ':'¾', 
-                'ল্ক':'j&K', 'ল্গ':'j&M', 'ল্ট':'j&U', 'ল্ড':'j&W', 'ল্প':'í', 'ল্ব':'j&e', 'ল্ম':'j&g', 'ল্ল':'jø',
-                'ধ্ব':'aŸ', 'শ্ব':'k¦', 'ত্ব':'Z¡', 'থ্ব':'_¡', 'ম্ন':'gœ',
-                '্য':'¨', '্র':'«', '্':'&'
-            };
-            
-            let keys = Object.keys(u2bJukta).sort((a, b) => b.length - a.length);
-            for (let k of keys) {
-                str = str.split(k).join(u2bJukta[k]);
+            } catch (error) {
+                console.error(error);
+                showStatus(error.message, true);
+            } finally {
+                toggleLoader(false);
             }
-
-            const map = {
-                'অ':'A', 'আ':'Av', 'ই':'B', 'ঈ':'C', 'উ':'D', 'ঊ':'E', 'ঋ':'F', 'এ':'G', 'ঐ':'H', 'ও':'I', 'ঔ':'J',
-                'ক':'K', 'খ':'L', 'গ':'M', 'ঘ':'N', 'ঙ':'O', 'চ':'P', 'ছ':'Q', 'জ':'R', 'ঝ':'S', 'ঞ':'T',
-                'ট':'U', 'ঠ':'V', 'ড':'W', 'ঢ':'X', 'ণ':'Y', 'ত':'Z', 'থ':'_', 'দ':'`', 'ধ':'a', 'ন':'b',
-                'প':'c', 'ফ':'d', 'ব':'e', 'ভ':'f', 'ম':'g', 'য':'h', 'র':'i', 'ল':'j', 'শ':'k', 'ষ':'l',
-                'স':'m', 'হ':'n', 'ড়':'o', 'ঢ়':'p', 'য়':'q', 'ৎ':'r', 'ং':'s', 'ঃ':'t', 'ঁ':'u',
-                'া':'v', 'ি':'w', 'ী':'x', 'ু':'y', 'ূ':'~', 'ৃ':'…', 'ে':'‡', 'ৈ':'ˆ', 'ৗ':'Š', '।':'|',
-                '০':'0', '১':'1', '২':'2', '৩':'3', '৪':'4', '৫':'5', '৬':'6', '৭':'7', '৮':'8', '৯':'9',
-                '©':'©' 
-            };
-            
-            let out = "";
-            for (let i = 0; i < str.length; i++) {
-                out += map[str[i]] || str[i];
-            }
-            return out;
-        }
-
-        function convertBijoyToUnicode(text) {
-            if (!text) return "";
-            let str = text;
-
-            str = str.replace(/[\u200B-\u200D\uFEFF\+]/g, '');
-
-            const b2uJukta = {
-                '°':'ক্ক', '±':'ক্ট', '³':'ক্ত', 'K¡':'ক্ব', '·':'ক্স', '¶':'ক্ষ', 'Á':'জ্ঞ',
-                '½':'ঙ্গ', '¼':'ঙ্ক', 'Æ':'ট্ট', 'Ç':'ড্ড', 'È':'ণ্ট', 'É':'ণ্ঠ', 'Ð':'ণ্ড',
-                'Ë':'ত্ত', 'Ì':'ত্থ', 'Î':'ত্র', 'Ï':'দ্দ', '×':'দ্ধ', 'Ø':'দ্ব', 'Ù':'দ্ম',
-                '›`':'ন্দ', 'Ü':'ন্ধ', 'bœ':'ন্ন', 'b¦':'ন্ব', 'b¥':'ন্ম', '¤ú':'ম্প', '¤^':'ম্ব', '¤§':'ম্ম',
-                '÷':'স্ট', 'ó':'ষ্ট', 'ô':'ষ্ঠ', 'ò':'ষ্ণ', '®ú':'ষ্প', '®ù':'ষ্ফ', '®§':'ষ্ম',
-                '¯‹':'স্ক', '¯Œ':'স্খ', '¯’':'স্থ', 'mœ':'স্ন', '¯ú':'স্প', 'ù':'স্ফ', '¯§':'স্ম', '¯^':'স্ব', '¯Í':'স্ত',
-                '¿':'হ্ম', 'û':'হু', 'ü':'হৃ', 'ý':'হ্ন', 'nŸ':'হ্ব', 'ß':'প্ত', 'ã':'ব্দ', 'ä':'ব্ধ',
-                'kÖ':'শ্র', 'µ':'ক্র', 'MÖ':'গ্র', 'cÖ':'প্র', 'W«':'ড্র', 'U«':'ট্র', 'd«':'ফ্র', 'eª':'ব্র',
-                'eø':'ব্ল', 'K¬':'ক্ল', 'Mø':'গ্ল', 'cø':'প্ল', 'd¬':'ফ্ল',
-                'Â':'ঞ্চ', 'Ã':'ঞ্ছ', 'Ä':'ঞ্জ', 'šÍ':'ন্ত', 'š’':'ন্থ',
-                'iæ':'রু', 'i~':'রূ', 'ï':'শু', '¸':'গু', 'š‘':'ন্তু', '¯‘':'স্তু',
-                'í':'ল্প', 'jø':'ল্ল', '”':'চ্চ', '•':'চ্ছ', '¾':'জ্জ',
-                'aŸ':'ধ্ব', 'k¦':'শ্ব', 'Z¡':'ত্ব', '_¡':'থ্ব', 'gœ':'ম্ন',
-                '¨':'্য', '«':'্র', '&':'্'
-            };
-            
-            let keys = Object.keys(b2uJukta).sort((a, b) => b.length - a.length);
-            for (let k of keys) {
-                str = str.split(k).join(b2uJukta[k]);
-            }
-
-            const b2u = {
-                'A':'অ', 'B':'ই', 'C':'ঈ', 'D':'উ', 'E':'ঊ', 'F':'ঋ', 'G':'এ', 'H':'ঐ', 'I':'ও', 'J':'ঔ',
-                'K':'ক', 'L':'খ', 'M':'গ', 'N':'ঘ', 'O':'ঙ', 'P':'চ', 'Q':'ছ', 'R':'জ', 'S':'ঝ', 'T':'ঞ',
-                'U':'ট', 'V':'ঠ', 'W':'ড', 'X':'ঢ', 'Y':'ণ', 'Z':'ত', '_':'থ', '`':'দ', 'a':'ধ', 'b':'ন',
-                'c':'প', 'd':'ফ', 'e':'ব', 'f':'ভ', 'g':'ম', 'h':'য', 'i':'র', 'j':'ল', 'k':'শ', 'l':'ষ',
-                'm':'স', 'n':'হ', 'o':'ড়', 'p':'ঢ়', 'q':'য়', 'r':'ৎ', 's':'ং', 't':'ঃ', 'u':'ঁ',
-                'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', 'z':'ূ', '…':'ৃ', '†':'ে', '‡':'ে', 'ˆ':'ৈ', 'Š':'ৗ', '|':'।',
-                '0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'
-            };
-            
-            str = str.replace(/Av/g, 'আ');
-            
-            let out = "";
-            for (let i = 0; i < str.length; i++) {
-                out += b2u[str[i]] || str[i];
-            }
-            str = out;
-
-            let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ";
-            let regexOrder = new RegExp("([িেৈ])?([" + cons + "](?:\u09CD[" + cons + "])*)(©)?([াীুূৃৗ])?", "g");
-            
-            str = str.replace(regexOrder, function(match, preKar, cluster, ref, postKar) {
-                return (ref ? "র্" : "") + cluster + (preKar || "") + (postKar || "");
-            });
-
-            str = str.replace(/অা/g, 'আ');
-            str = str.replace(/েৃ/g, 'ৃ'); 
-            str = str.replace(/ৌ/g, 'ৌ');
-            str = str.replace(/ো/g, 'ো');
-            
-            return str;
         }
     </script>
 </body>
