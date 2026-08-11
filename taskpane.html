@@ -119,7 +119,8 @@
                 throw new Error("API Key is missing! Please enter and save your Gemini API Key first.");
             }
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            // আপডেট: gemini-2.0-flash এর বদলে স্ট্যাবল gemini-1.5-flash ব্যবহার করা হলো
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
             
             const payload = {
                 contents: [{
