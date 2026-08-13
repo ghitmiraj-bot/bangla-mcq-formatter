@@ -98,18 +98,20 @@
                 let line = lines[i].trim();
                 if (!line) continue;
 
-                let expMatch = line.match(/^\s*(?:ব্যাখ্যা|Explanation)\s*[:：\-\u2013\u2014]\s*(.+)$/i);
+                // ইউনিকোড ও বিজয় উভয়ের জন্যই ব্যাখ্যা/e¨vL¨v ম্যাচ করানো
+                let expMatch = line.match(/^\s*(?:ব্যাখ্যা|Explanation|e¨vL¨v)\s*[:：\-\u2013\u2014]\s*(.+)$/i);
                 if (expMatch && current) {
                     current.explanation = expMatch[1].trim();
                     continue;
                 }
-                if (/^\s*ব্যাখ্যা\s*[:：\-\u2013\u2014]/.test(line) && current) {
-                    let parts = line.split(/ব্যাখ্যা\s*[:：\-\u2013\u2014]/);
+                if (/^\s*(?:ব্যাখ্যা|e¨vL¨v)\s*[:：\-\u2013\u2014]/.test(line) && current) {
+                    let parts = line.split(/(?:ব্যাখ্যা|e¨vL¨v)\s*[:：\-\u2013\u2014]/);
                     if (parts.length > 1) current.explanation = parts[1].trim();
                     continue;
                 }
 
-                let ansMatch = line.match(/^\s*(?:সঠিক উত্তর|উত্তর|Ans|Answer)\s*[:：]?\s*(.*)$/i);
+                // ইউনিকোড ও বিজয় উভয়ের জন্যই সঠিক উত্তর/mwVK DËi ম্যাচ করানো
+                let ansMatch = line.match(/^\s*(?:সঠিক উত্তর|উত্তর|Ans|Answer|mwVK DËi|DËi)\s*[:：]?\s*(.*)$/i);
                 if (ansMatch && current) {
                     let ansExtr = ansMatch[1].match(/[\(\[]?([ক-ঘA-DK-Na-dk-n])[\)\]]?/);
                     if (ansExtr) {
@@ -119,6 +121,7 @@
                     continue;
                 }
 
+                // প্রশ্ন নম্বর ম্যাচ করানো (বিজয় ও ইউনিকোড উভয়ের জন্যই)
                 if (isQuestionLine(line)) {
                     flush();
                     let qMatch = line.match(/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.*)$/);
@@ -129,7 +132,8 @@
 
                 if (!current) continue;
 
-                let optMatch1 = line.match(/^\s*\(([কখঘগ])\)\s*(.+?)$/);
+                // অপশন ম্যাচ করানো
+                let optMatch1 = line.match(/^\s*\(([কখঘগK-N])\)\s*(.+?)$/);
                 if (optMatch1) {
                     current.options.push([normalizeAnswerLabel(optMatch1[1]), optMatch1[2].trim()]);
                     continue;
@@ -140,8 +144,8 @@
                     continue;
                 }
 
-                if (line.includes("ব্যাখ্যা") && current) {
-                    let parts = line.split(/ব্যাখ্যা\s*[:：\-\u2013\u2014]/);
+                if ((line.includes("ব্যাখ্যা") || line.includes("e¨vL¨v")) && current) {
+                    let parts = line.split(/(?:ব্যাখ্যা|e¨vL¨v)\s*[:：\-\u2013\u2014]/);
                     if (parts.length > 1) {
                         if (!current.explanation) current.explanation = parts[1].trim();
                         if (current.options.length > 0) {
@@ -225,6 +229,10 @@
                         return;
                     }
 
+                    // === স্বয়ংক্রিয় ফন্ট ডিটেকশন (Auto-detect Font Type) ===
+                    let isUnicode = /[\u0980-\u09FF]/.test(text);
+                    let targetFont = isUnicode ? "Kalpurush" : "SutonnyMJ";
+
                     let questions = parseQuestions(text);
                     if (questions.length === 0) {
                         showStatus("No valid questions found in selection!", true);
@@ -241,8 +249,11 @@
                         let q = questions[i];
                         let safeQuestion = q.question.replace(/[\r\n\v]/g, "").trim();
                         
-                        let qPara = anchorRange.insertParagraph(`${toBanglaNumber(i + 1)}. ${safeQuestion}`, "Before");
-                        qPara.font.name = "Kalpurush";
+                        // ফন্ট অনুযায়ী নম্বর বসানো (ইউনিকোডে ০-৯, বিজয়ে 0-9)
+                        let qNum = isUnicode ? toBanglaNumber(i + 1) : (i + 1);
+                        
+                        let qPara = anchorRange.insertParagraph(`${qNum}. ${safeQuestion}`, "Before");
+                        qPara.font.name = targetFont;
                         qPara.font.size = 10.5;
                         qPara.alignment = "Justified";
 
@@ -257,7 +268,7 @@
                             optPara.font.size = 9;
 
                             let textRange = optPara.insertText(` ${textVal}`, "End");
-                            textRange.font.name = "Kalpurush";
+                            textRange.font.name = targetFont;
                             textRange.font.size = 10.5;
 
                             if (type === "normal" && j === 3 && q.answer) {
@@ -271,8 +282,10 @@
 
                         if (type === "normal" && q.explanation) {
                             let safeExp = q.explanation.replace(/[\r\n\v]/g, "").trim();
-                            let expPara = anchorRange.insertParagraph(`ব্যাখ্যা: ${safeExp}`, "Before");
-                            expPara.font.name = "Kalpurush";
+                            // ফন্ট অনুযায়ী ব্যাখ্যার লেবেল সেট করা
+                            let expLabel = isUnicode ? "ব্যাখ্যা: " : "e¨vL¨v: ";
+                            let expPara = anchorRange.insertParagraph(`${expLabel}${safeExp}`, "Before");
+                            expPara.font.name = targetFont;
                             expPara.font.size = 10.5;
                         }
                     }
@@ -280,15 +293,21 @@
                     if (type === "smart") {
                         anchorRange.insertBreak("Page", "Before");
                         
-                        let ansHeaderPara = anchorRange.insertParagraph("সঠিক উত্তর ও ব্যাখ্যা", "Before");
-                        ansHeaderPara.font.name = "Kalpurush";
+                        // ফন্ট অনুযায়ী স্মার্ট এমসিকিউ এর হেডার সেট করা
+                        let headerText = isUnicode ? "সঠিক উত্তর ও ব্যাখ্যা" : "mwVK DËi I e¨vL¨v";
+                        let ansHeaderPara = anchorRange.insertParagraph(headerText, "Before");
+                        ansHeaderPara.font.name = targetFont;
                         ansHeaderPara.font.size = 12;
                         ansHeaderPara.alignment = "Centered";
                         
                         for (let i = 0; i < questions.length; i++) {
                             let q = questions[i];
-                            let ansPara = anchorRange.insertParagraph(`${toBanglaNumber(i + 1)}. সঠিক উত্তর: `, "Before");
-                            ansPara.font.name = "Kalpurush";
+                            
+                            let qNum = isUnicode ? toBanglaNumber(i + 1) : (i + 1);
+                            let ansLabel = isUnicode ? "সঠিক উত্তর: " : "mwVK DËi: ";
+
+                            let ansPara = anchorRange.insertParagraph(`${qNum}. ${ansLabel}`, "Before");
+                            ansPara.font.name = targetFont;
                             ansPara.font.size = 10.5;
 
                             if (q.answer) {
@@ -300,8 +319,9 @@
 
                             if (q.explanation) {
                                 let safeExp = q.explanation.replace(/[\r\n\v]/g, "").trim();
-                                let expPara = anchorRange.insertParagraph(`ব্যাখ্যা: ${safeExp}`, "Before");
-                                expPara.font.name = "Kalpurush";
+                                let expLabel = isUnicode ? "ব্যাখ্যা: " : "e¨vL¨v: ";
+                                let expPara = anchorRange.insertParagraph(`${expLabel}${safeExp}`, "Before");
+                                expPara.font.name = targetFont;
                                 expPara.font.size = 10.5;
                             }
                         }
@@ -309,7 +329,7 @@
 
                     anchorRange.delete();
                     await context.sync();
-                    showStatus(`Successfully formatted ${questions.length} questions!`);
+                    showStatus(`Successfully formatted ${questions.length} questions in ${isUnicode ? "Unicode" : "Bijoy"}!`);
                 });
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
