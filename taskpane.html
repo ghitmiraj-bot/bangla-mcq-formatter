@@ -23,7 +23,7 @@
     </div>
 
     <div class="flex-1 flex flex-col mb-4 items-center justify-center border-2 border-dashed border-[#1976D2] bg-[#E3F2FD] rounded-lg p-6 text-center">
-        <img src="https://i.postimg.cc/yNRmXmYJ/Bangla-MCQ-Formatter-icon.png" alt="Bangla MCQ Formatter Logo" class="w-28 h-28 object-contain mb-3 rounded-2xl drop-shadow-md">
+        <img src="Bangla_MCQ_Formatter_icon.png" alt="Bangla MCQ Formatter Logo" class="w-28 h-28 object-contain mb-3 rounded-2xl drop-shadow-md">
         <p class="text-sm font-semibold text-[#1976D2] mb-1">Select Text in Word</p>
         <p class="text-xs text-gray-600">Highlight the raw questions in your document, then click a format button below.</p>
     </div>
@@ -37,6 +37,10 @@
         </button>
         <button id="btnFormatQuestions" class="w-full bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm mt-2">
             Number & Bold Questions
+        </button>
+        <!-- New English Font Fixer Button -->
+        <button id="btnFixEnglishFont" class="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm mt-2">
+            A➔a Replace English to Times New Roman
         </button>
         <!-- Converter Buttons -->
         <div class="flex space-x-2 mt-2">
@@ -211,6 +215,7 @@
                 document.getElementById("btnFormatQuestions").onclick = formatQuestionsMacro;
                 document.getElementById("btnUniToBijoy").onclick = () => runSmartConverter("UniToBijoy");
                 document.getElementById("btnBijoyToUni").onclick = () => runSmartConverter("BijoyToUni");
+                document.getElementById("btnFixEnglishFont").onclick = fixEnglishFont;
             }
         });
 
@@ -456,7 +461,7 @@
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
-        // --- Core Conversion Dictionaries (100% Fixed for Juktoborno) ---
+        // --- Core Conversion Dictionaries (Fixed for খন্ডিত, ব্রাহ্মণ) ---
         
         function convertUnicodeToBijoy(text) {
             if (!text) return "";
@@ -474,36 +479,30 @@
             let regexPreKar = new RegExp("([" + cons + "](?:\u09CD[" + cons + "])*(?:©)?)(ি|ে|ৈ)", "g");
             str = str.replace(regexPreKar, "$2$1");
 
-            // --- নতুন লজিক: 'ে'-কারের পজিশন অনুযায়ী নির্দিষ্ট সিম্বল বসানো ---
-            // শব্দের শুরুতে বা স্পেস/ব্র্যাকেটের ঠিক পরে থাকলে † বসবে
+            // 'ে'-কারের পজিশন অনুযায়ী নির্দিষ্ট সিম্বল বসানো
             str = str.replace(/(^|[\s\(\[\{'"‘“\-])ে/g, "$1†");
-            // শব্দের মধ্যে অর্থাৎ আগে অন্য কোনো বর্ণ থাকলে ‡ হবে
             str = str.replace(/ে/g, "‡");
-            // -----------------------------------------------------------
 
-            // ১০০% নিখুঁত যুক্তবর্ণের বিশাল ডিকশনারি (আপনার দেওয়া কোড অনুযায়ী)
             const u2bJukta = {
                 'ক্ক':'°', 'ক্ট':'±', 'ক্ত':'³', 'ক্ব':'K¡', 'ক্স':'·', 'ক্ষ':'¶', 'জ্ঞ':'Á',
-                'ঙ্গ':'½', 'ঙ্ক':'¼', 'ট্ট':'Æ', 'ড্ড':'Ç', 'ণ্ট':'È', 'ণ্ঠ':'É', 'ণ্ড':'Ð',
+                'ঙ্গ':'½', 'ঙ্ক':'¼', 'ট্ট':'Æ', 'ড্ড':'Ç', 'ণ্ট':'È', 'ণ্ঠ':'É', 'ণ্ড':'Û', 'ন্ড':'Û', // Fixed: 'ণ্ড' and 'ন্ড' both map to 'Û'
                 'ত্ত':'Ë', 'ত্থ':'Ì', 'ত্র':'Î', 'দ্দ':'Ï', 'দ্ধ':'×', 'দ্ব':'Ø', 'দ্ম':'Ù',
                 'ন্দ':'›`', 'ন্ধ':'Ü', 'ন্ন':'bœ', 'ন্ব':'b¦', 'ন্ম':'b¥', 'ম্প':'¤ú', 'ম্ব':'¤^', 'ম্ম':'¤§',
                 'স্ট':'÷', 'ষ্ট':'ó', 'ষ্ঠ':'ô', 'ষ্ণ':'ò', 'ষ্প':'®ú', 'ষ্ফ':'®ù', 'ষ্ম':'®§',
                 'স্ক':'¯‹', 'স্খ':'¯Œ', 'স্থ':'¯’', 'স্ন':'mœ', 'স্প':'¯ú', 'স্ফ':'ù', 'স্ম':'¯§', 'স্ব':'¯^', 'স্ত':'¯Í',
-                'হ্ম':'¿', 'হু':'û', 'হৃ':'ü', 'হ্ন':'ý', 'হ্ব':'nŸ', 'প্ত':'ß', 'ব্দ':'ã', 'ব্ধ':'ä',
+                'হ্ম':'þ', 'হু':'û', 'হৃ':'ü', 'হ্ন':'ý', 'হ্ব':'nŸ', 'প্ত':'ß', 'ব্দ':'ã', 'ব্ধ':'ä', // Fixed: 'হ্ম' mapped to 'þ'
                 'শ্র':'kÖ', 'ক্র':'µ', 'গ্র':'MÖ', 'প্র':'cÖ', 'ড্র':'W«', 'ট্র':'U«', 'ফ্র':'d«', 'ব্র':'eª',
                 'ব্ল':'eø', 'ক্ল':'K¬', 'গ্ল':'Mø', 'প্ল':'cø', 'ফ্ল':'d¬',
                 'ঞ্চ':'Â', 'ঞ্ছ':'Ã', 'ঞ্জ':'Ä',
                 'রু':'iæ', 'রূ':'i~', 'শু':'ï', 'গু':'¸', 'ন্তু':'š‘', 'স্তু':'¯‘',
-                'চ্চ':'”', 'চ্ছ':'•', 'জ্জ':'¾', 'ঝ্ঝ':'S&S', 'দ্ঘ':'`&N', 'ন্ত':'šÍ', 'ন্থ':'š’',
+                'চ্চ':'”P', 'চ্ছ':'”Q', 'জ্জ':'¾', 'ঝ্ঝ':'S&S', 'দ্ঘ':'`&N', 'ন্ত':'šÍ', 'ন্থ':'š’', 
                 'ল্ক':'j&K', 'ল্গ':'j&M', 'ল্ট':'j&U', 'ল্ড':'j&W', 'ল্প':'í', 'ল্ব':'j&e', 'ল্ম':'j&g', 'ল্ল':'jø',
                 'ধ্ব':'aŸ', 'শ্ব':'k¦', 'ত্ব':'Z¡', 'থ্ব':'_¡', 'ম্ন':'gœ',
-                
-                // --- ছবিতে পাওয়া ভাঙা যুক্তবর্ণগুলোর নতুন ফিক্স ---
                 'দ্য':'`¨', 'ন্ত্র':'š¿', 'ম্প্র':'¤cÖ', 'স্থ্য':'¯’¨', 'ষ্ট্র':'ó«', 
                 'শ্ন':'kœ', 'ব্য':'e¨', 'স্ত্র':'¯¿', 'ন্দ্র':'›`«', 'দ্র':'`«', 
                 'ত্ত্ব':'Ë¡', 'ন্দ্ব':'›Ø', 'প্ন':'cœ', 'ত্য':'Z¨', 'স্ক্র':'¯‹«', 
                 'প্ট':'c&U', 'স্ট্র':'÷«', 'থ্র':'_«', 'ক্ষ্য':'¶¨', 'ক্ষ্ম':'¶g',
-                
+                'গ্ধ':'\xBB', 
                 '্য':'¨', '্র':'«', '্':'&'
             };
             
@@ -538,26 +537,25 @@
 
             const b2uJukta = {
                 '°':'ক্ক', '±':'ক্ট', '³':'ক্ত', 'K¡':'ক্ব', '·':'ক্স', '¶':'ক্ষ', 'Á':'জ্ঞ',
-                '½':'ঙ্গ', '¼':'ঙ্ক', 'Æ':'ট্ট', 'Ç':'ড্ড', 'È':'ণ্ট', 'É':'ণ্ঠ', 'Ð':'ণ্ড',
+                '½':'ঙ্গ', '¼':'ঙ্ক', 'Æ':'ট্ট', 'Ç':'ড্ড', 'È':'ণ্ট', 'É':'ণ্ঠ', 'Û':'ণ্ড', '\xDB':'ণ্ড', 
                 'Ë':'ত্ত', 'Ì':'ত্থ', 'Î':'ত্র', 'Ï':'দ্দ', '×':'দ্ধ', 'Ø':'দ্ব', 'Ù':'দ্ম',
                 '›`':'ন্দ', 'Ü':'ন্ধ', 'bœ':'ন্ন', 'b¦':'ন্ব', 'b¥':'ন্ম', '¤ú':'ম্প', '¤^':'ম্ব', '¤§':'ম্ম',
                 '÷':'স্ট', 'ó':'ষ্ট', 'ô':'ষ্ঠ', 'ò':'ষ্ণ', '®ú':'ষ্প', '®ù':'ষ্ফ', '®§':'ষ্ম',
                 '¯‹':'স্ক', '¯Œ':'স্খ', '¯’':'স্থ', 'mœ':'স্ন', '¯ú':'স্প', 'ù':'স্ফ', '¯§':'স্ম', '¯^':'স্ব', '¯Í':'স্ত',
-                '¿':'হ্ম', 'û':'হু', 'ü':'হৃ', 'ý':'হ্ন', 'nŸ':'হ্ব', 'ß':'প্ত', 'ã':'ব্দ', 'ä':'ব্ধ',
+                'þ':'হ্ম', 'û':'হু', 'ü':'হৃ', 'ý':'হ্ন', 'nŸ':'হ্ব', 'ß':'প্ত', 'ã':'ব্দ', 'ä':'ব্ধ', // Fixed: 'þ' mapped to 'হ্ম'
                 'kÖ':'শ্র', 'µ':'ক্র', 'MÖ':'গ্র', 'cÖ':'প্র', 'W«':'ড্র', 'U«':'ট্র', 'd«':'ফ্র', 'eª':'ব্র',
                 'eø':'ব্ল', 'K¬':'ক্ল', 'Mø':'গ্ল', 'cø':'প্ল', 'd¬':'ফ্ল',
-                'Â':'ঞ্চ', 'Ã':'ঞ্ছ', 'Ä':'ঞ্জ', 'šÍ':'ন্ত', 'š’':'ন্থ',
+                '\xC2':'ঞ্চ', 'Â':'ঞ্চ', '\xC3':'ঞ্ছ', 'Ã':'ঞ্ছ', '\xC4':'ঞ্জ', 'Ä':'ঞ্জ',
                 'iæ':'রু', 'i~':'রূ', 'ï':'শু', '¸':'গু', 'š‘':'ন্তু', '¯‘':'স্তু',
-                '”':'চ্চ', '•':'চ্ছ', '¾':'জ্জ', 'S&S':'ঝ্ঝ', '`&N':'দ্ঘ', 
+                '”P':'চ্চ', '\x94P':'চ্চ', '”Q':'চ্ছ', '\x94Q':'চ্ছ', '”':'চ্', '\x94':'চ্', '•':'চ্ছ', 
+                '¾':'জ্জ', 'S&S':'ঝ্ঝ', '`&N':'দ্ঘ', 
                 'j&K':'ল্ক', 'j&M':'ল্গ', 'j&U':'ল্ট', 'j&W':'ল্ড', 'í':'ল্প', 'j&e':'ল্ব', 'j&g':'ল্ম', 'jø':'ল্ল',
                 'aŸ':'ধ্ব', 'k¦':'শ্ব', 'Z¡':'ত্ব', '_¡':'থ্ব', 'gœ':'ম্ন',
-                
-                // --- ছবিতে পাওয়া ভাঙা যুক্তবর্ণগুলোর নতুন রিভার্স ফিক্স ---
                 '`¨':'দ্য', 'š¿':'ন্ত্র', '¤cÖ':'ম্প্র', '¯’¨':'স্থ্য', 'ó«':'ষ্ট্র', 
                 'kœ':'শ্ন', 'e¨':'ব্য', '¯¿':'স্ত্র', '›`«':'ন্দ্র', '`«':'দ্র', 
                 'Ë¡':'ত্ত্ব', '›Ø':'ন্দ্ব', 'cœ':'প্ন', 'Z¨':'ত্য', '¯‹«':'স্ক্র', 
                 'c&U':'প্ট', '÷«':'স্ট্র', '_«':'থ্র', '¶¨':'ক্ষ্য', '¶g':'ক্ষ্ম',
-                
+                '\xBB':'গ্ধ', '»':'গ্ধ', 
                 '¨':'্য', '«':'্র', '&':'্'
             };
             
@@ -572,7 +570,13 @@
                 'U':'ট', 'V':'ঠ', 'W':'ড', 'X':'ঢ', 'Y':'ণ', 'Z':'ত', '_':'থ', '`':'দ', 'a':'ধ', 'b':'ন',
                 'c':'প', 'd':'ফ', 'e':'ব', 'f':'ভ', 'g':'ম', 'h':'য', 'i':'র', 'j':'ল', 'k':'শ', 'l':'ষ',
                 'm':'স', 'n':'হ', 'o':'ড়', 'p':'ঢ়', 'q':'য়', 'r':'ৎ', 's':'ং', 't':'ঃ', 'u':'ঁ',
-                'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', 'z':'ূ', '…':'ৃ', '†':'ে', '‡':'ে', 'ˆ':'ৈ', 'Š':'ৗ', '|':'।',
+                'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', 'z':'ু', '‚':'ূ', '\x82':'ূ', 
+                '\x85':'ৃ', '…':'ৃ', 
+                '\x86':'ে', '†':'ে', 
+                '\x87':'ে', '‡':'ে', 
+                '\x88':'ৈ', 'ˆ':'ৈ', 
+                '\x8A':'ৗ', 'Š':'ৗ', 
+                '|':'।',
                 '0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'
             };
             
@@ -597,6 +601,82 @@
             str = str.replace(/ো/g, 'ো');
             
             return str;
+        }
+        // ==========================================
+        // ENGLISH FONT FIXER ENGINE (PROTECTED MODE)
+        // ==========================================
+        async function fixEnglishFont() {
+            try {
+                await Word.run(async (context) => {
+                    const selection = context.document.getSelection();
+                    selection.load("text");
+                    await context.sync();
+
+                    const rawText = selection.text;
+                    if (!rawText || !rawText.trim()) {
+                        showStatus("Please select some text first!", true);
+                        return;
+                    }
+
+                    // আল্ট্রা-স্মার্ট রেজেক্স: যেকোনো ইংরেজি অক্ষর, সংখ্যা এবং তার চারপাশের স্পেস, যতিচিহ্ন একসাথে ব্লক আকারে ধরবে।
+                    // এতে করে বাংলা বর্ণগুলো অটোমেটিক বাদ পড়ে যাবে এবং রেজেক্স হ্যাং হবে না।
+                    const chunkRegex = /[ \t\(\)\[\]\{\}\'\"‘“’”\.\,\:\;\!\?\-\/\$\%\+\=\<\>°_@#&\*\\a-zA-Z0-9]+/g;
+                    let matches = rawText.match(chunkRegex);
+                    
+                    if (!matches) {
+                        showStatus("No English text found to replace.", false);
+                        return;
+                    }
+
+                    // শুধু সেই চাংকগুলো ফিল্টার করা হবে যেগুলোতে অন্তত একটি ইংরেজি অক্ষর বা সংখ্যা (0-9) আছে
+                    // এবং Word API-এর লিমিট অনুযায়ী সর্বোচ্চ 255 ক্যারেক্টার রাখা হবে
+                    let uniqueMatches = [...new Set(matches)]
+                                        .filter(m => /[a-zA-Z0-9]/.test(m))
+                                        .map(m => m.length > 255 ? m.substring(0, 255) : m)
+                                        .sort((a, b) => b.length - a.length);
+
+                    for (let i = 0; i < uniqueMatches.length; i++) {
+                        let chunk = uniqueMatches[i];
+                        
+                        // সিলেকশনের ভেতর নির্দিষ্ট ইংরেজি চাংকটি খোঁজা হচ্ছে
+                        let searchResults = selection.search(chunk, { matchCase: true });
+                        searchResults.load("items/font/name");
+                        await context.sync();
+
+                        for (let j = 0; j < searchResults.items.length; j++) {
+                            let item = searchResults.items[j];
+                            let fontName = item.font.name;
+
+                            // প্রোটেকশন লজিক: MCQ ফন্টগুলোকে রক্ষা করা
+                            if (fontName === "BanglaOMR" || fontName === "ProshnaP") {
+                                // এটি পুরোপুরি OMR বা ProshnaP ফন্ট, তাই কোনো পরিবর্তন হবে না (সুরক্ষিত)
+                                continue;
+                            } else if (fontName) {
+                                // এটি মিক্সড নয় এমন সাধারণ ফন্ট (যেমন: Kalpurush), তাই সরাসরি TNR করে দেওয়া যায়
+                                item.font.name = "Times New Roman";
+                            } else {
+                                // ফন্টের নাম null মানে হলো এর ভেতর MCQ ফন্ট এবং সাধারণ ফন্ট একসাথে মিক্স হয়ে আছে!
+                                // তাই আমরা এটিকে ক্যারেক্টার বাই ক্যারেক্টার চেক করে শুধু MCQ ফন্ট বাদে বাকিগুলোকে TNR করবো।
+                                let chars = item.search("?", { matchWildcards: true });
+                                chars.load("items/font/name");
+                                await context.sync();
+                                
+                                for (let k = 0; k < chars.items.length; k++) {
+                                    let charFont = chars.items[k].font.name;
+                                    if (charFont !== "BanglaOMR" && charFont !== "ProshnaP") {
+                                        chars.items[k].font.name = "Times New Roman";
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    await context.sync();
+                    showStatus("English text replaced (MCQ Fonts Protected)!");
+                });
+            } catch (error) { 
+                showStatus("Error: " + (error.message || "Unknown"), true); 
+            }
         }
     </script>
 </body>
