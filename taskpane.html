@@ -100,7 +100,32 @@
                 let line = lines[i].trim();
                 if (!line) continue;
 
-                // ইউনিকোড ও বিজয় উভয়ের জন্যই ব্যাখ্যা/e¨vL¨v ম্যাচ করানো
+                // যদি কোনো লাইনে প্রশ্ন এবং অপশনগুলো একসাথে এক লাইনেই থাকে, সেটিকে হ্যান্ডেল করা
+                // যেমন: "১. প্রশ্ন... ক) অপশন খ) অপশন গ) অপশন ঘ) অপশন"
+                let inlineMatch = line.match(/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.+?)\s+([কখঘগA-DK-Na-dk-n][\.\)।:]?\s*.+?)\s+([কখঘগA-DK-Na-dk-n][\.\)।:]?\s*.+?)\s+([কখঘগA-DK-Na-dk-n][\.\)।:]?\s*.+?)\s+([কখঘগA-DK-Na-dk-n][\.\)।:]?\s*.+)$/i);
+                
+                if (inlineMatch) {
+                    flush();
+                    current = { 
+                        question: inlineMatch[1].trim(), 
+                        options: [], 
+                        answer: null, 
+                        explanation: null, 
+                        original_answer: null 
+                    };
+                    
+                    // ৪টি অপশন আলাদা করা
+                    for (let optIdx = 2; optIdx <= 5; optIdx++) {
+                        let optPart = inlineMatch[optIdx];
+                        let subOpt = optPart.match(/^([কখঘগA-DKLMNa-dklmn])[\.\)।:]?\s*(.+)$/);
+                        if (subOpt) {
+                            current.options.push([normalizeAnswerLabel(subOpt[1]), subOpt[2].trim()]);
+                        }
+                    }
+                    continue;
+                }
+
+                // ইউনিকোড ও বিজয় উভয়ের জন্যই ব্যাখ্যা ম্যাচ করানো
                 let expMatch = line.match(/^\s*(?:ব্যাখ্যা|Explanation|e¨vL¨v)\s*[:：\-\u2013\u2014]\s*(.+)$/i);
                 if (expMatch && current) {
                     current.explanation = expMatch[1].trim();
@@ -112,7 +137,7 @@
                     continue;
                 }
 
-                // ইউনিকোড ও বিজয় উভয়ের জন্যই সঠিক উত্তর/mwVK DËi ম্যাচ করানো
+                // সঠিক উত্তর ম্যাচ করানো
                 let ansMatch = line.match(/^\s*(?:সঠিক উত্তর|উত্তর|Ans|Answer|mwVK DËi|DËi)\s*[:：]?\s*(.*)$/i);
                 if (ansMatch && current) {
                     let ansExtr = ansMatch[1].match(/[\(\[]?([ক-ঘA-DK-Na-dk-n])[\)\]]?/);
@@ -123,7 +148,7 @@
                     continue;
                 }
 
-                // প্রশ্ন নম্বর ম্যাচ করানো (বিজয় ও ইউনিকোড উভয়ের জন্যই)
+                // প্রশ্ন নম্বর ম্যাচ করানো
                 if (isQuestionLine(line)) {
                     flush();
                     let qMatch = line.match(/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.*)$/);
@@ -134,7 +159,7 @@
 
                 if (!current) continue;
 
-                // অপশন ম্যাচ করানো
+                // সাধারণ আলাদা লাইনের অপশন ম্যাচ করানো
                 let optMatch1 = line.match(/^\s*\(([কখঘগK-N])\)\s*(.+?)$/);
                 if (optMatch1) {
                     current.options.push([normalizeAnswerLabel(optMatch1[1]), optMatch1[2].trim()]);
