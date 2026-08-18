@@ -85,7 +85,9 @@
         }
 
         function parseQuestions(text) {
-            let lines = text.split(/[\r\n\v]+/);
+            // যদি পুরো টেক্সটটি এক লাইনে বা একই প্যারাগ্রাফে থাকে, তবে সেটিকে প্রশ্ন অনুযায়ী আলাদা করার জন্য প্রি-প্রসেসিং
+            let cleanText = text.replace(/([\r\n\v]+)/g, "\n");
+            let lines = cleanText.split('\n');
             let questions = [];
             let current = null;
 
@@ -100,40 +102,10 @@
                 let line = lines[i].trim();
                 if (!line) continue;
 
-                // যদি কোনো লাইনে প্রশ্ন এবং অপশনগুলো একসাথে এক লাইনেই থাকে, সেটিকে হ্যান্ডেল করা
-                // যেমন: "১. প্রশ্ন... ক) অপশন খ) অপশন গ) অপশন ঘ) অপশন"
-                let inlineMatch = line.match(/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.+?)\s+([কখঘগA-DK-Na-dk-n][\.\)।:]?\s*.+?)\s+([কখঘগA-DK-Na-dk-n][\.\)।:]?\s*.+?)\s+([কখঘগA-DK-Na-dk-n][\.\)।:]?\s*.+?)\s+([কখঘগA-DK-Na-dk-n][\.\)।:]?\s*.+)$/i);
-                
-                if (inlineMatch) {
-                    flush();
-                    current = { 
-                        question: inlineMatch[1].trim(), 
-                        options: [], 
-                        answer: null, 
-                        explanation: null, 
-                        original_answer: null 
-                    };
-                    
-                    // ৪টি অপশন আলাদা করা
-                    for (let optIdx = 2; optIdx <= 5; optIdx++) {
-                        let optPart = inlineMatch[optIdx];
-                        let subOpt = optPart.match(/^([কখঘগA-DKLMNa-dklmn])[\.\)।:]?\s*(.+)$/);
-                        if (subOpt) {
-                            current.options.push([normalizeAnswerLabel(subOpt[1]), subOpt[2].trim()]);
-                        }
-                    }
-                    continue;
-                }
-
-                // ইউনিকোড ও বিজয় উভয়ের জন্যই ব্যাখ্যা ম্যাচ করানো
+                // ব্যাখ্যা বা e¨vL¨v ম্যাচ করানো
                 let expMatch = line.match(/^\s*(?:ব্যাখ্যা|Explanation|e¨vL¨v)\s*[:：\-\u2013\u2014]\s*(.+)$/i);
                 if (expMatch && current) {
                     current.explanation = expMatch[1].trim();
-                    continue;
-                }
-                if (/^\s*(?:ব্যাখ্যা|e¨vL¨v)\s*[:：\-\u2013\u2014]/.test(line) && current) {
-                    let parts = line.split(/(?:ব্যাখ্যা|e¨vL¨v)\s*[:：\-\u2013\u2014]/);
-                    if (parts.length > 1) current.explanation = parts[1].trim();
                     continue;
                 }
 
@@ -148,16 +120,47 @@
                     continue;
                 }
 
-                // প্রশ্ন নম্বর ম্যাচ করানো
+                // নতুন প্রশ্ন শুরু হয়েছে কিনা চেক করা
                 if (isQuestionLine(line)) {
                     flush();
                     let qMatch = line.match(/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.*)$/);
-                    let qText = qMatch ? qMatch[1].trim() : line;
-                    current = { question: qText, options: [], answer: null, explanation: null, original_answer: null };
+                    let qText = qMatch ? qMatch[1] : line;
+
+                    // যদি একই লাইনেই প্রশ্ন এবং অপশনগুলো (ক, খ, গ, ঘ) একসাথে থেকে থাকে
+                    let inlineOptsCheck = qText.match(/(.*?)\s+([কখঘগA-DK-Na-dk-n])[\.\)।:]\s*(.+?)(?=\s+[কখঘগA-DK-Na-dk-n][\.\)।:]|$)/g);
+                    
+                    if (inlineOptsCheck && inlineOptsCheck.length >= 2) {
+                        // অর্থাৎ একই লাইনে প্রশ্ন ও অপশন দুটোই আছে
+                        let qOnlyMatch = qText.match(/^(.*?)(?=\s+[কখঘগA-DK-Na-dk-n][\.\)।:])/);
+                        let realQText = qOnlyMatch ? qOnlyMatch[1].trim() : qText;
+                        
+                        current = { question: realQText, options: [], answer: null, explanation: null, original_answer: null };
+
+                        // এই এক লাইনের ভেতর থেকে সবগুলো অপশন খুঁজে বের করা
+                        let optRegex = /([কখঘগA-DK-Na-dk-n])[\.\)।:]\s*([^\s]+(?:\s+[^\s]+)*?)(?=\s+[কখঘগA-DK-Na-dk-n][\.\)।:]|$)/g;
+                        let matchOpt;
+                        while ((matchOpt = optRegex.exec(qText)) !== null) {
+                            current.options.push([normalizeAnswerLabel(matchOpt[1]), matchOpt[2].trim()]);
+                        }
+                    } else {
+                        current = { question: qText.trim(), options: [], answer: null, explanation: null, original_answer: null };
+                    }
                     continue;
                 }
 
                 if (!current) continue;
+
+                // যদি অপশনগুলো একই লাইনে পাশাপাশি থাকে (যেমন: ক) অপশন খ) অপশন গ) অপশন ঘ) অপশন)
+                let multiOptMatch = line.match(/([কখঘগA-DK-Na-dk-n])[\.\)।:]\s*(.+?)(?=\s+[কখঘগA-DK-Na-dk-n][\.\)।:]|$)/g);
+                if (multiOptMatch && multiOptMatch.length >= 2) {
+                    for (let mOpt of multiOptMatch) {
+                        let subMatch = mOpt.match(/([কখঘগA-DK-Na-dk-n])[\.\)।:]\s*(.+)/);
+                        if (subMatch) {
+                            current.options.push([normalizeAnswerLabel(subMatch[1]), subMatch[2].trim()]);
+                        }
+                    }
+                    continue;
+                }
 
                 // সাধারণ আলাদা লাইনের অপশন ম্যাচ করানো
                 let optMatch1 = line.match(/^\s*\(([কখঘগK-N])\)\s*(.+?)$/);
@@ -168,17 +171,6 @@
                 let optMatch2 = line.match(/^\s*\(?([কখঘগA-DKLMNa-dklmn])\)?\s*[\.।:]?\s*(.+?)\s*$/);
                 if (optMatch2) {
                     current.options.push([normalizeAnswerLabel(optMatch2[1]), optMatch2[2].trim()]);
-                    continue;
-                }
-
-                if ((line.includes("ব্যাখ্যা") || line.includes("e¨vL¨v")) && current) {
-                    let parts = line.split(/(?:ব্যাখ্যা|e¨vL¨v)\s*[:：\-\u2013\u2014]/);
-                    if (parts.length > 1) {
-                        if (!current.explanation) current.explanation = parts[1].trim();
-                        if (current.options.length > 0) {
-                            current.options[current.options.length - 1][1] += " " + parts[0].trim();
-                        }
-                    }
                     continue;
                 }
 
