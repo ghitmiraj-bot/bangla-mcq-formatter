@@ -3,59 +3,281 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bangla MCQ Formatter</title>
+    <title>Bangla MCQ Formatter Pro</title>
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        #toast { transition: all 0.4s ease-in-out; transform: translateY(100%); opacity: 0; }
+        #toast.show { transform: translateY(0); opacity: 1; }
+        input[list]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; }
     </style>
 </head>
-<body class="bg-[#F4F6F9] text-gray-800 h-screen flex flex-col p-4">
+<body class="text-gray-800 h-screen flex flex-col">
 
-    <div class="bg-white p-4 rounded shadow-sm border border-gray-200 mb-4">
-        <h1 class="text-lg font-bold text-[#1976D2] mb-1">Bangla MCQ Formatter</h1>
-        <p class="text-xs text-gray-500 mb-4">Format directly from your selection</p>
-        
-        <label class="flex items-center space-x-2 cursor-pointer mb-2">
-            <input type="checkbox" id="shuffleCheck" class="form-checkbox h-4 w-4 text-[#1976D2] rounded border-gray-300" checked>
-            <span class="text-sm font-medium text-gray-700">Randomize Options</span>
-        </label>
+    <!-- Reusable Datalists for Font Inputs -->
+    <datalist id="font-list">
+        <option value="Times New Roman"></option>
+        <option value="Arial"></option>
+        <option value="Calibri"></option>
+        <option value="BanglaOMR"></option>
+        <option value="ProshnaP"></option>
+        <option value="SutonnyMJ"></option>
+        <option value="Kalpurush"></option>
+        <option value="SolaimanLipi"></option>
+        <option value="Siyam Rupali"></option>
+        <option value="Vrinda"></option>
+    </datalist>
+
+    <datalist id="size-list">
+        <option value="8"></option><option value="9"></option><option value="10"></option>
+        <option value="10.5"></option><option value="11"></option><option value="12"></option>
+        <option value="13"></option><option value="14"></option><option value="16"></option>
+    </datalist>
+
+    <!-- Header Section -->
+    <div class="bg-white px-5 py-4 shadow-sm border-b border-gray-200 flex items-center justify-between z-10">
+        <div>
+            <h1 class="text-xl font-extrabold text-blue-700 tracking-tight">MCQ Formatter <span class="text-sm font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded ml-1">PRO</span></h1>
+            <p class="text-xs text-gray-500 mt-0.5">Publication-grade MS Word Add-in</p>
+        </div>
+        <img src="https://ghitmiraj-bot.github.io/bangla-mcq-formatter/Bangla_MCQ_Formatter_icon.png" alt="Logo" class="w-10 h-10 rounded shadow-sm object-cover" onerror="this.style.display='none'">
     </div>
 
-    <div class="flex-1 flex flex-col mb-4 items-center justify-center border-2 border-dashed border-[#1976D2] bg-[#E3F2FD] rounded-lg p-6 text-center">
-        <img src="https://i.postimg.cc/nrCC8RnH/Bangla-MCQ-Formatter-icon.png" alt="Bangla MCQ Formatter Logo" class="w-40 h-40 object-contain mb-3 rounded-2xl drop-shadow-md">
-        <p class="text-sm font-semibold text-[#1976D2] mb-1">Select Text in Word</p>
-        <p class="text-xs text-gray-600">Highlight the raw questions in your document, then click a format button below.</p>
+    <!-- Navigation Tabs -->
+    <div class="flex border-b border-gray-200 bg-gray-50 px-2 pt-2">
+        <button onclick="switchTab('formatting')" id="tab-formatting" class="tab-btn flex-1 py-2 text-sm font-semibold text-blue-700 border-b-2 border-blue-700 transition-colors"><i class="fas fa-list-ol mr-1"></i> Formatter</button>
+        <button onclick="switchTab('converter')" id="tab-converter" class="tab-btn flex-1 py-2 text-sm font-semibold text-gray-500 border-b-2 border-transparent hover:text-blue-600 transition-colors"><i class="fas fa-exchange-alt mr-1"></i> Converter</button>
+        <button onclick="switchTab('fonts')" id="tab-fonts" class="tab-btn flex-1 py-2 text-sm font-semibold text-gray-500 border-b-2 border-transparent hover:text-blue-600 transition-colors"><i class="fas fa-font mr-1"></i> Fonts</button>
     </div>
 
-    <div class="flex flex-col space-y-2 mb-2">
-        <button id="btnNormal" class="w-full bg-[#1976D2] hover:bg-[#1565C0] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm">
-            Format Selected (Normal MCQ)
-        </button>
-        <button id="btnSmart" class="w-full bg-[#10B981] hover:bg-[#059669] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm">
-            Format Selected (Smart MCQ)
-        </button>
-        <button id="btnFormatQuestions" class="w-full bg-[#F59E0B] hover:bg-[#D97706] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm mt-2">
-            Number & Bold Questions
-        </button>
-        <!-- New English Font Fixer Button -->
-        <button id="btnFixEnglishFont" class="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white font-semibold py-2.5 px-4 rounded transition-colors text-sm shadow-sm mt-2">
-            A➔a Replace English to Times New Roman
-        </button>
-        <!-- Converter Buttons -->
-        <div class="flex space-x-2 mt-2">
-            <button id="btnUniToBijoy" class="w-1/2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-semibold py-2 px-2 rounded transition-colors text-xs shadow-sm">
-                Unicode ➔ Bijoy
-            </button>
-            <button id="btnBijoyToUni" class="w-1/2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold py-2 px-2 rounded transition-colors text-xs shadow-sm">
-                Bijoy ➔ Unicode
-            </button>
+    <!-- Main Content Area -->
+    <div class="flex-1 overflow-y-auto p-4 relative">
+        <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4 flex items-start shadow-sm">
+            <i class="fas fa-info-circle text-blue-500 mt-0.5 mr-2"></i>
+            <p class="text-xs text-gray-600">Select text in your document first, then click the desired action below to process.</p>
+        </div>
+
+        <!-- TAB 1: FORMATTING -->
+        <div id="formatting" class="tab-content active space-y-3">
+            <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100 mb-2">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" id="shuffleCheck" class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 transition" checked>
+                    <span class="text-sm font-medium text-gray-700">Shuffle Options (Randomize)</span>
+                </label>
+            </div>
+
+            <!-- Normal MCQ -->
+            <div>
+                <div class="flex space-x-2">
+                    <button id="btnNormal" class="w-full relative group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-md flex items-center justify-center">
+                        <i class="fas fa-align-left mr-2"></i> Format as Normal MCQ
+                    </button>
+                    <button onclick="toggleSettings('set-normal')" class="bg-gray-200 text-gray-600 px-4 rounded-lg shadow hover:bg-gray-300 transition"><i class="fas fa-cog"></i></button>
+                </div>
+                <div id="set-normal" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 space-y-2 text-sm">
+                    <div><label class="text-gray-600 text-xs font-semibold">Options Font Name</label>
+                        <input type="text" list="font-list" id="norm-opt-font" placeholder="Leave empty for BanglaOMR" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-blue-400 outline-none">
+                    </div>
+                    <div class="flex space-x-2">
+                        <div class="w-1/2"><label class="text-gray-600 text-xs font-semibold">Opt Font Size</label>
+                            <input type="text" list="size-list" id="norm-opt-size" placeholder="Default: 9" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-blue-400 outline-none">
+                        </div>
+                        <div class="w-1/2"><label class="text-gray-600 text-xs font-semibold">Ans Font Size</label>
+                            <input type="text" list="size-list" id="norm-ans-size" placeholder="Default: 10" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-blue-400 outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Smart MCQ -->
+            <div>
+                <div class="flex space-x-2">
+                    <button id="btnSmart" class="w-full relative group bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-md flex items-center justify-center">
+                        <i class="fas fa-file-alt mr-2"></i> Format as Smart MCQ
+                    </button>
+                    <button onclick="toggleSettings('set-smart')" class="bg-gray-200 text-gray-600 px-4 rounded-lg shadow hover:bg-gray-300 transition"><i class="fas fa-cog"></i></button>
+                </div>
+                <div id="set-smart" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 text-sm">
+                    <label class="text-gray-600 text-xs font-semibold">Answer Font Size</label>
+                    <input type="text" list="size-list" id="smart-ans-size" placeholder="Default: 10" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-blue-400 outline-none">
+                </div>
+            </div>
+
+            <!-- Number & Bold -->
+            <div>
+                <div class="flex space-x-2">
+                    <button id="btnFormatQuestions" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-md flex items-center justify-center mt-2">
+                        <i class="fas fa-list-ul mr-2"></i> Number & Bold Questions
+                    </button>
+                    <button onclick="toggleSettings('set-number')" class="bg-gray-200 text-gray-600 px-4 mt-2 rounded-lg shadow hover:bg-gray-300 transition"><i class="fas fa-cog"></i></button>
+                </div>
+                <div id="set-number" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 text-sm">
+                    <label class="text-gray-600 text-xs font-semibold">Numbering Style</label>
+                    <select id="num-style" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-amber-400 outline-none">
+                        <option value="auto-arabic">1. 2. 3. (MS Word Auto List)</option>
+                        <option value="auto-alpha">a. b. c. (MS Word Auto List)</option>
+                        <option value="auto-roman">i. ii. iii. (MS Word Auto List)</option>
+                        <option value="bn-num">১. ২. ৩. (Bangla Text Numbering)</option>
+                        <option value="bn-alpha">ক. খ. গ. (Bangla Text Numbering)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: CONVERTER -->
+        <div id="converter" class="tab-content space-y-3">
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 text-center mb-2">
+                <i class="fas fa-language text-3xl text-indigo-500 mb-2"></i>
+                <h3 class="text-sm font-bold text-gray-700">Smart Bijoy ↔ Unicode</h3>
+                <p class="text-xs text-gray-500 mt-1">Safely converts text. Leave inputs empty to keep original formatting.</p>
+            </div>
+
+            <!-- Unicode to Bijoy -->
+            <div>
+                <div class="flex space-x-2">
+                    <button id="btnUniToBijoy" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all flex items-center justify-center">
+                        Unicode <i class="fas fa-arrow-right mx-3"></i> Bijoy
+                    </button>
+                    <button onclick="toggleSettings('set-u2b')" class="bg-gray-200 text-gray-600 px-4 rounded-lg shadow hover:bg-gray-300 transition"><i class="fas fa-cog"></i></button>
+                </div>
+                <div id="set-u2b" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 space-y-2 text-sm">
+                    <div class="flex space-x-2">
+                        <div class="w-2/3"><label class="text-gray-600 text-xs font-semibold">Target Font Name</label>
+                            <input type="text" list="font-list" id="u2b-font" placeholder="Leave empty for SutonnyMJ" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-indigo-400 outline-none">
+                        </div>
+                        <div class="w-1/3"><label class="text-gray-600 text-xs font-semibold">Font Size</label>
+                            <input type="text" list="size-list" id="u2b-size" placeholder="Keep Original" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-indigo-400 outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bijoy to Unicode -->
+            <div>
+                <div class="flex space-x-2">
+                    <button id="btnBijoyToUni" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all flex items-center justify-center">
+                        Bijoy <i class="fas fa-arrow-right mx-3"></i> Unicode
+                    </button>
+                    <button onclick="toggleSettings('set-b2u')" class="bg-gray-200 text-gray-600 px-4 rounded-lg shadow hover:bg-gray-300 transition"><i class="fas fa-cog"></i></button>
+                </div>
+                <div id="set-b2u" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 space-y-2 text-sm">
+                    <div class="flex space-x-2">
+                        <div class="w-2/3"><label class="text-gray-600 text-xs font-semibold">Target Font Name</label>
+                            <input type="text" list="font-list" id="b2u-font" placeholder="Leave empty for Kalpurush" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-purple-400 outline-none">
+                        </div>
+                        <div class="w-1/3"><label class="text-gray-600 text-xs font-semibold">Font Size</label>
+                            <input type="text" list="size-list" id="b2u-size" placeholder="Keep Original" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-purple-400 outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: FONTS -->
+        <div id="fonts" class="tab-content space-y-3">
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 text-center mb-2">
+                <i class="fas fa-text-height text-3xl text-cyan-500 mb-2"></i>
+                <h3 class="text-sm font-bold text-gray-700">English Font Fixer</h3>
+                <p class="text-xs text-gray-500 mt-1">Changes English letters/numbers safely.</p>
+            </div>
+            <div>
+                <div class="flex space-x-2">
+                    <button id="btnFixEnglishFont" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all flex items-center justify-center">
+                        <i class="fas fa-font mr-2"></i> Fix English Fonts
+                    </button>
+                    <button onclick="toggleSettings('set-fixfont')" class="bg-gray-200 text-gray-600 px-4 rounded-lg shadow hover:bg-gray-300 transition"><i class="fas fa-cog"></i></button>
+                </div>
+                <div id="set-fixfont" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 space-y-2 text-sm">
+                    <div class="flex space-x-2">
+                        <div class="w-2/3"><label class="text-gray-600 text-xs font-semibold">Target Font Name</label>
+                            <input type="text" list="font-list" id="fix-font" placeholder="Default: Times New Roman" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-cyan-400 outline-none">
+                        </div>
+                        <div class="w-1/3"><label class="text-gray-600 text-xs font-semibold">Font Size</label>
+                            <input type="text" list="size-list" id="fix-size" placeholder="Keep Original" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-cyan-400 outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Animated Toast Notification -->
+    <div id="toast" class="fixed bottom-4 left-4 right-4 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center justify-between z-50 pointer-events-none">
+        <div class="flex items-center">
+            <i id="toastIcon" class="fas fa-check-circle text-green-400 mr-2 text-lg"></i>
+            <span id="toastMsg" class="text-sm font-medium">Task completed!</span>
         </div>
     </div>
-    
-    <div id="statusMsg" class="text-sm font-medium text-center hidden py-2 rounded"></div>
 
     <script>
+        // ==========================================
+        // UI & INTERFACE LOGIC
+        // ==========================================
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('text-blue-700', 'border-blue-700');
+                b.classList.add('text-gray-500', 'border-transparent');
+            });
+            document.getElementById(tabId).classList.add('active');
+            let activeBtn = document.getElementById('tab-' + tabId);
+            activeBtn.classList.remove('text-gray-500', 'border-transparent');
+            activeBtn.classList.add('text-blue-700', 'border-blue-700');
+        }
+
+        function toggleSettings(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('hidden');
+        }
+
+        function showStatus(msg, isError = false) {
+            const toast = document.getElementById("toast");
+            const toastMsg = document.getElementById("toastMsg");
+            const toastIcon = document.getElementById("toastIcon");
+            
+            toastMsg.textContent = msg;
+            if (isError) {
+                toastIcon.className = "fas fa-exclamation-circle text-red-400 mr-2 text-lg";
+                toast.classList.replace("bg-gray-900", "bg-red-900");
+            } else {
+                toastIcon.className = "fas fa-check-circle text-green-400 mr-2 text-lg";
+                toast.classList.replace("bg-red-900", "bg-gray-900");
+            }
+
+            toast.classList.add("show");
+            setTimeout(() => { toast.classList.remove("show"); }, 3500);
+        }
+
+        function setLoading(buttonId, isLoading) {
+            const btn = document.getElementById(buttonId);
+            if (isLoading) {
+                btn.dataset.originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Processing...';
+                btn.disabled = true;
+                btn.classList.add('opacity-80', 'cursor-not-allowed');
+            } else {
+                btn.innerHTML = btn.dataset.originalHtml;
+                btn.disabled = false;
+                btn.classList.remove('opacity-80', 'cursor-not-allowed');
+            }
+        }
+
+        const BENGALI_ALPHABET = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহ";
+        function getSequenceString(index, style) {
+            if (style === "bn-alpha") return BENGALI_ALPHABET[index % BENGALI_ALPHABET.length] + ". ";
+            return toBanglaNumber(index + 1) + ". ";
+        }
+
         // ==========================================
         // PARSING & FORMATTING LOGIC
         // ==========================================
@@ -70,22 +292,13 @@
 
         function normalizeAnswerLabel(label) {
             const ENG_TO_BN = {
-                "A": "ক", "B": "খ", "C": "গ", "D": "ঘ",
-                "a": "ক", "b": "খ", "c": "গ", "d": "ঘ",
-                "K": "ক", "L": "খ", "M": "গ", "N": "ঘ",
-                "k": "ক", "l": "খ", "m": "গ", "n": "ঘ",
+                "A": "ক", "B": "খ", "C": "গ", "D": "ঘ", "a": "ক", "b": "খ", "c": "গ", "d": "ঘ",
+                "K": "ক", "L": "খ", "M": "গ", "N": "ঘ", "k": "ক", "l": "খ", "m": "গ", "n": "ঘ",
             };
             return ENG_TO_BN[label] || label;
         }
 
-        function isQuestionLine(line) {
-            if (/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.*)$/.test(line)) return true;
-            if (/^.+[?؟]\s*$/.test(line)) return true;
-            return false;
-        }
-
         function parseQuestions(text) {
-            // যদি পুরো টেক্সটটি এক লাইনে বা একই প্যারাগ্রাফে থাকে, তবে সেটিকে প্রশ্ন অনুযায়ী আলাদা করার জন্য প্রি-প্রসেসিং
             let cleanText = text.replace(/([\r\n\v]+)/g, "\n");
             let lines = cleanText.split('\n');
             let questions = [];
@@ -102,14 +315,9 @@
                 let line = lines[i].trim();
                 if (!line) continue;
 
-                // ব্যাখ্যা বা e¨vL¨v ম্যাচ করানো
                 let expMatch = line.match(/^\s*(?:ব্যাখ্যা|Explanation|e¨vL¨v)\s*[:：\-\u2013\u2014]\s*(.+)$/i);
-                if (expMatch && current) {
-                    current.explanation = expMatch[1].trim();
-                    continue;
-                }
+                if (expMatch && current) { current.explanation = expMatch[1].trim(); continue; }
 
-                // সঠিক উত্তর ম্যাচ করানো
                 let ansMatch = line.match(/^\s*(?:সঠিক উত্তর|উত্তর|Ans|Answer|mwVK DËi|DËi)\s*[:：]?\s*(.*)$/i);
                 if (ansMatch && current) {
                     let ansExtr = ansMatch[1].match(/[\(\[]?([ক-ঘA-DK-Na-dk-n])[\)\]]?/);
@@ -120,57 +328,42 @@
                     continue;
                 }
 
-                // নতুন প্রশ্ন শুরু হয়েছে কিনা চেক করা
-                if (isQuestionLine(line)) {
+                let qMatch = line.match(/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.*)$/);
+                if (qMatch || /^[^\(]+?\?$/.test(line)) {
                     flush();
-                    let qMatch = line.match(/^\s*(?:\d+|[০-৯]+)\s*[\.\)।]\s*(.*)$/);
-                    let qText = qMatch ? qMatch[1] : line;
-
-                    // যদি একই লাইনেই প্রশ্ন এবং অপশনগুলো (ক, খ, গ, ঘ) একসাথে থেকে থাকে
-                    let inlineOptsCheck = qText.match(/(.*?)\s+([কখঘগA-DK-Na-dk-n])[\.\)।:]\s*(.+?)(?=\s+[কখঘগA-DK-Na-dk-n][\.\)।:]|$)/g);
+                    let rawQ = qMatch ? qMatch[1] : line;
+                    let optPattern = /([কখগঘK-N])[\.\)।:]\s*(.+?)(?=\s+[কখগঘK-N][\.\)।:]|$)/g;
+                    let optionsFound = [];
+                    let questionText = rawQ;
                     
-                    if (inlineOptsCheck && inlineOptsCheck.length >= 2) {
-                        // অর্থাৎ একই লাইনে প্রশ্ন ও অপশন দুটোই আছে
-                        let qOnlyMatch = qText.match(/^(.*?)(?=\s+[কখঘগA-DK-Na-dk-n][\.\)।:])/);
-                        let realQText = qOnlyMatch ? qOnlyMatch[1].trim() : qText;
-                        
-                        current = { question: realQText, options: [], answer: null, explanation: null, original_answer: null };
-
-                        // এই এক লাইনের ভেতর থেকে সবগুলো অপশন খুঁজে বের করা
-                        let optRegex = /([কখঘগA-DK-Na-dk-n])[\.\)।:]\s*([^\s]+(?:\s+[^\s]+)*?)(?=\s+[কখঘগA-DK-Na-dk-n][\.\)।:]|$)/g;
-                        let matchOpt;
-                        while ((matchOpt = optRegex.exec(qText)) !== null) {
-                            current.options.push([normalizeAnswerLabel(matchOpt[1]), matchOpt[2].trim()]);
+                    let firstOptIndex = rawQ.search(/(?:\s+|^)([কখগঘK-N])[\.\)।:]/);
+                    if(firstOptIndex !== -1) {
+                        questionText = rawQ.substring(0, firstOptIndex).trim();
+                        let optionsPart = rawQ.substring(firstOptIndex).trim();
+                        let match;
+                        while ((match = optPattern.exec(optionsPart)) !== null) {
+                            optionsFound.push([normalizeAnswerLabel(match[1]), match[2].trim()]);
                         }
-                    } else {
-                        current = { question: qText.trim(), options: [], answer: null, explanation: null, original_answer: null };
                     }
+
+                    current = { question: questionText, options: optionsFound, answer: null, explanation: null, original_answer: null };
                     continue;
                 }
 
                 if (!current) continue;
 
-                // যদি অপশনগুলো একই লাইনে পাশাপাশি থাকে (যেমন: ক) অপশন খ) অপশন গ) অপশন ঘ) অপশন)
-                let multiOptMatch = line.match(/([কখঘগA-DK-Na-dk-n])[\.\)।:]\s*(.+?)(?=\s+[কখঘগA-DK-Na-dk-n][\.\)।:]|$)/g);
-                if (multiOptMatch && multiOptMatch.length >= 2) {
-                    for (let mOpt of multiOptMatch) {
-                        let subMatch = mOpt.match(/([কখঘগA-DK-Na-dk-n])[\.\)।:]\s*(.+)/);
-                        if (subMatch) {
-                            current.options.push([normalizeAnswerLabel(subMatch[1]), subMatch[2].trim()]);
-                        }
-                    }
-                    continue;
+                let optPattern = /([কখগঘK-N])[\.\)।:]\s*(.+?)(?=\s+[কখগঘK-N][\.\)।:]|$)/g;
+                let match;
+                let foundInline = false;
+                while ((match = optPattern.exec(line)) !== null) {
+                    current.options.push([normalizeAnswerLabel(match[1]), match[2].trim()]);
+                    foundInline = true;
                 }
+                if (foundInline) continue;
 
-                // সাধারণ আলাদা লাইনের অপশন ম্যাচ করানো
-                let optMatch1 = line.match(/^\s*\(([কখঘগK-N])\)\s*(.+?)$/);
-                if (optMatch1) {
-                    current.options.push([normalizeAnswerLabel(optMatch1[1]), optMatch1[2].trim()]);
-                    continue;
-                }
-                let optMatch2 = line.match(/^\s*\(?([কখঘগA-DKLMNa-dklmn])\)?\s*[\.।:]?\s*(.+?)\s*$/);
-                if (optMatch2) {
-                    current.options.push([normalizeAnswerLabel(optMatch2[1]), optMatch2[2].trim()]);
+                let singleOptMatch = line.match(/^\s*\(?([কখঘগA-DKLMNa-dklmn])\)?[.।:]?\s*(.+?)$/);
+                if (singleOptMatch) {
+                    current.options.push([normalizeAnswerLabel(singleOptMatch[1]), singleOptMatch[2].trim()]);
                     continue;
                 }
 
@@ -188,11 +381,8 @@
             if (!question.options || question.options.length < 2 || !question.answer) return question;
             let originalAns = question.original_answer || question.answer;
             let correctText = null;
-            
             for (let i = 0; i < question.options.length; i++) {
-                if (question.options[i][0] === originalAns) {
-                    correctText = question.options[i][1]; break;
-                }
+                if (question.options[i][0] === originalAns) { correctText = question.options[i][1]; break; }
             }
             if (!correctText) return question;
 
@@ -204,78 +394,112 @@
 
             let newOptions = [];
             let newAnswer = null;
-
             for (let i = 0; i < shuffled.length; i++) {
                 let newLabel = OPTION_ORDER[i] || shuffled[i][0];
                 newOptions.push([newLabel, shuffled[i][1]]);
-                if (shuffled[i][1] === correctText) {
-                    newAnswer = newLabel;
-                }
+                if (shuffled[i][1] === correctText) { newAnswer = newLabel; }
             }
             question.options = newOptions;
             question.answer = newAnswer;
             return question;
         }
 
-        function showStatus(msg, isError = false) {
-            const el = document.getElementById("statusMsg");
-            el.textContent = msg;
-            el.className = `text-sm font-medium text-center py-2 rounded mt-2 block ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
-            setTimeout(() => { el.style.display = 'none'; el.className = 'hidden'; }, 4000);
-            el.style.display = 'block';
-        }
-
         Office.onReady((info) => {
             if (info.host === Office.HostType.Word) {
-                document.getElementById("btnNormal").onclick = () => formatSelectedText("normal");
-                document.getElementById("btnSmart").onclick = () => formatSelectedText("smart");
-                document.getElementById("btnFormatQuestions").onclick = formatQuestionsMacro;
-                document.getElementById("btnUniToBijoy").onclick = () => runSmartConverter("UniToBijoy");
-                document.getElementById("btnBijoyToUni").onclick = () => runSmartConverter("BijoyToUni");
-                document.getElementById("btnFixEnglishFont").onclick = fixEnglishFont;
+                document.getElementById("btnNormal").onclick = async () => {
+                    setLoading("btnNormal", true);
+                    await formatSelectedText("normal");
+                    setLoading("btnNormal", false);
+                };
+                document.getElementById("btnSmart").onclick = async () => {
+                    setLoading("btnSmart", true);
+                    await formatSelectedText("smart");
+                    setLoading("btnSmart", false);
+                };
+                document.getElementById("btnFormatQuestions").onclick = async () => {
+                    setLoading("btnFormatQuestions", true);
+                    await formatQuestionsMacro();
+                    setLoading("btnFormatQuestions", false);
+                };
+                document.getElementById("btnUniToBijoy").onclick = async () => {
+                    setLoading("btnUniToBijoy", true);
+                    await runSmartConverter("UniToBijoy");
+                    setLoading("btnUniToBijoy", false);
+                };
+                document.getElementById("btnBijoyToUni").onclick = async () => {
+                    setLoading("btnBijoyToUni", true);
+                    await runSmartConverter("BijoyToUni");
+                    setLoading("btnBijoyToUni", false);
+                };
+                document.getElementById("btnFixEnglishFont").onclick = async () => {
+                    setLoading("btnFixEnglishFont", true);
+                    await fixEnglishFont();
+                    setLoading("btnFixEnglishFont", false);
+                };
             }
         });
 
+        // ==========================================
+        // FORMATTER WITH EXPLICIT FORMATTING RESET
+        // ==========================================
         async function formatSelectedText(type) {
             try {
                 await Word.run(async (context) => {
                     const selection = context.document.getSelection();
+                    
+                    // Capture Original Formatting of the Selected Text BEFORE replacing
+                    const selParas = selection.paragraphs;
+                    selParas.load("items");
+                    await context.sync();
+
+                    let origAlign = "Left";
+                    let origBold = false;
+                    let origItalic = false;
+
+                    if (selParas.items.length > 0) {
+                        selParas.items[0].load("alignment, font/bold, font/italic");
+                        await context.sync();
+                        origAlign = selParas.items[0].alignment || "Left";
+                        origBold = selParas.items[0].font.bold === true;
+                        origItalic = selParas.items[0].font.italic === true;
+                    }
+
                     selection.load("text");
                     await context.sync();
 
                     const text = selection.text;
-                    if (!text || !text.trim()) {
-                        showStatus("Please select some text in the document first!", true);
-                        return;
-                    }
+                    if (!text || !text.trim()) { showStatus("Please select some text in the document first!", true); return; }
 
-                    // === স্বয়ংক্রিয় ফন্ট ডিটেকশন (Auto-detect Font Type) ===
                     let isUnicode = /[\u0980-\u09FF]/.test(text);
                     let targetFont = isUnicode ? "Kalpurush" : "SutonnyMJ";
 
                     let questions = parseQuestions(text);
-                    if (questions.length === 0) {
-                        showStatus("No valid questions found in selection!", true);
-                        return;
-                    }
+                    if (questions.length === 0) { showStatus("No valid questions found in selection!", true); return; }
 
                     if (document.getElementById("shuffleCheck").checked) {
                         questions = questions.map(q => shuffleOptions(q));
                     }
+
+                    let optFont = document.getElementById("norm-opt-font").value.trim();
+                    let optSize = document.getElementById("norm-opt-size").value.trim();
+                    let normAnsSize = document.getElementById("norm-ans-size").value.trim();
+                    let smartAnsSize = document.getElementById("smart-ans-size").value.trim();
 
                     let anchorRange = selection.insertText(" ", "Replace");
 
                     for (let i = 0; i < questions.length; i++) {
                         let q = questions[i];
                         let safeQuestion = q.question.replace(/[\r\n\v]/g, "").trim();
-                        
-                        // ফন্ট অনুযায়ী নম্বর বসানো (ইউনিকোডে ০-৯, বিজয়ে 0-9)
                         let qNum = isUnicode ? toBanglaNumber(i + 1) : (i + 1);
                         
                         let qPara = anchorRange.insertParagraph(`${qNum}. ${safeQuestion}`, "Before");
                         qPara.font.name = targetFont;
                         qPara.font.size = 10.5;
-                        qPara.alignment = "Justified";
+                        
+                        // Prevent inheriting previous paragraph's style by forcing original style
+                        qPara.alignment = origAlign;
+                        qPara.font.bold = origBold;     
+                        qPara.font.italic = origItalic; 
 
                         for (let j = 0; j < Math.min(4, q.options.length); j++) {
                             let optLabel = OPTION_ORDER[j];
@@ -283,58 +507,68 @@
                             let marker = OPTION_EXPORT_MAP[optLabel] || optLabel;
 
                             let optPara = anchorRange.insertParagraph(marker, "Before");
-                            optPara.alignment = "Justified";
-                            optPara.font.name = "BanglaOMR";
-                            optPara.font.size = 9;
+                            optPara.alignment = origAlign;
+                            optPara.font.bold = origBold;
+                            optPara.font.italic = origItalic;
+                            
+                            optPara.font.name = optFont !== "" ? optFont : "BanglaOMR";
+                            optPara.font.size = optSize !== "" ? parseFloat(optSize) : 9;
 
                             let textRange = optPara.insertText(` ${textVal}`, "End");
                             textRange.font.name = targetFont;
                             textRange.font.size = 10.5;
+                            textRange.font.bold = origBold;
+                            textRange.font.italic = origItalic;
 
                             if (type === "normal" && j === 3 && q.answer) {
                                 let ansMarker = ANSWER_EXPORT_MAP[q.answer] || q.answer;
                                 optPara.insertText("\t", "End");
                                 let ansRange = optPara.insertText(ansMarker, "End");
                                 ansRange.font.name = "ProshnaP";
-                                ansRange.font.size = 10;
+                                ansRange.font.bold = origBold;
+                                ansRange.font.size = normAnsSize !== "" ? parseFloat(normAnsSize) : 10;
                             }
                         }
 
                         if (type === "normal" && q.explanation) {
                             let safeExp = q.explanation.replace(/[\r\n\v]/g, "").trim();
-                            // ফন্ট অনুযায়ী ব্যাখ্যার লেবেল সেট করা
                             let expLabel = isUnicode ? "ব্যাখ্যা: " : "e¨vL¨v: ";
                             let expPara = anchorRange.insertParagraph(`${expLabel}${safeExp}`, "Before");
                             expPara.font.name = targetFont;
                             expPara.font.size = 10.5;
+                            expPara.alignment = origAlign;
+                            expPara.font.bold = origBold;
+                            expPara.font.italic = origItalic;
                         }
                     }
 
                     if (type === "smart") {
                         anchorRange.insertBreak("Page", "Before");
-                        
-                        // ফন্ট অনুযায়ী স্মার্ট এমসিকিউ এর হেডার সেট করা
                         let headerText = isUnicode ? "সঠিক উত্তর ও ব্যাখ্যা" : "mwVK DËi I e¨vL¨v";
                         let ansHeaderPara = anchorRange.insertParagraph(headerText, "Before");
                         ansHeaderPara.font.name = targetFont;
                         ansHeaderPara.font.size = 12;
+                        ansHeaderPara.font.bold = true;
                         ansHeaderPara.alignment = "Centered";
                         
                         for (let i = 0; i < questions.length; i++) {
                             let q = questions[i];
-                            
                             let qNum = isUnicode ? toBanglaNumber(i + 1) : (i + 1);
                             let ansLabel = isUnicode ? "সঠিক উত্তর: " : "mwVK DËi: ";
 
                             let ansPara = anchorRange.insertParagraph(`${qNum}. ${ansLabel}`, "Before");
                             ansPara.font.name = targetFont;
                             ansPara.font.size = 10.5;
+                            ansPara.alignment = origAlign;
+                            ansPara.font.bold = origBold;
+                            ansPara.font.italic = origItalic;
 
                             if (q.answer) {
                                 let ansMarker = ANSWER_EXPORT_MAP[q.answer] || q.answer;
                                 let ansRange = ansPara.insertText(ansMarker, "End");
                                 ansRange.font.name = "ProshnaP";
-                                ansRange.font.size = 10;
+                                ansRange.font.bold = origBold;
+                                ansRange.font.size = smartAnsSize !== "" ? parseFloat(smartAnsSize) : 10;
                             }
 
                             if (q.explanation) {
@@ -343,13 +577,16 @@
                                 let expPara = anchorRange.insertParagraph(`${expLabel}${safeExp}`, "Before");
                                 expPara.font.name = targetFont;
                                 expPara.font.size = 10.5;
+                                expPara.alignment = origAlign;
+                                expPara.font.bold = origBold;
+                                expPara.font.italic = origItalic;
                             }
                         }
                     }
 
                     anchorRange.delete();
                     await context.sync();
-                    showStatus(`Successfully formatted ${questions.length} questions in ${isUnicode ? "Unicode" : "Bijoy"}!`);
+                    showStatus(`Formatted ${questions.length} questions perfectly!`);
                 });
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
@@ -362,265 +599,327 @@
                     paragraphs.load("items");
                     await context.sync();
 
-                    if (paragraphs.items.length === 0) { showStatus("Please select some text first.", true); return; }
-                    for (let i = 0; i < paragraphs.items.length; i++) { paragraphs.items[i].load("text"); }
+                    if (paragraphs.items.length === 0) { showStatus("Please select text first.", true); return; }
+                    
+                    let numStyle = document.getElementById("num-style").value;
+                    let matchingParagraphs = [];
+
+                    for (let i = 0; i < paragraphs.items.length; i++) {
+                        paragraphs.items[i].load("text");
+                    }
                     await context.sync();
 
-                    let matchingParagraphs = [];
+                    // Strict Smart Filter: Only detect actual Question lines
                     for (let i = 0; i < paragraphs.items.length; i++) {
                         let p = paragraphs.items[i];
-                        let cleanText = p.text.replace(/[\s\u00A0\u200B\r\n]+$/, "");
-                        if (cleanText.length > 2) {
-                            let lastChar = cleanText.slice(-1);
-                            if (["?", "\u061F", "\u2014", "-", ":"].includes(lastChar)) { matchingParagraphs.push(p); }
+                        let text = p.text.trim();
+                        if (text.length < 2) continue;
+                        
+                        // Ignore Options (ক, খ, A, B)
+                        if (/^\s*\(?[কখগঘA-D]\)?[\.\)।:]\s+/i.test(text)) continue;
+                        // Ignore Explanations/Answers
+                        if (/^\s*(?:সঠিক উত্তর|উত্তর|Ans|Answer|mwVK DËi|DËi|ব্যাখ্যা|Explanation|e¨vL¨v)/i.test(text)) continue;
+                        
+                        let hasNumber = /^\s*(?:\d+|[০-৯]+|[a-zA-Z]|[iIvVxXlLcCdDmMoO]+)\s*[\.\)।]/.test(text);
+                        let lastChar = text.slice(-1);
+                        let endsWithPunctuation = ["?", "\u061F", "\u2014", "-", ":"].includes(lastChar);
+                        
+                        // Only target lines that are clearly questions
+                        if (hasNumber || endsWithPunctuation || text.includes("?")) {
+                            matchingParagraphs.push(p);
                         }
                     }
 
-                    if (matchingParagraphs.length > 0) {
+                    if (matchingParagraphs.length === 0) { showStatus("No questions detected.", true); return; }
+
+                    // Apply MS Word Native Auto List
+                    if (numStyle.startsWith("auto-")) {
                         let list = matchingParagraphs[0].startNewList();
                         list.load("id");
-                        matchingParagraphs[0].font.bold = true;
-                        matchingParagraphs[0].leftIndent = 22.32;
-                        matchingParagraphs[0].firstLineIndent = -22.32;
                         await context.sync();
 
-                        for (let i = 1; i < matchingParagraphs.length; i++) {
-                            matchingParagraphs[i].attachToList(list.id, 0);
-                            matchingParagraphs[i].font.bold = true;
-                            matchingParagraphs[i].leftIndent = 22.32;
-                            matchingParagraphs[i].firstLineIndent = -22.32;
+                        let listLevelType = Word.ListNumbering.arabic;
+                        if (numStyle === "auto-roman") listLevelType = Word.ListNumbering.lowerRoman;
+                        if (numStyle === "auto-alpha") listLevelType = Word.ListNumbering.lowerLetter;
+
+                        list.setLevelNumbering(0, listLevelType);
+
+                        for (let i = 0; i < matchingParagraphs.length; i++) {
+                            let p = matchingParagraphs[i];
+                            p.font.bold = true;
+                            if (i > 0) p.attachToList(list.id, 0);
+                        }
+                        await context.sync();
+                    } else {
+                        // Text Based Formatting
+                        let qCount = 0;
+                        for (let i = 0; i < matchingParagraphs.length; i++) {
+                            let p = matchingParagraphs[i];
+                            p.font.bold = true; 
+                            let text = p.text.trim();
+                            let hasNumber = /^\s*(?:\d+|[০-৯]+|[a-zA-Z]|[iIvVxXlLcCdDmMoO]+)\s*[\.\)।]/.test(text);
+                            
+                            if (!hasNumber) {
+                                let numText = getSequenceString(qCount, numStyle);
+                                let numRange = p.insertText(numText, "Start");
+                                numRange.font.bold = true;
+                            }
+                            qCount++;
                         }
                         await context.sync();
                     }
-                    showStatus(`Task Completed! Total Questions Found: ${matchingParagraphs.length}`);
+                    showStatus(`Numbered and Bolded ${matchingParagraphs.length} Questions!`);
                 });
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
         // ==========================================
-        // SMART BIJOY-UNICODE CONVERTER ENGINE 
+        // SMART CONVERTER ENGINE (PERFECT SELECTION & 1-CLICK UNDO)
         // ==========================================
-
         async function runSmartConverter(direction) {
             try {
                 await Word.run(async (context) => {
                     const selection = context.document.getSelection();
-                    selection.load("text");
+                    selection.load("text, font/bold, font/italic");
                     await context.sync();
 
                     const rawText = selection.text;
-                    if (!rawText || !rawText.trim()) {
-                        showStatus("Please select some text to convert!", true);
-                        return;
-                    }
+                    if (!rawText || !rawText.trim()) { showStatus("Select text to convert!", true); return; }
+
+                    // Save styles of the selection to prevent losing them during replacement
+                    let origBold = selection.font.bold === true;
+                    let origItalic = selection.font.italic === true;
 
                     let isUnicode = /[\u0980-\u09FF]/.test(rawText);
                     let targetDirection = direction;
-                    
                     if (isUnicode && direction === "BijoyToUni") targetDirection = "UniToBijoy";
                     else if (!isUnicode && direction === "UniToBijoy") targetDirection = "BijoyToUni";
 
-                    let anchorRange = selection.insertText("", "Replace");
+                    // User Preferences
+                    let prefix = direction === "UniToBijoy" ? "u2b" : "b2u";
+                    let customFontName = document.getElementById(`${prefix}-font`).value.trim();
+                    let customFontSize = document.getElementById(`${prefix}-size`).value.trim();
+
+                    let defaultFont = targetDirection === "UniToBijoy" ? "SutonnyMJ" : "Kalpurush";
+                    let finalFontName = customFontName !== "" ? customFontName : defaultFont;
+
+                    // Replaces selection with anchor and pushes text BEFORE it, maintaining order perfectly
+                    let cursor = selection.insertText("", "Replace");
 
                     if (targetDirection === "UniToBijoy") {
-                        // ইংরেজি লেখা, তার আগের স্পেস এবং দুপাশের ব্র্যাকেটগুলোকে একসাথে স্প্লিট করা হচ্ছে
-                        let chunkRegex = /([\s\(\[\{'"‘“]*[a-zA-Z0-9]+(?:[\s\-\.\,\:\;\!\?]*[a-zA-Z0-9]+)*[\)\]\}'"’”]*)/g;
+                        // Keeps spaces, newlines, English characters grouped safely
+                        let chunkRegex = /([ \t\r\n\v\(\)\[\]\{\}\'\"‘“’”\.\,\:\;\!\?\-\/\$\%\+\=\<\>°_@#&\*\\a-zA-Z0-9]+)/g;
                         let textChunks = rawText.split(chunkRegex);
 
                         for (let i = 0; i < textChunks.length; i++) {
                             let chunk = textChunks[i];
                             if (!chunk) continue;
-
-                            // চাংকটিতে কোনো ইংরেজি অক্ষর বা সংখ্যা থাকলে পুরো চাংকটি (স্পেস ও ব্র্যাকেটসহ) Times New Roman হবে
+                            
+                            let rng;
                             if (/[a-zA-Z0-9]/.test(chunk)) {
-                                let textRange = anchorRange.insertText(chunk, "Before");
-                                textRange.font.name = "Times New Roman"; 
+                                rng = cursor.insertText(chunk, "Before");
+                                rng.font.name = "Times New Roman";
                             } else {
-                                // স্পেস, যতিচিহ্ন এবং বাংলা লেখা কনভার্ট হয়ে SutonnyMJ ফন্ট পাবে
                                 let converted = convertUnicodeToBijoy(chunk);
-                                let textRange = anchorRange.insertText(converted, "Before");
-                                textRange.font.name = "SutonnyMJ";
+                                rng = cursor.insertText(converted, "Before");
+                                rng.font.name = finalFontName; 
                             }
+                            
+                            // Restore original style to the inserted chunk
+                            if (customFontSize !== "") rng.font.size = parseFloat(customFontSize);
+                            rng.font.bold = origBold;
+                            rng.font.italic = origItalic;
                         }
                     } else {
-                        // বিজয় ➔ ইউনিকোড কনভার্সন (আগের মতোই থাকবে)
                         let protectedEng = [];
                         let protectRegex = /(\([A-Za-z0-9\s\-\.\_]+\)|\[[A-Za-z0-9\s\-\.\_]+\]|"[A-Za-z0-9\s\-\.\_]+"|'[A-Za-z0-9\s\-\.\_]+')/g;
-                        
                         let safeText = rawText.replace(protectRegex, function(match) {
                             protectedEng.push(match);
                             return "▲" + (protectedEng.length - 1) + "▲";
                         });
 
                         let converted = convertBijoyToUnicode(safeText);
-
+                        let chunkRegex = /([ \t\r\n\v\(\)\[\]\{\}\'\"‘“’”\.\,\:\;\!\?\-\/\$\%\+\=\<\>°_@#&\*\\]+)/g;
                         let textChunks = converted.split(/(▲\d+▲)/g);
 
                         for (let i = 0; i < textChunks.length; i++) {
                             let chunk = textChunks[i];
                             if (!chunk) continue;
-
+                            
                             let match = chunk.match(/^▲(\d+)▲$/);
                             if (match) {
                                 let engText = protectedEng[parseInt(match[1])];
-                                let textRange = anchorRange.insertText(engText, "Before");
-                                textRange.font.name = "Times New Roman";
+                                let rng = cursor.insertText(engText, "Before");
+                                rng.font.name = "Times New Roman";
+                                rng.font.bold = origBold;
+                                rng.font.italic = origItalic;
+                                if (customFontSize !== "") rng.font.size = parseFloat(customFontSize);
                             } else {
-                                let textRange = anchorRange.insertText(chunk, "Before");
-                                textRange.font.name = "Kalpurush";
+                                let subChunks = chunk.split(chunkRegex);
+                                for (let j = 0; j < subChunks.length; j++) {
+                                    let subChunk = subChunks[j];
+                                    if (!subChunk) continue;
+                                    
+                                    let rng = cursor.insertText(subChunk, "Before");
+                                    if (/[^\s]/.test(subChunk)) {
+                                        rng.font.name = finalFontName;
+                                    }
+                                    rng.font.bold = origBold;
+                                    rng.font.italic = origItalic;
+                                    if (customFontSize !== "") rng.font.size = parseFloat(customFontSize);
+                                }
                             }
                         }
                     }
-
+                    // ONE Sync = 1 Click Ctrl+Z Undo!
                     await context.sync();
-                    showStatus(`Converted successfully!`);
+                    showStatus(`Text Converted smoothly!`);
                 });
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
-        // --- Core Conversion Dictionaries (Fixed for লাইসেন্স/ন্স and কার্যারম্ভের/ম্ভ) ---
-        
+        // --- Core Conversion Dictionaries ---
         function convertUnicodeToBijoy(text) {
             if (!text) return "";
             let str = text;
-
+            
+            // Nukta pre-processing
+            str = str.replace(/\u09AF\u09BC/g, 'য়');
+            str = str.replace(/\u09A1\u09BC/g, 'ড়');
+            str = str.replace(/\u09A2\u09BC/g, 'ঢ়');
+            
             str = str.replace(/[\u200B-\u200D\uFEFF]/g, '');
             str = str.replace(/ো/g, 'ো');
             str = str.replace(/ৌ/g, 'ৌ');
-
+            
             let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ"; 
-
             let regexReph = new RegExp("র\u09CD([" + cons + "](?:\u09CD[" + cons + "])*)", "g");
             str = str.replace(regexReph, "$1©");
-
+            
             let regexPreKar = new RegExp("([" + cons + "](?:\u09CD[" + cons + "])*(?:©)?)(ি|ে|ৈ)", "g");
             str = str.replace(regexPreKar, "$2$1");
-
-            // 'ে'-কারের পজিশন অনুযায়ী নির্দিষ্ট সিম্বল বসানো
+            
             str = str.replace(/(^|[\s\(\[\{'"‘“\-])ে/g, "$1†");
             str = str.replace(/ে/g, "‡");
 
             const u2bJukta = {
-                'ক্ক':'°', 'ক্ট':'±', 'ক্ত':'³', 'ক্ব':'K¡', 'ক্স':'·', 'ক্ষ':'¶', 'জ্ঞ':'Á',
-                'ঙ্গ':'½', 'ঙ্ক':'¼', 'ট্ট':'Æ', 'ড্ড':'Ç', 'ণ্ট':'È', 'ণ্ঠ':'É', 'ণ্ড':'Û', 'ন্ড':'Û',
+                // Newly Added Fixes
+                'ন্ট':'›U', 'প্ট':'Þ', 'ষ্ক':'®‹', 'ল্ক':'é', 'ল্গ':'ê', 'ল্ড':'ì', 'শ্চ':'ð', 'স্কৃ':'¯‹…',
+
+                // Previous Fixes
+                'গ্ব':'M¦', 'ভু':'fz', 'খ্ব':'L¡',
+
+                // Core Juktoborno
+                'ক্ক':'°', 'ক্ট':'±', 'ক্ত':'³', 'ক্ব':'K¡', 'ক্স':'·', 'ক্ষ':'¶', 'ক্ষ্ম':'¶g', 'ক্ষ্য':'¶¨', 'ক্ষু':'¶z',
+                'জ্ঞ':'Á', 'ঙ্ক':'¼', 'ঙ্খ':'¼L', 'ঙ্গ':'½', 'ঙ্ঘ':'½N', 
+                'ট্ট':'Æ', 'ঠ্ঠ':'V&V', 'ড্ড':'Ç', 'ণ্ট':'È', 'ণ্ঠ':'É', 'ণ্ড':'Û', 'ন্ড':'Û',
                 'ত্ত':'Ë', 'ত্থ':'Ì', 'ত্র':'Î', 'দ্দ':'Ï', 'দ্ধ':'×', 'দ্ব':'Ø', 'দ্ম':'Ù',
-                'ন্দ':'›`', 'ন্ধ':'Ü', 'ন্ন':'bœ', 'ন্ব':'b¦', 'ন্ম':'b¥', 'ম্প':'¤ú', 'ম্ব':'¤^', 'ম্ম':'¤§', 'ম্ভ':'¤¢', 'ন্স':'Ý', // Fixed: 'ম্ভ' and 'ন্স' added
+                'ন্দ':'›`', 'ন্ধ':'Ü', 'ন্ন':'bœ', 'ন্ব':'b¦', 'ন্ম':'b¥', 'ন্দ্র':'›`«', 'দ্র':'`ª',
+                'ম্প':'¤ú', 'ম্ব':'¤^', 'ম্ম':'¤§', 'ম্ভ':'¤¢', 'ন্স':'Ý', 'ত্ম':'Z¥', 'ত্ন':'Zœ', 'ত্ম্য':'Z¥¨',
                 'স্ট':'÷', 'ষ্ট':'ó', 'ষ্ঠ':'ô', 'ষ্ণ':'ò', 'ষ্প':'®ú', 'ষ্ফ':'®ù', 'ষ্ম':'®§',
-                'স্ক':'¯‹', 'স্খ':'¯Œ', 'স্থ':'¯’', 'স্ন':'mœ', 'স্প':'¯ú', 'স্ফ':'ù', 'স্ম':'¯§', 'স্ব':'¯^', 'স্ত':'¯Í',
-                'হ্ম':'þ', 'হু':'û', 'হৃ':'ü', 'হ্ন':'ý', 'হ্ব':'nŸ', 'প্ত':'ß', 'ব্দ':'ã', 'ব্ধ':'ä', 
+                'স্ক':'¯‹', 'স্খ':'¯Œ', 'স্থ':'¯’', 'স্ন':'mœ', 'স্প':'¯ú', 'স্ফ':'ù', 'স্ম':'¯§', 'স্ব':'¯^', 'স্ত':'¯Í', 'স্স':'m&m',
+                'হ্ম':'þ', 'হু':'û', 'হৃ':'ü', 'হ্ন':'ý', 'হ্ব':'nŸ', 'প্ত':'ß', 'ব্দ':'ã', 'ব্ধ':'ä', 'ব্ব':'e&e', 'ব্জ':'e&R',
                 'শ্র':'kÖ', 'ক্র':'µ', 'গ্র':'MÖ', 'প্র':'cÖ', 'ড্র':'W«', 'ট্র':'U«', 'ফ্র':'d«', 'ব্র':'eª',
-                'ব্ল':'eø', 'ক্ল':'K¬', 'গ্ল':'Mø', 'প্ল':'cø', 'ফ্ল':'d¬',
+                'ব্ল':'eø', 'ক্ল':'K¬', 'গ্ল':'Mø', 'প্ল':'cø', 'ফ্ল':'d¬', 'ম্ল':'gø', 'শ্ল':'kø', 'স্ল':'mø', 'হ্ল':'n&j',
                 'ঞ্চ':'Â', 'ঞ্ছ':'Ã', 'ঞ্জ':'Ä',
                 'রু':'iæ', 'রূ':'i~', 'শু':'ï', 'গু':'¸', 'ন্তু':'š‘', 'স্তু':'¯‘',
                 'চ্চ':'”P', 'চ্ছ':'”Q', 'জ্জ':'¾', 'ঝ্ঝ':'S&S', 'দ্ঘ':'`&N', 'ন্ত':'šÍ', 'ন্থ':'š’', 
-                'ল্ক':'j&K', 'ল্গ':'j&M', 'ল্ট':'j&U', 'ল্ড':'j&W', 'ল্প':'í', 'ল্ব':'j&e', 'ল্ম':'j&g', 'ল্ল':'jø',
-                'ধ্ব':'aŸ', 'শ্ব':'k¦', 'ত্ব':'Z¡', 'থ্ব':'_¡', 'ম্ন':'gœ',
+                'ল্প':'í', 'ল্ব':'j&e', 'ল্ম':'j&g', 'ল্ল':'jø', 'ল্ফ':'j&d',
+                'ধ্ব':'aŸ', 'শ্ব':'k¦', 'ত্ব':'Z¡', 'থ্ব':'_¡', 'ম্ন':'gœ', 'শ্ম':'k&g',
                 'দ্য':'`¨', 'ন্ত্র':'š¿', 'ম্প্র':'¤cÖ', 'স্থ্য':'¯’¨', 'ষ্ট্র':'ó«', 
-                'শ্ন':'kœ', 'ব্য':'e¨', 'স্ত্র':'¯¿', 'ন্দ্র':'›`«', 'দ্র':'`«', 
+                'শ্ন':'kœ', 'ব্য':'e¨', 'স্ত্র':'¯¿', 
                 'ত্ত্ব':'Ë¡', 'ন্দ্ব':'›Ø', 'প্ন':'cœ', 'ত্য':'Z¨', 'স্ক্র':'¯‹«', 
-                'প্ট':'c&U', 'স্ট্র':'÷«', 'থ্র':'_«', 'ক্ষ্য':'¶¨', 'ক্ষ্ম':'¶g',
-                'গ্ধ':'\xBB', 
-                '্য':'¨', '্র':'«', '্':'&'
+                'স্ট্র':'÷«', 'থ্র':'_«', 'প্প':'c&c', 'প্স':'c&m',
+                'ঙ্ক্ষ':'¼¶', 'ঙ্ম':'O&g',
+                'গ্ধ':'\xBB', '্য':'¨', '্র':'«', '্':'&',
+                
+                // Fixed Vowels mapping explicitly
+                'কু':'Kz', 'কূ':'K‚', 'চু':'Pz', 'চূ':'P‚', 'ঝু':'Sz', 'ঝূ':'S‚', 'তু':'Zz', 'তূ':'Z‚', 'ভূ':'f‚',
+                'কৃ':'K…', 'তৃ':'Z…',
+                
+                'ত্যু':'Zz¨', 'প্যু':'cz¨', 'ফ্যু':'dz¨', 'ভ্যু':'fz¨', 'হ্যু':'n~¨',
+                'ক্যু':'Ky¨', 'গ্যু':'My¨', 'চ্যু':'Py¨', 'জ্যু':'Ry¨', 'ড্যু':'Wy¨', 'দ্যু':'`y¨', 'ধ্যু':'ay¨', 'ব্যু':'ey¨', 'ল্যু':'jy¨', 'শ্যু':'k~¨',
+                'ত্যূ':'Z‚¨'
             };
-            
             let keys = Object.keys(u2bJukta).sort((a, b) => b.length - a.length);
-            for (let k of keys) {
-                str = str.split(k).join(u2bJukta[k]);
-            }
+            for (let k of keys) { str = str.split(k).join(u2bJukta[k]); }
 
             const map = {
-                'অ':'A', 'আ':'Av', 'ই':'B', 'ঈ':'C', 'উ':'D', 'ঊ':'E', 'ঋ':'F', 'এ':'G', 'ঐ':'H', 'ও':'I', 'ঔ':'J',
-                'ক':'K', 'খ':'L', 'গ':'M', 'ঘ':'N', 'ঙ':'O', 'চ':'P', 'ছ':'Q', 'জ':'R', 'ঝ':'S', 'ঞ':'T',
-                'ট':'U', 'ঠ':'V', 'ড':'W', 'ঢ':'X', 'ণ':'Y', 'ত':'Z', 'থ':'_', 'দ':'`', 'ধ':'a', 'ন':'b',
-                'প':'c', 'ফ':'d', 'ব':'e', 'ভ':'f', 'ম':'g', 'য':'h', 'র':'i', 'ল':'j', 'শ':'k', 'ষ':'l',
-                'স':'m', 'হ':'n', 'ড়':'o', 'ঢ়':'p', 'য়':'q', 'ৎ':'r', 'ং':'s', 'ঃ':'t', 'ঁ':'u',
-                'া':'v', 'ি':'w', 'ী':'x', 'ু':'y', 'ূ':'~', 'ৃ':'…', 'ে':'‡', 'ৈ':'ˆ', 'ৗ':'Š', '।':'|',
-                '০':'0', '১':'1', '২':'2', '৩':'3', '৪':'4', '৫':'5', '৬':'6', '৭':'7', '৮':'8', '৯':'9',
-                '©':'©' 
+                'অ':'A', 'আ':'Av', 'ই':'B', 'ঈ':'C', 'উ':'D', 'ঊ':'E', 'ঋ':'F', 'এ':'G', 'ঐ':'H', 'ও':'I', 'ঔ':'J', 'ক':'K', 'খ':'L', 'গ':'M', 'ঘ':'N', 'ঙ':'O', 'চ':'P', 'ছ':'Q', 'জ':'R', 'ঝ':'S', 'ঞ':'T', 'ট':'U', 'ঠ':'V', 'ড':'W', 'ঢ':'X', 'ণ':'Y', 'ত':'Z', 'থ':'_', 'দ':'`', 'ধ':'a', 'ন':'b', 'প':'c', 'ফ':'d', 'ব':'e', 'ভ':'f', 'ম':'g', 'য':'h', 'র':'i', 'ল':'j', 'শ':'k', 'ষ':'l', 'স':'m', 'হ':'n', 'ড়':'o', 'ঢ়':'p', 'য়':'q', 'ৎ':'r', 'ং':'s', 'ঃ':'t', 'ঁ':'u', 'া':'v', 'ি':'w', 'ী':'x', 'ু':'y', 'ূ':'~', 'ৃ':'„', 'ে':'‡', 'ৈ':'ˆ', 'ৗ':'Š', '।':'|', '০':'0', '১':'1', '২':'2', '৩':'3', '৪':'4', '৫':'5', '৬':'6', '৭':'৭', '৮':'8', '৯':'9', '©':'©' 
             };
-            
+
             let out = "";
-            for (let i = 0; i < str.length; i++) {
-                out += map[str[i]] || str[i];
-            }
+            for (let i = 0; i < str.length; i++) { out += map[str[i]] || str[i]; }
             return out;
         }
 
         function convertBijoyToUnicode(text) {
             if (!text) return "";
             let str = text;
-
             str = str.replace(/[\u200B-\u200D\uFEFF\+]/g, '');
 
             const b2uJukta = {
-                '°':'ক্ক', '±':'ক্ট', '³':'ক্ত', 'K¡':'ক্ব', '·':'ক্স', '¶':'ক্ষ', 'Á':'জ্ঞ',
-                '½':'ঙ্গ', '¼':'ঙ্ক', 'Æ':'ট্ট', 'Ç':'ড্ড', 'È':'ণ্ট', 'É':'ণ্ঠ', 'Û':'ণ্ড', '\xDB':'ণ্ড', 
+                // Newly Added Fixes
+                '›U':'ন্ট', 'Þ':'প্ট', '®‹':'ষ্ক', 'é':'ল্ক', 'ê':'ল্গ', 'ì':'ল্ড', 'ð':'শ্চ', '¯‹…':'স্কৃ',
+
+                // Previous Fixes
+                'M¦':'গ্ব', 'fz':'ভু', 'L¡':'খ্ব',
+
+                // Core Juktoborno
+                '°':'ক্ক', '±':'ক্ট', '³':'ক্ত', 'K¡':'ক্ব', '·':'ক্স', '¶':'ক্ষ', '¶g':'ক্ষ্ম', '¶¨':'ক্ষ্য', '¶z':'ক্ষু',
+                'Á':'জ্ঞ', '¼':'ঙ্ক', '¼L':'ঙ্খ', '½':'ঙ্গ', '½N':'ঙ্ঘ',
+                'Æ':'ট্ট', 'Ç':'ড্ড', 'È':'ণ্ট', 'É':'ণ্ঠ', 'Û':'ণ্ড', '\xDB':'ণ্ড',
                 'Ë':'ত্ত', 'Ì':'ত্থ', 'Î':'ত্র', 'Ï':'দ্দ', '×':'দ্ধ', 'Ø':'দ্ব', 'Ù':'দ্ম',
-                '›`':'ন্দ', 'Ü':'ন্ধ', 'bœ':'ন্ন', 'b¦':'ন্ব', 'b¥':'ন্ম', '¤ú':'ম্প', '¤^':'ম্ব', '¤§':'ম্ম', '¤¢':'ম্ভ', 'Ý':'ন্স', // Fixed: '¤¢' and 'Ý' added
+                '›`':'ন্দ', 'Ü':'ন্ধ', 'bœ':'ন্ন', 'b¦':'ন্ব', 'b¥':'ন্ম', '›`«':'ন্দ্র', '`ª':'দ্র',
+                '¤ú':'ম্প', '¤^':'ম্ব', '¤§':'ম্ম', '¤¢':'ম্ভ', 'Ý':'ন্স', 'Z¥':'ত্ম', 'Zœ':'ত্ন', 'Z¥¨':'ত্ম্য',
                 '÷':'স্ট', 'ó':'ষ্ট', 'ô':'ষ্ঠ', 'ò':'ষ্ণ', '®ú':'ষ্প', '®ù':'ষ্ফ', '®§':'ষ্ম',
-                '¯‹':'স্ক', '¯Œ':'স্খ', '¯’':'স্থ', 'mœ':'স্ন', '¯ú':'স্প', 'ù':'স্ফ', '¯§':'স্ম', '¯^':'স্ব', '¯Í':'স্ত',
-                'þ':'হ্ম', 'û':'হু', 'ü':'হৃ', 'ý':'হ্ন', 'nŸ':'হ্ব', 'ß':'প্ত', 'ã':'ব্দ', 'ä':'ব্ধ', 
+                '¯‹':'স্ক', '¯Œ':'স্খ', '¯’':'স্থ', 'mœ':'স্ন', '¯ú':'স্প', 'ù':'স্ফ', '¯§':'স্ম', '¯^':'স্ব', '¯Í':'স্ত', 'm&m':'স্স',
+                'þ':'হ্ম', 'û':'হু', 'ü':'হৃ', 'ý':'হ্ন', 'nŸ':'হ্ব', 'ß':'প্ত', 'ã':'ব্দ', 'ä':'ব্ধ', 'e&e':'ব্ব', 'e&R':'ব্জ',
                 'kÖ':'শ্র', 'µ':'ক্র', 'MÖ':'গ্র', 'cÖ':'প্র', 'W«':'ড্র', 'U«':'ট্র', 'd«':'ফ্র', 'eª':'ব্র',
-                'eø':'ব্ল', 'K¬':'ক্ল', 'Mø':'গ্ল', 'cø':'প্ল', 'd¬':'ফ্ল',
+                'eø':'ব্ল', 'K¬':'ক্ল', 'Mø':'গ্ল', 'cø':'প্ল', 'd¬':'ফ্ল', 'gø':'ম্ল', 'kø':'শ্ল', 'mø':'স্ল', 'n&j':'হ্ল',
                 '\xC2':'ঞ্চ', 'Â':'ঞ্চ', '\xC3':'ঞ্ছ', 'Ã':'ঞ্ছ', '\xC4':'ঞ্জ', 'Ä':'ঞ্জ',
                 'iæ':'রু', 'i~':'রূ', 'ï':'শু', '¸':'গু', 'š‘':'ন্তু', '¯‘':'স্তু',
-                '”P':'চ্চ', '\x94P':'চ্চ', '”Q':'চ্ছ', '\x94Q':'চ্ছ', '”':'চ্', '\x94':'চ্', '•':'চ্ছ', 
-                '¾':'জ্জ', 'S&S':'ঝ্ঝ', '`&N':'দ্ঘ', 
-                'j&K':'ল্ক', 'j&M':'ল্গ', 'j&U':'ল্ট', 'j&W':'ল্ড', 'í':'ল্প', 'j&e':'ল্ব', 'j&g':'ল্ম', 'jø':'ল্ল',
-                'aŸ':'ধ্ব', 'k¦':'শ্ব', 'Z¡':'ত্ব', '_¡':'থ্ব', 'gœ':'ম্ন',
-                '`¨':'দ্য', 'š¿':'ন্ত্র', '¤cÖ':'ম্প্র', '¯’¨':'স্থ্য', 'ó«':'ষ্ট্র', 
-                'kœ':'শ্ন', 'e¨':'ব্য', '¯¿':'স্ত্র', '›`«':'ন্দ্র', '`«':'দ্র', 
-                'Ë¡':'ত্ত্ব', '›Ø':'ন্দ্ব', 'cœ':'প্ন', 'Z¨':'ত্য', '¯‹«':'স্ক্র', 
-                'c&U':'প্ট', '÷«':'স্ট্র', '_«':'থ্র', '¶¨':'ক্ষ্য', '¶g':'ক্ষ্ম',
-                '\xBB':'গ্ধ', '»':'গ্ধ', 
-                '¨':'্য', '«':'্র', '&':'্'
+                '”P':'চ্চ', '\x94P':'চ্চ', '”Q':'চ্ছ', '\x94Q':'চ্ছ', '”':'চ্', '\x94':'চ্', '•':'চ্ছ',
+                '¾':'জ্জ', 'S&S':'ঝ্ঝ', '`&N':'দ্ঘ', 'šÍ':'ন্ত', 'š’':'ন্থ',
+                'í':'ল্প', 'j&e':'ল্ব', 'j&g':'ল্ম', 'jø':'ল্ল', 'j&d':'ল্ফ',
+                'aŸ':'ধ্ব', 'k¦':'শ্ব', 'Z¡':'ত্ব', '_¡':'থ্ব', 'gœ':'ম্ন', 'k&g':'শ্ম',
+                '`¨':'দ্য', 'š¿':'ন্ত্র', '¤cÖ':'ম্প্র', '¯’¨':'স্থ্য', 'ó«':'ষ্ট্র',
+                'kœ':'শ্ন', 'e¨':'ব্য', '¯¿':'স্ত্র',
+                'Ë¡':'ত্ত্ব', '›Ø':'ন্দ্ব', 'cœ':'প্ন', 'Z¨':'ত্য', '¯‹«':'স্ক্র',
+                '÷«':'স্ট্র', '_«':'থ্র', 'c&c':'প্প', 'c&m':'প্স',
+                '¼¶':'ঙ্ক্ষ', 'O&g':'ঙ্ম',
+                '\xBB':'গ্ধ', '»':'গ্ধ', '¨':'্য', '«':'্র', '&':'্',
+
+                'Kz':'কু', 'K‚':'কূ', 'Pz':'চু', 'P‚':'চূ', 'Sz':'ঝু', 'S‚':'ঝূ', 'Zz':'তু', 'Z‚':'তূ', 'f‚':'ভূ',
+                'K…':'কৃ', 'Z…':'তৃ',
+
+                'Zz¨':'ত্যু', 'cz¨':'প্যু', 'dz¨':'ফ্যু', 'fz¨':'ভ্যু', 'n~¨':'হ্যু',
+                'Ky¨':'ক্যু', 'My¨':'গ্যু', 'Py¨':'চ্যু', 'Ry¨':'জ্যু', 'Wy¨':'ড্যু', '`y¨':'দ্যু', 'ay¨':'ধ্যু', 'ey¨':'ব্যু', 'jy¨':'ল্যু', 'k~¨':'শ্যু',
+                'Z‚¨':'ত্যূ'
             };
-            
             let keys = Object.keys(b2uJukta).sort((a, b) => b.length - a.length);
-            for (let k of keys) {
-                str = str.split(k).join(b2uJukta[k]);
-            }
+            for (let k of keys) { str = str.split(k).join(b2uJukta[k]); }
 
             const b2u = {
-                'A':'অ', 'B':'ই', 'C':'ঈ', 'D':'উ', 'E':'ঊ', 'F':'ঋ', 'G':'এ', 'H':'ঐ', 'I':'ও', 'J':'ঔ',
-                'K':'ক', 'L':'খ', 'M':'গ', 'N':'ঘ', 'O':'ঙ', 'P':'চ', 'Q':'ছ', 'R':'জ', 'S':'ঝ', 'T':'ঞ',
-                'U':'ট', 'V':'ঠ', 'W':'ড', 'X':'ঢ', 'Y':'ণ', 'Z':'ত', '_':'থ', '`':'দ', 'a':'ধ', 'b':'ন',
-                'c':'প', 'd':'ফ', 'e':'ব', 'f':'ভ', 'g':'ম', 'h':'য', 'i':'র', 'j':'ল', 'k':'শ', 'l':'ষ',
-                'm':'স', 'n':'হ', 'o':'ড়', 'p':'ঢ়', 'q':'য়', 'r':'ৎ', 's':'ং', 't':'ঃ', 'u':'ঁ',
-                'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', 'z':'ু', '‚':'ূ', '\x82':'ূ', 
-                '\x85':'ৃ', '…':'ৃ', 
-                '\x86':'ে', '†':'ে', 
-                '\x87':'ে', '‡':'ে', 
-                '\x88':'ৈ', 'ˆ':'ৈ', 
-                '\x8A':'ৗ', 'Š':'ৗ', 
-                '|':'।',
-                '0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'
+                'A':'অ', 'B':'ই', 'C':'ঈ', 'D':'উ', 'E':'ঊ', 'F':'ঋ', 'G':'এ', 'H':'ঐ', 'I':'ও', 'J':'ঔ', 'K':'ক', 'L':'খ', 'M':'গ', 'N':'ঘ', 'O':'ঙ', 'P':'চ', 'Q':'ছ', 'R':'জ', 'S':'ঝ', 'T':'ঞ', 'U':'ট', 'V':'ঠ', 'W':'ড', 'X':'ঢ', 'Y':'ণ', 'Z':'ত', '_':'থ', '`':'দ', 'a':'ধ', 'b':'ন', 'c':'প', 'd':'ফ', 'e':'ব', 'f':'ভ', 'g':'ম', 'h':'য', 'i':'র', 'j':'ল', 'k':'শ', 'l':'ষ', 'm':'স', 'n':'হ', 'o':'ড়', 'p':'ঢ়', 'q':'য়', 'r':'ৎ', 's':'ং', 't':'ঃ', 'u':'ঁ', 'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', 'z':'ু', '‚':'ূ', '\x82':'ূ', '\x85':'ৃ', '…':'ৃ', '„':'ৃ', '\x84':'ৃ', '\x86':'ে', '†':'ে', '\x87':'ে', '‡':'ে', '\x88':'ৈ', 'ˆ':'ৈ', '\x8A':'ৗ', 'Š':'ৗ', '|':'।', '0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪', '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'
             };
-            
             str = str.replace(/Av/g, 'আ');
-            
             let out = "";
-            for (let i = 0; i < str.length; i++) {
-                out += b2u[str[i]] || str[i];
-            }
+            for (let i = 0; i < str.length; i++) { out += b2u[str[i]] || str[i]; }
             str = out;
 
             let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ";
             let regexOrder = new RegExp("([িেৈ])?([" + cons + "](?:\u09CD[" + cons + "])*)(©)?([াীুূৃৗ])?", "g");
-            
             str = str.replace(regexOrder, function(match, preKar, cluster, ref, postKar) {
                 return (ref ? "র্" : "") + cluster + (preKar || "") + (postKar || "");
             });
-
-            str = str.replace(/অা/g, 'আ');
-            str = str.replace(/েৃ/g, 'ৃ'); 
-            str = str.replace(/ৌ/g, 'ৌ');
-            str = str.replace(/ো/g, 'ো');
-            
+            str = str.replace(/অা/g, 'আ'); str = str.replace(/েৃ/g, 'ৃ'); str = str.replace(/ৌ/g, 'ৌ'); str = str.replace(/ো/g, 'ো');
+            str = str.replace(/([ুূৃ])্য/g, '্য$1');
             return str;
         }
+
         // ==========================================
-        // ENGLISH FONT FIXER ENGINE (PROTECTED MODE)
+        // ENGLISH FONT FIXER ENGINE
         // ==========================================
         async function fixEnglishFont() {
             try {
@@ -630,23 +929,15 @@
                     await context.sync();
 
                     const rawText = selection.text;
-                    if (!rawText || !rawText.trim()) {
-                        showStatus("Please select some text first!", true);
-                        return;
-                    }
+                    if (!rawText || !rawText.trim()) { showStatus("Please select text first!", true); return; }
 
-                    // আল্ট্রা-স্মার্ট রেজেক্স: যেকোনো ইংরেজি অক্ষর, সংখ্যা এবং তার চারপাশের স্পেস, যতিচিহ্ন একসাথে ব্লক আকারে ধরবে।
-                    // এতে করে বাংলা বর্ণগুলো অটোমেটিক বাদ পড়ে যাবে এবং রেজেক্স হ্যাং হবে না।
+                    let fixFontName = document.getElementById("fix-font").value.trim();
+                    let fixFontSize = document.getElementById("fix-size").value.trim();
+
                     const chunkRegex = /[ \t\(\)\[\]\{\}\'\"‘“’”\.\,\:\;\!\?\-\/\$\%\+\=\<\>°_@#&\*\\a-zA-Z0-9]+/g;
                     let matches = rawText.match(chunkRegex);
-                    
-                    if (!matches) {
-                        showStatus("No English text found to replace.", false);
-                        return;
-                    }
+                    if (!matches) { showStatus("No English text found.", false); return; }
 
-                    // শুধু সেই চাংকগুলো ফিল্টার করা হবে যেগুলোতে অন্তত একটি ইংরেজি অক্ষর বা সংখ্যা (0-9) আছে
-                    // এবং Word API-এর লিমিট অনুযায়ী সর্বোচ্চ 255 ক্যারেক্টার রাখা হবে
                     let uniqueMatches = [...new Set(matches)]
                                         .filter(m => /[a-zA-Z0-9]/.test(m))
                                         .map(m => m.length > 255 ? m.substring(0, 255) : m)
@@ -654,8 +945,6 @@
 
                     for (let i = 0; i < uniqueMatches.length; i++) {
                         let chunk = uniqueMatches[i];
-                        
-                        // সিলেকশনের ভেতর নির্দিষ্ট ইংরেজি চাংকটি খোঁজা হচ্ছে
                         let searchResults = selection.search(chunk, { matchCase: true });
                         searchResults.load("items/font/name");
                         await context.sync();
@@ -664,36 +953,29 @@
                             let item = searchResults.items[j];
                             let fontName = item.font.name;
 
-                            // প্রোটেকশন লজিক: MCQ ফন্টগুলোকে রক্ষা করা
                             if (fontName === "BanglaOMR" || fontName === "ProshnaP") {
-                                // এটি পুরোপুরি OMR বা ProshnaP ফন্ট, তাই কোনো পরিবর্তন হবে না (সুরক্ষিত)
                                 continue;
                             } else if (fontName) {
-                                // এটি মিক্সড নয় এমন সাধারণ ফন্ট (যেমন: Kalpurush), তাই সরাসরি TNR করে দেওয়া যায়
-                                item.font.name = "Times New Roman";
+                                if(fixFontName !== "") item.font.name = fixFontName;
+                                if(fixFontSize !== "") item.font.size = parseFloat(fixFontSize);
                             } else {
-                                // ফন্টের নাম null মানে হলো এর ভেতর MCQ ফন্ট এবং সাধারণ ফন্ট একসাথে মিক্স হয়ে আছে!
-                                // তাই আমরা এটিকে ক্যারেক্টার বাই ক্যারেক্টার চেক করে শুধু MCQ ফন্ট বাদে বাকিগুলোকে TNR করবো।
                                 let chars = item.search("?", { matchWildcards: true });
                                 chars.load("items/font/name");
                                 await context.sync();
-                                
                                 for (let k = 0; k < chars.items.length; k++) {
                                     let charFont = chars.items[k].font.name;
                                     if (charFont !== "BanglaOMR" && charFont !== "ProshnaP") {
-                                        chars.items[k].font.name = "Times New Roman";
+                                        if(fixFontName !== "") chars.items[k].font.name = fixFontName;
+                                        if(fixFontSize !== "") chars.items[k].font.size = parseFloat(fixFontSize);
                                     }
                                 }
                             }
                         }
                     }
-
                     await context.sync();
-                    showStatus("English text replaced (MCQ Fonts Protected)!");
+                    showStatus("English text fonts fixed safely!");
                 });
-            } catch (error) { 
-                showStatus("Error: " + (error.message || "Unknown"), true); 
-            }
+            } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
     </script>
 </body>
