@@ -919,7 +919,7 @@
         }
 
         // ==========================================
-        // ENGLISH FONT FIXER ENGINE
+        // ENGLISH FONT FIXER ENGINE (FIXED)
         // ==========================================
         async function fixEnglishFont() {
             try {
@@ -933,6 +933,11 @@
 
                     let fixFontName = document.getElementById("fix-font").value.trim();
                     let fixFontSize = document.getElementById("fix-size").value.trim();
+
+                    // 1. DEFAULT FALLBACK: বক্স খালি থাকলে স্বয়ংক্রিয়ভাবে Times New Roman সেট হবে
+                    if (fixFontName === "") {
+                        fixFontName = "Times New Roman";
+                    }
 
                     const chunkRegex = /[ \t\(\)\[\]\{\}\'\"‘“’”\.\,\:\;\!\?\-\/\$\%\+\=\<\>°_@#&\*\\a-zA-Z0-9]+/g;
                     let matches = rawText.match(chunkRegex);
@@ -956,7 +961,8 @@
                             if (fontName === "BanglaOMR" || fontName === "ProshnaP") {
                                 continue;
                             } else if (fontName) {
-                                if(fixFontName !== "") item.font.name = fixFontName;
+                                // খালি বক্সের কনফ্লিক্ট দূর করা হয়েছে
+                                item.font.name = fixFontName;
                                 if(fixFontSize !== "") item.font.size = parseFloat(fixFontSize);
                             } else {
                                 let chars = item.search("?", { matchWildcards: true });
@@ -965,7 +971,7 @@
                                 for (let k = 0; k < chars.items.length; k++) {
                                     let charFont = chars.items[k].font.name;
                                     if (charFont !== "BanglaOMR" && charFont !== "ProshnaP") {
-                                        if(fixFontName !== "") chars.items[k].font.name = fixFontName;
+                                        chars.items[k].font.name = fixFontName;
                                         if(fixFontSize !== "") chars.items[k].font.size = parseFloat(fixFontSize);
                                     }
                                 }
