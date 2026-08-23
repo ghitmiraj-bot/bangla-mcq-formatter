@@ -2229,15 +2229,10 @@
                 return;
             }
 
-            if (currentVisionImageBase64.length > 12 * 1024 * 1024) {
-                showStatus("This image is very large. Please use a smaller image for reliable OCR.", true);
-                return;
-            }
-
             setLoading("btnExtractText", true);
             
             try {
-                // আপনার দেওয়া সেই দুর্দান্ত JSON System Prompt
+                // ChatGPT এর প্রম্পটটির সাথে Field Code ইনস্ট্রাকশন যুক্ত করা হয়েছে
                 const prompt = `You are the document understanding and formatting engine of MCQ Studio.
 
 Your job is to analyze user-provided documents, images, PDFs, screenshots, clipboard text, and other extracted text, then reconstruct the content while preserving the original document's structure, order, wording, and formatting relationships.
@@ -2249,9 +2244,15 @@ The original document is the source of truth.
 Do not rewrite, summarize, improve, correct, reorder, or reinterpret the content.
 Extract and reconstruct the content exactly as it appears in the source as much as possible.
 Preserve: Original wording, Original Bangla text, Bangla conjunct characters, Names, Numbers, Question numbering, Option labels, Punctuation, Mathematical expressions, Symbols, English words, Headings, Paragraphs, Lists, Tables, Line/section relationships, Original content order.
-Never invent missing content.
-Never silently correct uncertain OCR.
-If a character or word is uncertain, preserve the closest readable source text and mark the uncertainty.
+
+==================================================
+MATH & EQUATION FORMATTING (FIELD CODES)
+==================================================
+If the document contains mathematical fractions, roots, or other expressions, you MUST format them using MS Word EQ Field Code syntax wrapped in square brackets.
+- FRACTIONS: Instead of 2/5, output [EQ \\F(2,5)]. Example: 1/15 -> [EQ \\F(1,15)]
+- ROOTS: Instead of √3, output [EQ \\R(,3)]. Example: 2√3 -> 2[EQ \\R(,3)]
+- CUBE ROOTS: Example: cube root of 8 -> [EQ \\R(3,8)]
+Do NOT use LaTeX or plain text fractions. ALWAYS use this specific [EQ \\F(...)] and [EQ \\R(...)] format.
 
 ==================================================
 MCQ DETECTION & STRUCTURE
@@ -2315,12 +2316,12 @@ If answer or explanation does not exist, use null.`;
                         ]
                     }],
                     generationConfig: {
-                        responseMimeType: "application/json" // Force Gemini to return structured JSON
+                        responseMimeType: "application/json"
                     }
                 };
 
-                // আপনার পরীক্ষিত ও সফল লেটেস্ট মডেলটিই ব্যবহার করা হলো
-                const VISION_MODEL = "gemini-3.6-flash";
+                // গুগলের অরিজিনাল ও লেটেস্ট স্টেবল মডেল
+                const VISION_MODEL = "gemini-1.5-flash";
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${VISION_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
                 const response = await fetch(url, {
@@ -2340,7 +2341,6 @@ If answer or explanation does not exist, use null.`;
                     throw new Error(errorMsg);
                 }
 
-                // JSON ডাটা পার্স করা হচ্ছে
                 const data = JSON.parse(responseText);
                 let rawJsonOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 
@@ -2357,72 +2357,130 @@ If answer or explanation does not exist, use null.`;
                     throw new Error("Failed to parse AI output. AI did not return valid JSON.");
                 }
 
-                // ============================================================
-                // JSON ডাটা ওয়ার্ডে স্মার্টলি ফরম্যাট করে বসানো
-                // ============================================================
                 await Word.run(async (context) => {
                     const selection = context.document.getSelection();
                     let targetRange = selection.insertText("", "Replace");
                     
                     const items = parsedDocument?.document?.content || [];
 
+                    // ============================================================
+                    // স্মার্ট ফিল্ড কোড (OOXML) জেনারেটর ইঞ্জিন
+                    // ============================================================
+                    function insertSmartLine(text, fontName, fontSize, isBold) {
+                        // যদি লাইনে কোনো ফিল্ড কোড না থাকে, তবে নরমাল ইনসার্ট হবে
+                        if (!text.includes("[EQ ")) {
+                            let p = targetRange.insertParagraph(text, "Before");
+                            p.font.name = fontName;
+                            p.font.size = fontSize;
+                            p.font.bold = isBold;
+                            return;
+                        }
+
+                        // যদি ফিল্ড কোড থাকে, তবে সেটি ভেঙে Word Field Object (OOXML) তৈরি করবে
+                        let parts = text.split(/(\[EQ [^\]]+\])/g);
+                        let runs = "";
+                        let bTag = isBold ? '<w:b w:val="1"/>' : '';
+
+                        for (let part of parts) {
+                            if (part.startsWith("[EQ ") && part.endsWith("]")) {
+                                let instruction = part.substring(1, part.length - 1).trim(); 
+                                runs += `
+                                <w:r>
+                                    <w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/><w:sz w:val="${fontSize * 2}"/>${bTag}</w:rPr>
+                                    <w:fldChar w:fldCharType="begin"/>
+                                </w:r>
+                                <w:r>
+                                    <w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/><w:sz w:val="${fontSize * 2}"/>${bTag}</w:rPr>
+                                    <w:instrText xml:space="preserve"> ${instruction.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')} </w:instrText>
+                                </w:r>
+                                <w:r>
+                                    <w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/><w:sz w:val="${fontSize * 2}"/>${bTag}</w:rPr>
+                                    <w:fldChar w:fldCharType="separate"/>
+                                </w:r>
+                                <w:r>
+                                    <w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/><w:sz w:val="${fontSize * 2}"/>${bTag}</w:rPr>
+                                    <w:fldChar w:fldCharType="end"/>
+                                </w:r>`;
+                            } else if (part) {
+                                let safeText = part.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                                runs += `
+                                <w:r>
+                                    <w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/><w:sz w:val="${fontSize * 2}"/>${bTag}</w:rPr>
+                                    <w:t xml:space="preserve">${safeText}</w:t>
+                                </w:r>`;
+                            }
+                        }
+
+                        let ooxml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                        <pkg:package xmlns:pkg="http://schemas.microsoft.com/office/2006/xmlPackage">
+                          <pkg:part pkg:name="/_rels/.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml" pkg:padding="512">
+                            <pkg:xmlData>
+                              <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+                                <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+                              </Relationships>
+                            </pkg:xmlData>
+                          </pkg:part>
+                          <pkg:part pkg:name="/word/document.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml">
+                            <pkg:xmlData>
+                              <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                                <w:body>
+                                  <w:p>
+                                    <w:pPr>
+                                      <w:rPr>
+                                        <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
+                                        <w:sz w:val="${fontSize * 2}"/>
+                                        ${bTag}
+                                      </w:rPr>
+                                    </w:pPr>
+                                    ${runs}
+                                  </w:p>
+                                </w:body>
+                              </w:document>
+                            </pkg:xmlData>
+                          </pkg:part>
+                        </pkg:package>`;
+
+                        targetRange.insertOoxml(ooxml, "Before");
+                    }
+
+                    // JSON এর ডাটাগুলো ওয়ার্ডে সাজিয়ে প্রিন্ট করা হচ্ছে
                     for (const item of items) {
                         if (item.type === "heading") {
-                            let p = targetRange.insertParagraph(item.text, "Before");
-                            p.font.name = "Kalpurush";
-                            p.font.size = 14;
-                            p.font.bold = true;
+                            insertSmartLine(item.text, "Kalpurush", 14, true);
                             targetRange.insertParagraph("", "Before");
                         } 
                         else if (item.type === "paragraph") {
-                            let p = targetRange.insertParagraph(item.text, "Before");
-                            p.font.name = "Kalpurush";
-                            p.font.size = 11;
+                            insertSmartLine(item.text, "Kalpurush", 11, false);
                             targetRange.insertParagraph("", "Before");
                         } 
                         else if (item.type === "mcq") {
-                            // প্রশ্ন বোল্ড করে বসানো
                             let qText = `${item.serial ? item.serial + ' ' : ''}${item.question}`;
-                            let qPara = targetRange.insertParagraph(qText.trim(), "Before");
-                            qPara.font.name = "Kalpurush";
-                            qPara.font.size = 11;
-                            qPara.font.bold = true; 
+                            insertSmartLine(qText.trim(), "Kalpurush", 11, true);
 
-                            // অপশনগুলো সুন্দর করে নিচে নিচে বসানো
                             if (item.options && Array.isArray(item.options)) {
                                 for (const opt of item.options) {
                                     let optText = `${opt.label ? opt.label + ' ' : ''}${opt.text}`;
-                                    let oPara = targetRange.insertParagraph(optText.trim(), "Before");
-                                    oPara.font.name = "Kalpurush";
-                                    oPara.font.size = 11;
-                                    oPara.font.bold = false;
+                                    insertSmartLine(optText.trim(), "Kalpurush", 11, false);
                                 }
                             }
 
-                            // উত্তর এবং ব্যাখ্যা বসানো
                             if (item.answer && item.answer.text) {
                                 let ansText = item.answer.text.startsWith("উত্তর") ? item.answer.text : `উত্তর: ${item.answer.text}`;
-                                let aPara = targetRange.insertParagraph(ansText, "Before");
-                                aPara.font.name = "Kalpurush";
-                                aPara.font.size = 11;
-                                aPara.font.bold = true;
+                                insertSmartLine(ansText, "Kalpurush", 11, true);
                             }
 
                             if (item.explanation && item.explanation.text) {
                                 let expText = item.explanation.text.startsWith("ব্যাখ্যা") ? item.explanation.text : `ব্যাখ্যা: ${item.explanation.text}`;
-                                let ePara = targetRange.insertParagraph(expText, "Before");
-                                ePara.font.name = "Kalpurush";
-                                ePara.font.size = 11;
-                                ePara.font.bold = false;
+                                insertSmartLine(expText, "Kalpurush", 11, false);
                             }
                             
-                            targetRange.insertParagraph("", "Before"); // দুটি প্রশ্নের মাঝে ফাঁকা জায়গা
+                            targetRange.insertParagraph("", "Before"); 
                         }
                     }
 
                     targetRange.delete();
                     await context.sync();
-                    showStatus("Smart JSON Extraction Successful!");
+                    showStatus("Smart JSON & Math Extraction Successful!");
                 });
 
             } catch (error) {
