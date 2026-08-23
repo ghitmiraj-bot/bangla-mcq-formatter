@@ -2236,9 +2236,8 @@
                     }]
                 };
 
-                // FIX 2: Key is sent in the URL with encodeURIComponent to prevent broken links
                 // FIX 3: Using the stable gemini-1.5-flash model
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+                const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
 
                 // We only send standard headers to avoid CORS Preflight (OPTIONS) 405 error
                 const response = await fetch(url, {
