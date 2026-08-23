@@ -1096,10 +1096,10 @@
                 '¾':'জ্জ', 'S&S':'ঝ্ঝ', '`&N':'দ্ঘ', 'šÍ':'ন্ত', 'š’':'ন্থ',
                 'í':'ল্প', 'j&e':'ল্ব', 'j&g':'ল্ম', 'jø':'ল্ল', 'j&d':'ল্ফ',
                 'aŸ':'ধ্ব', 'k¦':'শ্ব', 'Z¡':'ত্ব', '_¡':'থ্ব', 'gœ':'ম্ন', 'k&g':'শ্ম',
-                '`¨':'দ্য', 'š¿':'ন্ত্র', '¤cÖ':'ম্প্র', '¯’¨':'স্থ্য', 'ó«':'ষ্ট্র',
-                'kœ':'শ্ন', 'e¨':'ব্য', '¯¿':'স্ত্র',
-                'Ë¡':'ত্ত্ব', '›Ø':'ন্দ্ব', 'cœ':'প্ন', 'Z¨':'ত্য', '¯‹«':'স্ক্র',
-                '÷«':'স্ট্র', '_«':'থ্র', 'c&c':'প্প', 'c&m':'প্স',
+                '`¨':'দ্য', 'ন্ত্র':'š¿', 'ম্প্র':'¤cÖ', 'স্থ্য':'¯’¨', 'ষ্ট্র':'ó«', 
+                'শ্ন':'kœ', 'ব্য':'e¨', 'স্ত্র':'¯¿', 
+                'ত্ত্ব':'Ë¡', 'ন্দ্ব':'›Ø', 'প্ন':'cœ', 'ত্য':'Z¨', 'স্ক্র':'¯‹«', 
+                'স্ট্র':'÷«', 'থ্র':'_«', 'প্প':'c&c', 'প্স':'c&m',
                 '¼¶':'ঙ্ক্ষ', 'O&g':'ঙ্ম',
                 '\xBB':'গ্ধ', '»':'গ্ধ', '¨':'্য', '«':'্র', '&':'্',
 
@@ -2234,7 +2234,7 @@
             let pos = 0;
 
             while (pos < text.length) {
-                const start = text.indexOf("[EQ ", pos);
+                const start = text.indexOf("[EQ", pos);
 
                 if (start === -1) {
                     if (pos < text.length) {
@@ -2268,7 +2268,7 @@
                     break;
                 }
 
-                const rawToken = text.slice(start + 4, end).trim();
+                const rawToken = text.slice(start + 3, end).trim();
 
                 parts.push({
                     type: "eq",
@@ -2460,24 +2460,39 @@ If answer or explanation does not exist, use null.`;
                     const items = parsedDocument?.document?.content || [];
 
                     // ============================================================
-                    // OOXML জেনারেটর ইঞ্জিন (With Balanced Parser)
+                    // বুলেটপ্রুফ OOXML জেনারেটর ইঞ্জিন 
                     // ============================================================
                     function insertSmartLine(text, fontName, fontSize, isBold) {
-                        if (!text.includes("[EQ ")) {
-                            let p = targetRange.insertParagraph(text, "Before");
+                        text = String(text || "");
+
+                        // যদি ফিল্ড কোড না থাকে, তাহলে ওয়ার্ডের ন্যাটিভ এপিআই ব্যবহার হবে (যা \n বা নতুন লাইন সাপোর্ট করে)
+                        if (!text.includes("[EQ")) {
+                            let lines = text.split('\n');
+                            let p = targetRange.insertParagraph(lines[0], "Before");
                             p.font.name = fontName;
                             p.font.size = fontSize;
                             p.font.bold = isBold;
+                            
+                            for (let i = 1; i < lines.length; i++) {
+                                let brRange = p.insertText("\n" + lines[i], "End"); 
+                                brRange.font.name = fontName;
+                                brRange.font.size = fontSize;
+                                brRange.font.bold = isBold;
+                            }
                             return;
                         }
 
+                        // যদি ফিল্ড কোড থাকে
                         const parts = parseEQTokens(text);
                         let runs = "";
                         const bTag = isBold ? '<w:b w:val="1"/>' : '';
 
                         for (const part of parts) {
                             if (part.type === "eq") {
-                                const instruction = part.value;
+                                let instruction = part.value.trim();
+                                instruction = instruction.replace(/\\r/g, '\\R'); 
+                                instruction = instruction.replace(/\\f/g, '\\F'); 
+
                                 const safeInstruction = instruction
                                     .replace(/&/g, '&amp;')
                                     .replace(/</g, '&lt;')
@@ -2487,52 +2502,76 @@ If answer or explanation does not exist, use null.`;
                                 <w:r>
                                     <w:rPr>
                                         <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                        <w:sz w:val="${fontSize * 2}"/>
                                         ${bTag}
+                                        <w:sz w:val="${fontSize * 2}"/>
+                                        <w:szCs w:val="${fontSize * 2}"/>
                                     </w:rPr>
                                     <w:fldChar w:fldCharType="begin"/>
                                 </w:r>
                                 <w:r>
                                     <w:rPr>
                                         <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                        <w:sz w:val="${fontSize * 2}"/>
                                         ${bTag}
+                                        <w:sz w:val="${fontSize * 2}"/>
+                                        <w:szCs w:val="${fontSize * 2}"/>
                                     </w:rPr>
                                     <w:instrText xml:space="preserve"> EQ ${safeInstruction} </w:instrText>
                                 </w:r>
                                 <w:r>
                                     <w:rPr>
                                         <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                        <w:sz w:val="${fontSize * 2}"/>
                                         ${bTag}
+                                        <w:sz w:val="${fontSize * 2}"/>
+                                        <w:szCs w:val="${fontSize * 2}"/>
                                     </w:rPr>
                                     <w:fldChar w:fldCharType="separate"/>
                                 </w:r>
                                 <w:r>
                                     <w:rPr>
                                         <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                        <w:sz w:val="${fontSize * 2}"/>
                                         ${bTag}
+                                        <w:sz w:val="${fontSize * 2}"/>
+                                        <w:szCs w:val="${fontSize * 2}"/>
+                                    </w:rPr>
+                                    <w:t xml:space="preserve"> </w:t>
+                                </w:r>
+                                <w:r>
+                                    <w:rPr>
+                                        <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
+                                        ${bTag}
+                                        <w:sz w:val="${fontSize * 2}"/>
+                                        <w:szCs w:val="${fontSize * 2}"/>
                                     </w:rPr>
                                     <w:fldChar w:fldCharType="end"/>
                                 </w:r>`;
                             } else {
-                                const safeText = part.value
-                                    .replace(/&/g, '&amp;')
-                                    .replace(/</g, '&lt;')
-                                    .replace(/>/g, '&gt;');
+                                // টেক্সটের ভেতরে \n থাকলে সেটাকে ভেঙে <w:br/> বানানো হচ্ছে, যাতে ক্র্যাশ না করে
+                                let segments = part.value.split('\n');
+                                
+                                for (let i = 0; i < segments.length; i++) {
+                                    let seg = segments[i];
+                                    if (i > 0) {
+                                        runs += `<w:r><w:br/></w:r>`; 
+                                    }
+                                    
+                                    let safeText = seg
+                                        .replace(/&/g, '&amp;')
+                                        .replace(/</g, '&lt;')
+                                        .replace(/>/g, '&gt;');
 
-                                if (!safeText) continue;
-
-                                runs += `
-                                <w:r>
-                                    <w:rPr>
-                                        <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                        <w:sz w:val="${fontSize * 2}"/>
-                                        ${bTag}
-                                    </w:rPr>
-                                    <w:t xml:space="preserve">${safeText}</w:t>
-                                </w:r>`;
+                                    if (safeText) {
+                                        runs += `
+                                        <w:r>
+                                            <w:rPr>
+                                                <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
+                                                ${bTag}
+                                                <w:sz w:val="${fontSize * 2}"/>
+                                                <w:szCs w:val="${fontSize * 2}"/>
+                                            </w:rPr>
+                                            <w:t xml:space="preserve">${safeText}</w:t>
+                                        </w:r>`;
+                                    }
+                                }
                             }
                         }
 
@@ -2553,8 +2592,9 @@ If answer or explanation does not exist, use null.`;
                                     <w:pPr>
                                       <w:rPr>
                                         <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                        <w:sz w:val="${fontSize * 2}"/>
                                         ${bTag}
+                                        <w:sz w:val="${fontSize * 2}"/>
+                                        <w:szCs w:val="${fontSize * 2}"/>
                                       </w:rPr>
                                     </w:pPr>
                                     ${runs}
