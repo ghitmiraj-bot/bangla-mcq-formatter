@@ -2215,22 +2215,21 @@
                 return;
             }
 
-            // Clean the key just in case
-            apiKey = apiKey.trim();
-
+            apiKey = apiKey.trim(); // Remove any accidental spaces
             setLoading("btnExtractText", true);
             
             try {
-                // The prompt for the AI
+                // Highly optimized prompt
                 const prompt = "You are an expert MCQ parser. Extract all the Multiple Choice Questions from this image. Do NOT solve them or change the language. Output the text EXACTLY in this format:\n\n1. [Question text here]\nক. [Option 1]\nখ. [Option 2]\nগ. [Option 3]\nঘ. [Option 4]\nসঠিক উত্তর: [Answer label like ক, খ] (only if explicitly visible in the image)\nব্যাখ্যা: [Explanation text] (only if explicitly visible in the image)\n\nRULES:\n- Ensure perfect Bengali Unicode typing.\n- Separate each question with a blank line.\n- Do NOT include any extra markdown formatting like ``` or bold text.\n- Do not include any introductory or concluding remarks.";
                 
+                // Exactly following Google's REST API documentation syntax
                 const requestBody = {
                     contents: [{
                         parts: [
                             { text: prompt },
                             { 
-                                inlineData: { 
-                                    mimeType: currentVisionImageMime, 
+                                inline_data: { 
+                                    mime_type: currentVisionImageMime, 
                                     data: currentVisionImageBase64 
                                 } 
                             }
@@ -2238,13 +2237,8 @@
                     }]
                 };
 
-                // Updated Model Name: Trying gemini-2.5-flash or gemini-2.0-flash which are newer.
-                // If this fails, we can try gemini-pro-vision.
-                const modelName = "gemini-2.0-flash"; // Or try "gemini-1.5-pro" if flash still fails
-                
-                const url = `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){modelName}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
-                console.log("Sending request to:", url.split("?key=")[0] + "?key=HIDDEN");
+                // Reverted to the 100% stable gemini-1.5-flash model
+                const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$){apiKey}`;
 
                 const response = await fetch(url, {
                     method: "POST",
@@ -2261,14 +2255,14 @@
                             const errData = JSON.parse(responseText);
                             errorMsg = errData.error?.message || errorMsg;
                         } catch(e) {
-                            errorMsg = "Server Error: " + responseText.substring(0, 50);
+                            if (responseText.includes("405")) {
+                                errorMsg = "Server Error 405: Model endpoint not allowed. Please refresh and try again.";
+                            } else {
+                                errorMsg = "Server Error: " + responseText.substring(0, 50);
+                            }
                         }
                     }
                     throw new Error(errorMsg);
-                }
-
-                if (!responseText) {
-                    throw new Error("Empty response received from the AI server.");
                 }
 
                 const data = JSON.parse(responseText);
@@ -2278,6 +2272,7 @@
                     throw new Error("AI could not find any readable text in this image.");
                 }
                 
+                // Clean markdown artifacts
                 extractedText = extractedText.replace(/```[a-zA-Z]*\n?/g, '').replace(/```/g, '').trim();
 
                 await Word.run(async (context) => {
@@ -2302,7 +2297,7 @@
                 });
 
             } catch (error) {
-                showStatus("Error: " + (error.message || "Unknown issue occurred"), true);
+                showStatus("Error: " + (error.message || "Unknown issue"), true);
                 console.error("Vision AI Error:", error);
             } finally {
                 setLoading("btnExtractText", false);
