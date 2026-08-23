@@ -2229,7 +2229,6 @@
                 return;
             }
 
-            // Very large base64 payloads can make browser requests unreliable.
             if (currentVisionImageBase64.length > 12 * 1024 * 1024) {
                 showStatus("This image is very large. Please use a smaller image for reliable OCR.", true);
                 return;
@@ -2238,9 +2237,71 @@
             setLoading("btnExtractText", true);
             
             try {
-                const prompt = "You are an expert MCQ parser. Extract all the Multiple Choice Questions from this image. Do NOT solve them or change the language. Output the text EXACTLY in this format:\n\n1. [Question text here]\nক. [Option 1]\nখ. [Option 2]\nগ. [Option 3]\nঘ. [Option 4]\nসঠিক উত্তর: [Answer label like ক, খ] (only if explicitly visible in the image)\nব্যাখ্যা: [Explanation text] (only if explicitly visible in the image)\n\nRULES:\n- Ensure perfect Bengali Unicode typing.\n- Separate each question with a blank line.\n- Do NOT include any extra markdown formatting like ``` or bold text.\n- Do not include any introductory or concluding remarks.";
+                // আপনার দেওয়া সেই দুর্দান্ত JSON System Prompt
+                const prompt = `You are the document understanding and formatting engine of MCQ Studio.
+
+Your job is to analyze user-provided documents, images, PDFs, screenshots, clipboard text, and other extracted text, then reconstruct the content while preserving the original document's structure, order, wording, and formatting relationships.
+
+==================================================
+CORE PRINCIPLE
+==================================================
+The original document is the source of truth.
+Do not rewrite, summarize, improve, correct, reorder, or reinterpret the content.
+Extract and reconstruct the content exactly as it appears in the source as much as possible.
+Preserve: Original wording, Original Bangla text, Bangla conjunct characters, Names, Numbers, Question numbering, Option labels, Punctuation, Mathematical expressions, Symbols, English words, Headings, Paragraphs, Lists, Tables, Line/section relationships, Original content order.
+Never invent missing content.
+Never silently correct uncertain OCR.
+If a character or word is uncertain, preserve the closest readable source text and mark the uncertainty.
+
+==================================================
+MCQ DETECTION & STRUCTURE
+==================================================
+If the document contains MCQs, identify them as MCQs.
+An MCQ normally contains: 1. Question serial/number, 2. Question text, 3. Multiple options, 4. Correct answer, 5. Optional explanation.
+
+For every detected MCQ:
+- Preserve the original question serial number exactly as it appears.
+- Preserve the original question and option text/labels exactly.
+- Do NOT shuffle options or renumber questions.
+
+When converting an MCQ into structured content, maintain this logical order:
+QUESTION -> OPTIONS -> ANSWER -> EXPLANATION (if present)
+
+==================================================
+OUTPUT FORMAT (JSON ONLY)
+==================================================
+Return valid JSON only. Do not wrap in markdown \`\`\`json.
+Use this exact structure:
+{
+  "document": {
+    "title": "",
+    "content": [
+      {
+        "type": "heading",
+        "text": "",
+        "confidence": "high"
+      },
+      {
+        "type": "paragraph",
+        "text": "",
+        "confidence": "high"
+      },
+      {
+        "type": "mcq",
+        "serial": "",
+        "question": "",
+        "options": [
+          { "label": "", "text": "" }
+        ],
+        "answer": { "text": "", "confidence": "high" },
+        "explanation": { "text": "", "confidence": "high" },
+        "confidence": "high"
+      }
+    ]
+  }
+}
+If answer or explanation does not exist, use null.`;
                 
-                // FIX 1: Exact CamelCase keys required by Google REST API (inlineData and mimeType)
                 const requestBody = {
                     contents: [{
                         parts: [
@@ -2252,99 +2313,116 @@
                                 } 
                             }
                         ]
-                    }]
+                    }],
+                    generationConfig: {
+                        responseMimeType: "application/json" // Force Gemini to return structured JSON
+                    }
                 };
 
-                // ============================================================
-                // GEMINI VISION MODEL
-                // ============================================================
-                // Gemini 2.0 Flash was shut down by Google on June 1, 2026.
-                // Use the current stable multimodal model instead.
-                // ============================================================
+                // আপনার পরীক্ষিত ও সফল লেটেস্ট মডেলটিই ব্যবহার করা হলো
                 const VISION_MODEL = "gemini-3.6-flash";
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${VISION_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
-                // Standard JSON request. No custom headers are required.
                 const response = await fetch(url, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(requestBody)
                 });
 
                 const responseText = await response.text();
-                let responseData = null;
-
-                try {
-                    responseData = responseText ? JSON.parse(responseText) : null;
-                } catch (parseError) {
-                    responseData = null;
-                }
 
                 if (!response.ok) {
-                    const apiMessage = responseData?.error?.message || "";
-                    let errorMsg = apiMessage || `Gemini API request failed (HTTP ${response.status}).`;
-
-                    if (response.status === 400) {
-                        errorMsg = apiMessage || "Invalid image/request. Please try another image.";
-                    } else if (response.status === 401 || response.status === 403) {
-                        errorMsg = apiMessage || "Gemini API key is invalid or does not have permission for this model.";
-                    } else if (response.status === 404) {
-                        errorMsg = `Vision model '${VISION_MODEL}' was not found for this API key/project.`;
-                    } else if (response.status === 429) {
-                        errorMsg = apiMessage || "Gemini rate limit reached. Please wait a moment and try again.";
-                    } else if (response.status >= 500) {
-                        errorMsg = apiMessage || "Google Gemini service is temporarily unavailable. Please try again.";
-                    }
-
+                    let errorMsg = `HTTP Error ${response.status}`;
+                    try {
+                        const errData = JSON.parse(responseText);
+                        errorMsg = errData.error?.message || errorMsg;
+                    } catch(e) { }
                     throw new Error(errorMsg);
                 }
 
-                const candidates = responseData?.candidates || [];
-                const parts = candidates[0]?.content?.parts || [];
-                let extractedText = parts
-                    .filter(part => typeof part?.text === "string")
-                    .map(part => part.text)
-                    .join("\n")
-                    .trim();
-
-                if (!extractedText) {
-                    const finishReason = candidates[0]?.finishReason || "unknown";
-                    throw new Error(`AI returned no readable text (finish reason: ${finishReason}).`);
+                // JSON ডাটা পার্স করা হচ্ছে
+                const data = JSON.parse(responseText);
+                let rawJsonOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (!rawJsonOutput) {
+                    throw new Error("AI returned an empty response.");
+                }
+                
+                rawJsonOutput = rawJsonOutput.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+                
+                let parsedDocument;
+                try {
+                    parsedDocument = JSON.parse(rawJsonOutput);
+                } catch(e) {
+                    throw new Error("Failed to parse AI output. AI did not return valid JSON.");
                 }
 
-                // Remove markdown code fences only; keep the actual extracted text.
-                extractedText = extractedText
-                    .replace(/^```(?:text|plain|markdown)?\s*/i, "")
-                    .replace(/\s*```$/i, "")
-                    .trim();
-
                 // ============================================================
-                // INSERT INTO WORD
+                // JSON ডাটা ওয়ার্ডে স্মার্টলি ফরম্যাট করে বসানো
                 // ============================================================
                 await Word.run(async (context) => {
                     const selection = context.document.getSelection();
-                    const lines = extractedText.split(/\r?\n/);
+                    let targetRange = selection.insertText("", "Replace");
+                    
+                    const items = parsedDocument?.document?.content || [];
 
-                    // Replace the current selection, then insert each line.
-                    const targetRange = selection.insertText("", "Replace");
+                    for (const item of items) {
+                        if (item.type === "heading") {
+                            let p = targetRange.insertParagraph(item.text, "Before");
+                            p.font.name = "Kalpurush";
+                            p.font.size = 14;
+                            p.font.bold = true;
+                            targetRange.insertParagraph("", "Before");
+                        } 
+                        else if (item.type === "paragraph") {
+                            let p = targetRange.insertParagraph(item.text, "Before");
+                            p.font.name = "Kalpurush";
+                            p.font.size = 11;
+                            targetRange.insertParagraph("", "Before");
+                        } 
+                        else if (item.type === "mcq") {
+                            // প্রশ্ন বোল্ড করে বসানো
+                            let qText = `${item.serial ? item.serial + ' ' : ''}${item.question}`;
+                            let qPara = targetRange.insertParagraph(qText.trim(), "Before");
+                            qPara.font.name = "Kalpurush";
+                            qPara.font.size = 11;
+                            qPara.font.bold = true; 
 
-                    let insertedRanges = [];
-                    for (const rawLine of lines) {
-                        const line = rawLine.trim();
-                        const range = targetRange.insertParagraph(line, "Before");
-                        insertedRanges.push(range);
+                            // অপশনগুলো সুন্দর করে নিচে নিচে বসানো
+                            if (item.options && Array.isArray(item.options)) {
+                                for (const opt of item.options) {
+                                    let optText = `${opt.label ? opt.label + ' ' : ''}${opt.text}`;
+                                    let oPara = targetRange.insertParagraph(optText.trim(), "Before");
+                                    oPara.font.name = "Kalpurush";
+                                    oPara.font.size = 11;
+                                    oPara.font.bold = false;
+                                }
+                            }
+
+                            // উত্তর এবং ব্যাখ্যা বসানো
+                            if (item.answer && item.answer.text) {
+                                let ansText = item.answer.text.startsWith("উত্তর") ? item.answer.text : `উত্তর: ${item.answer.text}`;
+                                let aPara = targetRange.insertParagraph(ansText, "Before");
+                                aPara.font.name = "Kalpurush";
+                                aPara.font.size = 11;
+                                aPara.font.bold = true;
+                            }
+
+                            if (item.explanation && item.explanation.text) {
+                                let expText = item.explanation.text.startsWith("ব্যাখ্যা") ? item.explanation.text : `ব্যাখ্যা: ${item.explanation.text}`;
+                                let ePara = targetRange.insertParagraph(expText, "Before");
+                                ePara.font.name = "Kalpurush";
+                                ePara.font.size = 11;
+                                ePara.font.bold = false;
+                            }
+                            
+                            targetRange.insertParagraph("", "Before"); // দুটি প্রশ্নের মাঝে ফাঁকা জায়গা
+                        }
                     }
 
-                    // Use Unicode Bangla font for OCR output.
-                    for (const range of insertedRanges) {
-                        range.font.name = "Kalpurush";
-                        range.font.size = 10.5;
-                    }
-
+                    targetRange.delete();
                     await context.sync();
-                    showStatus("MCQs extracted and inserted into Word successfully!");
+                    showStatus("Smart JSON Extraction Successful!");
                 });
 
             } catch (error) {
