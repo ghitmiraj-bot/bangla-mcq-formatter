@@ -2221,13 +2221,14 @@
             try {
                 const prompt = "You are an expert MCQ parser. Extract all the Multiple Choice Questions from this image. Do NOT solve them or change the language. Output the text EXACTLY in this format:\n\n1. [Question text here]\nক. [Option 1]\nখ. [Option 2]\nগ. [Option 3]\nঘ. [Option 4]\nসঠিক উত্তর: [Answer label like ক, খ] (only if explicitly visible in the image)\nব্যাখ্যা: [Explanation text] (only if explicitly visible in the image)\n\nRULES:\n- Ensure perfect Bengali Unicode typing.\n- Separate each question with a blank line.\n- Do NOT include any extra markdown formatting like ``` or bold text.\n- Do not include any introductory or concluding remarks.";
                 
+                // FIX 1: Exact CamelCase keys required by Google REST API (inlineData and mimeType)
                 const requestBody = {
                     contents: [{
                         parts: [
                             { text: prompt },
                             { 
-                                inline_data: { 
-                                    mime_type: currentVisionImageMime, 
+                                inlineData: { 
+                                    mimeType: currentVisionImageMime, 
                                     data: currentVisionImageBase64 
                                 } 
                             }
@@ -2235,14 +2236,15 @@
                     }]
                 };
 
-                // FIX: லிংক থেকে Key সরিয়ে ফেলা হয়েছে যেন URL না ভাঙে
-                const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent)`;
+                // FIX 2: Key is sent in the URL with encodeURIComponent to prevent broken links
+                // FIX 3: Using the stable gemini-1.5-flash model
+                const url = `[https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$](https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$){encodeURIComponent(apiKey)}`;
 
+                // We only send standard headers to avoid CORS Preflight (OPTIONS) 405 error
                 const response = await fetch(url, {
                     method: "POST",
                     headers: { 
-                        "Content-Type": "application/json",
-                        "x-goog-api-key": apiKey // FIX: Key পাঠানো হচ্ছে নিরাপদ Header এর মাধ্যমে
+                        "Content-Type": "application/json" 
                     },
                     body: JSON.stringify(requestBody)
                 });
@@ -2251,13 +2253,11 @@
 
                 if(!response.ok) {
                     let errorMsg = `HTTP Error ${response.status}`;
-                    if (responseText) {
-                        try {
-                            const errData = JSON.parse(responseText);
-                            errorMsg = errData.error?.message || errorMsg;
-                        } catch(e) {
-                            errorMsg = "Server Error: " + responseText.substring(0, 50);
-                        }
+                    try {
+                        const errData = JSON.parse(responseText);
+                        errorMsg = errData.error?.message || errorMsg;
+                    } catch(e) {
+                        errorMsg = "Server Error: " + responseText.substring(0, 50);
                     }
                     throw new Error(errorMsg);
                 }
@@ -2300,7 +2300,6 @@
                 setLoading("btnExtractText", false);
             }
         };
-
     </script>
 </body>
 </html>
