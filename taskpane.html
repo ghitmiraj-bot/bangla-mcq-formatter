@@ -358,7 +358,7 @@
                     <input type="password" id="gemini-api-key" placeholder="Paste your free Gemini API Key" class="w-full p-2 border rounded text-xs focus:ring-2 focus:ring-teal-400 outline-none">
                     <button id="btnSaveApiKey" class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold py-1.5 rounded transition shadow-sm">Save Key</button>
                     <p class="text-[10px] text-gray-500 mt-1"><a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-teal-600 underline">Get a free key</a> from Google AI Studio. The key is stored locally in this browser.</p>
-                    <p class="text-[10px] text-gray-400 mt-1">Vision model: <strong>Gemini 3.6 Flash</strong></p>
+                    <p class="text-[10px] text-gray-400 mt-1">Vision model: <strong>Gemini 3.5 Flash Lite</strong></p>
                 </div>
             </div>
 
@@ -1096,9 +1096,9 @@
                 '¾':'জ্জ', 'S&S':'ঝ্ঝ', '`&N':'দ্ঘ', 'šÍ':'ন্ত', 'š’':'ন্থ',
                 'í':'ল্প', 'j&e':'ল্ব', 'j&g':'ল্ম', 'jø':'ল্ল', 'j&d':'ল্ফ',
                 'aŸ':'ধ্ব', 'k¦':'শ্ব', 'Z¡':'ত্ব', '_¡':'থ্ব', 'gœ':'ম্ন', 'k&g':'শ্ম',
-                '`¨':'দ্য', 'š¿':'ন্ত্র', '¤cÖ':'ম্প্র', '¯’¨':'স্থ্য', 'ó«':'ষ্ট্র',
-                'kœ':'শ্ন', 'e¨':'ব্য', '¯¿':'স্ত্র',
-                'Ë¡':'ত্ত্ব', '›Ø':'ন্দ্ব', 'cœ':'প্ন', 'Z¨':'ত্য', '¯‹«':'স্ক্র',
+                '`¨':'দ্য', 'ন্ত্র':'š¿', 'ম্প্র':'¤cÖ', 'স্থ্য':'¯’¨', 'ষ্ট্র':'ó«', 
+                'শ্ন':'kœ', 'ব্য':'e¨', 'স্ত্র':'¯¿', 
+                'ত্ত্ব':'Ë¡', 'ন্দ্ব':'›Ø', 'cœ':'প্ন', 'Z¨':'ত্য', '¯‹«':'স্ক্র',
                 '÷«':'স্ট্র', '_«':'থ্র', 'c&c':'প্প', 'c&m':'প্স',
                 '¼¶':'ঙ্ক্ষ', 'O&g':'ঙ্ম',
                 '\xBB':'গ্ধ', '»':'গ্ধ', '¨':'্য', '«':'্র', '&':'্',
@@ -2237,7 +2237,7 @@
             setLoading("btnExtractText", true);
             
             try {
-                // আপনার দেওয়া সেই দুর্দান্ত JSON System Prompt
+                // JSON System Prompt
                 const prompt = `You are the document understanding and formatting engine of MCQ Studio.
 
 Your job is to analyze user-provided documents, images, PDFs, screenshots, clipboard text, and other extracted text, then reconstruct the content while preserving the original document's structure, order, wording, and formatting relationships.
@@ -2319,7 +2319,7 @@ If answer or explanation does not exist, use null.`;
                     }
                 };
 
-                // আপনার পরীক্ষিত ও সফল লেটেস্ট মডেলটিই ব্যবহার করা হলো
+                // Model Changed to gemini-3.5-flash-lite as requested
                 const VISION_MODEL = "gemini-3.5-flash-lite";
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${VISION_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
@@ -2340,7 +2340,6 @@ If answer or explanation does not exist, use null.`;
                     throw new Error(errorMsg);
                 }
 
-                // JSON ডাটা পার্স করা হচ্ছে
                 const data = JSON.parse(responseText);
                 let rawJsonOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 
@@ -2358,7 +2357,7 @@ If answer or explanation does not exist, use null.`;
                 }
 
                 // ============================================================
-                // JSON ডাটা ওয়ার্ডে স্মার্টলি ফরম্যাট করে বসানো
+                // JSON ডাটা ওয়ার্ডে সিম্পল ভাবে বসানো (No OOXML, No Extra Gaps)
                 // ============================================================
                 await Word.run(async (context) => {
                     const selection = context.document.getSelection();
@@ -2366,37 +2365,53 @@ If answer or explanation does not exist, use null.`;
                     
                     const items = parsedDocument?.document?.content || [];
 
+                    // একটি ফ্রেশ ইনসার্ট ফাংশন, যা \n (নতুন লাইন) সাপোর্ট করে
+                    const insertLine = (text, size, isBold) => {
+                        if (!text) return;
+                        let lines = String(text).split('\n');
+                        let p = targetRange.insertParagraph(lines[0].trim(), "Before");
+                        p.font.name = "Kalpurush";
+                        p.font.size = size;
+                        p.font.bold = isBold;
+                        
+                        for (let i = 1; i < lines.length; i++) {
+                            let brRange = p.insertText("\n" + lines[i].trim(), "End"); 
+                            brRange.font.name = "Kalpurush";
+                            brRange.font.size = size;
+                            brRange.font.bold = isBold;
+                        }
+                    };
+
                     for (const item of items) {
                         if (item.type === "heading") {
-                            insertSmartLine(item.text, "Kalpurush", 14, true);
+                            insertLine(item.text, 14, true);
                         } 
                         else if (item.type === "paragraph") {
-                            insertSmartLine(item.text, "Kalpurush", 11, false);
+                            insertLine(item.text, 11, false);
                         } 
                         else if (item.type === "mcq") {
                             let qText = `${item.serial ? item.serial + ' ' : ''}${item.question}`;
-                            insertSmartLine(qText.trim(), "Kalpurush", 11, true);
+                            insertLine(qText.trim(), 11, true);
 
                             if (item.options && Array.isArray(item.options)) {
                                 for (const opt of item.options) {
                                     let optText = `${opt.label ? opt.label + ' ' : ''}${opt.text}`;
-                                    insertSmartLine(optText.trim(), "Kalpurush", 11, false);
+                                    insertLine(optText.trim(), 11, false);
                                 }
                             }
 
                             if (item.answer && item.answer.text) {
                                 let ansText = item.answer.text.startsWith("উত্তর") ? item.answer.text : `উত্তর: ${item.answer.text}`;
-                                insertSmartLine(ansText, "Kalpurush", 11, true);
+                                insertLine(ansText, 11, true);
                             }
 
                             if (item.explanation && item.explanation.text) {
                                 let expText = item.explanation.text.startsWith("ব্যাখ্যা") ? item.explanation.text : `ব্যাখ্যা: ${item.explanation.text}`;
-                                insertSmartLine(expText, "Kalpurush", 11, false);
+                                insertLine(expText, 11, false);
                             }
-                            
-                            // MCQ এর শেষেও কোনো এক্সট্রা গ্যাপ রাখা হয়নি
                         }
                     }
+                    
                     targetRange.delete();
                     await context.sync();
                     showStatus("Smart JSON Extraction Successful!");
