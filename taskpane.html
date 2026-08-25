@@ -2611,11 +2611,9 @@ If answer or explanation does not exist, use null.`;
                     for (const item of items) {
                         if (item.type === "heading") {
                             insertSmartLine(item.text, "Kalpurush", 14, true);
-                            targetRange.insertParagraph("", "Before");
                         } 
                         else if (item.type === "paragraph") {
                             insertSmartLine(item.text, "Kalpurush", 11, false);
-                            targetRange.insertParagraph("", "Before");
                         } 
                         else if (item.type === "mcq") {
                             let qText = `${item.serial ? item.serial + ' ' : ''}${item.question}`;
@@ -2638,7 +2636,7 @@ If answer or explanation does not exist, use null.`;
                                 insertSmartLine(expText, "Kalpurush", 11, false);
                             }
                             
-                            targetRange.insertParagraph("", "Before"); 
+                            // MCQ এর শেষেও কোনো এক্সট্রা গ্যাপ রাখা হয়নি
                         }
                     }
 
