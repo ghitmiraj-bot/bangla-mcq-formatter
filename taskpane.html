@@ -1096,10 +1096,10 @@
                 '¾':'জ্জ', 'S&S':'ঝ্ঝ', '`&N':'দ্ঘ', 'šÍ':'ন্ত', 'š’':'ন্থ',
                 'í':'ল্প', 'j&e':'ল্ব', 'j&g':'ল্ম', 'jø':'ল্ল', 'j&d':'ল্ফ',
                 'aŸ':'ধ্ব', 'k¦':'শ্ব', 'Z¡':'ত্ব', '_¡':'থ্ব', 'gœ':'ম্ন', 'k&g':'শ্ম',
-                '`¨':'দ্য', 'ন্ত্র':'š¿', 'ম্প্র':'¤cÖ', 'স্থ্য':'¯’¨', 'ষ্ট্র':'ó«', 
-                'শ্ন':'kœ', 'ব্য':'e¨', 'স্ত্র':'¯¿', 
-                'ত্ত্ব':'Ë¡', 'ন্দ্ব':'›Ø', 'প্ন':'cœ', 'ত্য':'Z¨', 'স্ক্র':'¯‹«', 
-                'স্ট্র':'÷«', 'থ্র':'_«', 'প্প':'c&c', 'প্স':'c&m',
+                '`¨':'দ্য', 'š¿':'ন্ত্র', '¤cÖ':'ম্প্র', '¯’¨':'স্থ্য', 'ó«':'ষ্ট্র',
+                'kœ':'শ্ন', 'e¨':'ব্য', '¯¿':'স্ত্র',
+                'Ë¡':'ত্ত্ব', '›Ø':'ন্দ্ব', 'cœ':'প্ন', 'Z¨':'ত্য', '¯‹«':'স্ক্র',
+                '÷«':'স্ট্র', '_«':'থ্র', 'c&c':'প্প', 'c&m':'প্স',
                 '¼¶':'ঙ্ক্ষ', 'O&g':'ঙ্ম',
                 '\xBB':'গ্ধ', '»':'গ্ধ', '¨':'্য', '«':'্র', '&':'্',
 
@@ -2213,74 +2213,6 @@
             btnExtractText.classList.add("opacity-50", "cursor-not-allowed");
         };
 
-        // ============================================================
-        // SMART MATH & NESTED EQ NORMALIZER (MATH ENGINE V3)
-        // ============================================================
-        function normalizeNestedEQ(instruction) {
-            let result = instruction.trim();
-            let changed = true;
-            while (changed) {
-                changed = false;
-                result = result.replace(/\[EQ\s+([\s\S]*?)\]/gi, function(match, innerCode) {
-                    changed = true;
-                    return innerCode.trim();
-                });
-            }
-            return result;
-        }
-
-        function parseEQTokens(text) {
-            const parts = [];
-            let pos = 0;
-
-            while (pos < text.length) {
-                const start = text.indexOf("[EQ", pos);
-
-                if (start === -1) {
-                    if (pos < text.length) {
-                        parts.push({ type: "text", value: text.slice(pos) });
-                    }
-                    break;
-                }
-
-                if (start > pos) {
-                    parts.push({ type: "text", value: text.slice(pos, start) });
-                }
-
-                let depth = 0;
-                let end = -1;
-
-                for (let i = start; i < text.length; i++) {
-                    const ch = text[i];
-                    if (ch === "[") {
-                        depth++;
-                    } else if (ch === "]") {
-                        depth--;
-                        if (depth === 0) {
-                            end = i;
-                            break;
-                        }
-                    }
-                }
-
-                if (end === -1) {
-                    parts.push({ type: "text", value: text.slice(start) });
-                    break;
-                }
-
-                const rawToken = text.slice(start + 3, end).trim();
-
-                parts.push({
-                    type: "eq",
-                    value: normalizeNestedEQ(rawToken)
-                });
-
-                pos = end + 1;
-            }
-
-            return parts;
-        }
-
         btnExtractText.onclick = async () => {
             let apiKey = localStorage.getItem("gemini_api_key");
             
@@ -2305,6 +2237,7 @@
             setLoading("btnExtractText", true);
             
             try {
+                // আপনার দেওয়া সেই দুর্দান্ত JSON System Prompt
                 const prompt = `You are the document understanding and formatting engine of MCQ Studio.
 
 Your job is to analyze user-provided documents, images, PDFs, screenshots, clipboard text, and other extracted text, then reconstruct the content while preserving the original document's structure, order, wording, and formatting relationships.
@@ -2319,37 +2252,6 @@ Preserve: Original wording, Original Bangla text, Bangla conjunct characters, Na
 Never invent missing content.
 Never silently correct uncertain OCR.
 If a character or word is uncertain, preserve the closest readable source text and mark the uncertainty.
-
-==================================================
-MATH & EQUATION FORMATTING (FIELD CODES)
-==================================================
-If the document contains mathematical fractions, roots, or other expressions, you MUST format them using MS Word EQ Field Code syntax wrapped in square brackets.
-- FRACTIONS: Instead of 2/5, output [EQ \\F(2,5)]. Example: 1/15 -> [EQ \\F(1,15)]
-- ROOTS: Instead of √3, output [EQ \\R(,3)]. Example: 2√3 -> 2[EQ \\R(,3)]
-- CUBE ROOTS: Example: cube root of 8 -> [EQ \\R(3,8)]
-Do NOT use LaTeX or plain text fractions. ALWAYS use this specific [EQ \\F(...)] and [EQ \\R(...)] format.
-
-==================================================
-COMPOUND MATHEMATICAL EXPRESSIONS
-==================================================
-A mathematical expression may contain more than one mathematical operation inside a single expression.
-IMPORTANT: The entire mathematical expression MUST be represented by ONE [EQ ...] token.
-NEVER nest one [EQ ...] token inside another [EQ ...] token.
-
-WRONG: [EQ \\R([EQ \\F(9,4)])]
-CORRECT: [EQ \\R(\\F(9,4))]
-
-For example:
-√(9/4) -> [EQ \\R(\\F(9,4))]
-√(a/b) -> [EQ \\R(\\F(a,b))]
-√((a+b)/c) -> [EQ \\R(\\F(a+b,c))]
-2√(9/4) -> 2[EQ \\R(\\F(9,4))]
-
-A fraction inside a square root is NOT a separate [EQ] field. It is part of the SAME EQ field instruction.
-The [EQ] token represents ONE complete Word EQ field.
-NEVER produce: [EQ \\R([EQ ...])]
-NEVER produce: [EQ \\F([EQ ...],[EQ ...])]
-Instead, combine the mathematical commands inside ONE EQ field.
 
 ==================================================
 MCQ DETECTION & STRUCTURE
@@ -2413,10 +2315,11 @@ If answer or explanation does not exist, use null.`;
                         ]
                     }],
                     generationConfig: {
-                        responseMimeType: "application/json"
+                        responseMimeType: "application/json" // Force Gemini to return structured JSON
                     }
                 };
 
+                // আপনার পরীক্ষিত ও সফল লেটেস্ট মডেলটিই ব্যবহার করা হলো
                 const VISION_MODEL = "gemini-3.5-flash-lite";
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${VISION_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
 
@@ -2437,6 +2340,7 @@ If answer or explanation does not exist, use null.`;
                     throw new Error(errorMsg);
                 }
 
+                // JSON ডাটা পার্স করা হচ্ছে
                 const data = JSON.parse(responseText);
                 let rawJsonOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 
@@ -2453,160 +2357,14 @@ If answer or explanation does not exist, use null.`;
                     throw new Error("Failed to parse AI output. AI did not return valid JSON.");
                 }
 
+                // ============================================================
+                // JSON ডাটা ওয়ার্ডে স্মার্টলি ফরম্যাট করে বসানো
+                // ============================================================
                 await Word.run(async (context) => {
                     const selection = context.document.getSelection();
                     let targetRange = selection.insertText("", "Replace");
                     
                     const items = parsedDocument?.document?.content || [];
-
-                    // ============================================================
-                    // বুলেটপ্রুফ OOXML জেনারেটর ইঞ্জিন 
-                    // ============================================================
-                    function insertSmartLine(text, fontName, fontSize, isBold) {
-                        text = String(text || "");
-
-                        // যদি ফিল্ড কোড না থাকে, তাহলে ওয়ার্ডের ন্যাটিভ এপিআই ব্যবহার হবে (যা \n বা নতুন লাইন সাপোর্ট করে)
-                        if (!text.includes("[EQ")) {
-                            let lines = text.split('\n');
-                            let p = targetRange.insertParagraph(lines[0], "Before");
-                            p.font.name = fontName;
-                            p.font.size = fontSize;
-                            p.font.bold = isBold;
-                            
-                            for (let i = 1; i < lines.length; i++) {
-                                let brRange = p.insertText("\n" + lines[i], "End"); 
-                                brRange.font.name = fontName;
-                                brRange.font.size = fontSize;
-                                brRange.font.bold = isBold;
-                            }
-                            return;
-                        }
-
-                        // যদি ফিল্ড কোড থাকে
-                        const parts = parseEQTokens(text);
-                        let runs = "";
-                        const bTag = isBold ? '<w:b w:val="1"/>' : '';
-
-                        for (const part of parts) {
-                            if (part.type === "eq") {
-                                let instruction = part.value.trim();
-                                instruction = instruction.replace(/\\r/g, '\\R'); 
-                                instruction = instruction.replace(/\\f/g, '\\F'); 
-
-                                const safeInstruction = instruction
-                                    .replace(/&/g, '&amp;')
-                                    .replace(/</g, '&lt;')
-                                    .replace(/>/g, '&gt;');
-
-                                runs += `
-                                <w:r>
-                                    <w:rPr>
-                                        <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                        ${bTag}
-                                        <w:sz w:val="${fontSize * 2}"/>
-                                        <w:szCs w:val="${fontSize * 2}"/>
-                                    </w:rPr>
-                                    <w:fldChar w:fldCharType="begin"/>
-                                </w:r>
-                                <w:r>
-                                    <w:rPr>
-                                        <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                        ${bTag}
-                                        <w:sz w:val="${fontSize * 2}"/>
-                                        <w:szCs w:val="${fontSize * 2}"/>
-                                    </w:rPr>
-                                    <w:instrText xml:space="preserve"> EQ ${safeInstruction} </w:instrText>
-                                </w:r>
-                                <w:r>
-                                    <w:rPr>
-                                        <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                        ${bTag}
-                                        <w:sz w:val="${fontSize * 2}"/>
-                                        <w:szCs w:val="${fontSize * 2}"/>
-                                    </w:rPr>
-                                    <w:fldChar w:fldCharType="separate"/>
-                                </w:r>
-                                <w:r>
-                                    <w:rPr>
-                                        <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                        ${bTag}
-                                        <w:sz w:val="${fontSize * 2}"/>
-                                        <w:szCs w:val="${fontSize * 2}"/>
-                                    </w:rPr>
-                                    <w:t xml:space="preserve"> </w:t>
-                                </w:r>
-                                <w:r>
-                                    <w:rPr>
-                                        <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                        ${bTag}
-                                        <w:sz w:val="${fontSize * 2}"/>
-                                        <w:szCs w:val="${fontSize * 2}"/>
-                                    </w:rPr>
-                                    <w:fldChar w:fldCharType="end"/>
-                                </w:r>`;
-                            } else {
-                                // টেক্সটের ভেতরে \n থাকলে সেটাকে ভেঙে <w:br/> বানানো হচ্ছে, যাতে ক্র্যাশ না করে
-                                let segments = part.value.split('\n');
-                                
-                                for (let i = 0; i < segments.length; i++) {
-                                    let seg = segments[i];
-                                    if (i > 0) {
-                                        runs += `<w:r><w:br/></w:r>`; 
-                                    }
-                                    
-                                    let safeText = seg
-                                        .replace(/&/g, '&amp;')
-                                        .replace(/</g, '&lt;')
-                                        .replace(/>/g, '&gt;');
-
-                                    if (safeText) {
-                                        runs += `
-                                        <w:r>
-                                            <w:rPr>
-                                                <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                                ${bTag}
-                                                <w:sz w:val="${fontSize * 2}"/>
-                                                <w:szCs w:val="${fontSize * 2}"/>
-                                            </w:rPr>
-                                            <w:t xml:space="preserve">${safeText}</w:t>
-                                        </w:r>`;
-                                    }
-                                }
-                            }
-                        }
-
-                        let ooxml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-                        <pkg:package xmlns:pkg="http://schemas.microsoft.com/office/2006/xmlPackage">
-                          <pkg:part pkg:name="/_rels/.rels" pkg:contentType="application/vnd.openxmlformats-package.relationships+xml" pkg:padding="512">
-                            <pkg:xmlData>
-                              <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-                                <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-                              </Relationships>
-                            </pkg:xmlData>
-                          </pkg:part>
-                          <pkg:part pkg:name="/word/document.xml" pkg:contentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml">
-                            <pkg:xmlData>
-                              <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-                                <w:body>
-                                  <w:p>
-                                    <w:pPr>
-                                      <w:rPr>
-                                        <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}" w:eastAsia="${fontName}"/>
-                                        ${bTag}
-                                        <w:sz w:val="${fontSize * 2}"/>
-                                        <w:szCs w:val="${fontSize * 2}"/>
-                                      </w:rPr>
-                                    </w:pPr>
-                                    ${runs}
-                                  </w:p>
-                                </w:body>
-                              </w:document>
-                            </pkg:xmlData>
-                          </pkg:part>
-                        </pkg:package>`;
-
-                        targetRange.insertOoxml(ooxml, "Before");
-                    }
 
                     for (const item of items) {
                         if (item.type === "heading") {
@@ -2639,10 +2397,9 @@ If answer or explanation does not exist, use null.`;
                             // MCQ এর শেষেও কোনো এক্সট্রা গ্যাপ রাখা হয়নি
                         }
                     }
-
                     targetRange.delete();
                     await context.sync();
-                    showStatus("Smart JSON & Math Extraction Successful!");
+                    showStatus("Smart JSON Extraction Successful!");
                 });
 
             } catch (error) {
