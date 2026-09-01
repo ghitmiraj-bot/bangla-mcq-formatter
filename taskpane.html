@@ -3,20 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bangla MCQ Formatter Pro</title>
+    <title>Foliora Studio Suite</title>
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
-        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        #toast { transition: all 0.4s ease-in-out; transform: translateY(100%); opacity: 0; }
+        body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #f8fafc; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .product-pane { display: none; animation: fadeIn 0.25s ease-in-out; }
+        .product-pane.active { display: block; }
+        .subtab-content { display: none; }
+        .subtab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        #toast { transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(120%); opacity: 0; }
         #toast.show { transform: translateY(0); opacity: 1; }
         input[list]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; }
         .dup-result-card { transition: all .15s ease; }
@@ -24,7 +26,7 @@
         .dup-question-text { white-space: pre-wrap; word-break: break-word; }
     </style>
 </head>
-<body class="text-gray-800 h-screen flex flex-col">
+<body class="text-slate-800 h-screen flex flex-col select-none">
 
     <!-- Reusable Datalists -->
     <datalist id="font-list">
@@ -46,361 +48,738 @@
         <option value="13"></option><option value="14"></option><option value="16"></option>
     </datalist>
 
-    <!-- Header Section -->
-    <div class="bg-white px-5 py-4 shadow-sm border-b border-gray-200 flex items-center justify-between z-10">
-        <div>
-            <h1 class="text-xl font-extrabold text-blue-700 tracking-tight">MCQ Formatter <span class="text-sm font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded ml-1">PRO</span></h1>
-            <p class="text-xs text-gray-500 mt-0.5">Publication-grade MS Word Add-in</p>
-        </div>
-        <img src="https://ghitmiraj-bot.github.io/bangla-mcq-formatter/Bangla_MCQ_Formatter_icon.png" alt="Logo" class="w-10 h-10 rounded shadow-sm object-cover" onerror="this.style.display='none'">
-    </div>
-
-    <!-- Navigation Tabs -->
-    <div class="flex border-b border-gray-200 bg-gray-50 px-1 pt-2 overflow-x-auto text-xs sm:text-sm">
-        <button onclick="switchTab('formatting')" id="tab-formatting" class="tab-btn flex-1 py-2 font-semibold text-blue-700 border-b-2 border-blue-700 transition-colors whitespace-nowrap"><i class="fas fa-list-ol mr-1"></i> Format</button>
-        <button onclick="switchTab('converter')" id="tab-converter" class="tab-btn flex-1 py-2 font-semibold text-gray-500 border-b-2 border-transparent hover:text-blue-600 transition-colors whitespace-nowrap"><i class="fas fa-exchange-alt mr-1"></i> Convert</button>
-        <button onclick="switchTab('fonts')" id="tab-fonts" class="tab-btn flex-1 py-2 font-semibold text-gray-500 border-b-2 border-transparent hover:text-blue-600 transition-colors whitespace-nowrap"><i class="fas fa-font mr-1"></i> Fonts</button>
-        <button onclick="switchTab('studio')" id="tab-studio" class="tab-btn flex-1 py-2 font-semibold text-gray-500 border-b-2 border-transparent hover:text-blue-600 transition-colors whitespace-nowrap"><i class="fas fa-layer-group mr-1"></i> Studio</button>
-        <button onclick="switchTab('vision')" id="tab-vision" class="tab-btn flex-1 py-2 font-semibold text-gray-500 border-b-2 border-transparent hover:text-blue-600 transition-colors whitespace-nowrap"><i class="fas fa-eye mr-1"></i> Vision</button>
-    </div>
-
-    <!-- Main Content Area -->
-    <div class="flex-1 overflow-y-auto p-4 relative">
-        <div id="helper-info" class="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4 flex items-start shadow-sm">
-            <i class="fas fa-info-circle text-blue-500 mt-0.5 mr-2"></i>
-            <p class="text-xs text-gray-600">Select text in your document first, then click the desired action below to process.</p>
-        </div>
-
-        <!-- TAB 1: FORMATTING -->
-        <div id="formatting" class="tab-content active space-y-3">
-            <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100 mb-2">
-                <label class="flex items-center space-x-2 cursor-pointer">
-                    <input type="checkbox" id="shuffleCheck" class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 transition" checked>
-                    <span class="text-sm font-medium text-gray-700">Shuffle Options (Randomize)</span>
-                </label>
-            </div>
-
-            <!-- Normal MCQ -->
-            <div>
-                <div class="flex space-x-2">
-                    <button id="btnNormal" class="w-full relative group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-md flex items-center justify-center">
-                        <i class="fas fa-align-left mr-2"></i> Format as Normal MCQ
-                    </button>
-                    <button onclick="toggleSettings('set-normal')" class="bg-gray-200 text-gray-600 px-4 rounded-lg shadow hover:bg-gray-300 transition"><i class="fas fa-cog"></i></button>
-                </div>
-                <div id="set-normal" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 space-y-2 text-sm">
-                    <div><label class="text-gray-600 text-xs font-semibold">Options Font Name</label>
-                        <input type="text" list="font-list" id="norm-opt-font" placeholder="Leave empty for BanglaOMR" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-blue-400 outline-none">
-                    </div>
-                    <div class="flex space-x-2">
-                        <div class="w-1/2"><label class="text-gray-600 text-xs font-semibold">Opt Font Size</label>
-                            <input type="text" list="size-list" id="norm-opt-size" placeholder="Default: 9" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-blue-400 outline-none">
-                        </div>
-                        <div class="w-1/2"><label class="text-gray-600 text-xs font-semibold">Ans Font Size</label>
-                            <input type="text" list="size-list" id="norm-ans-size" placeholder="Default: 10" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-blue-400 outline-none">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Smart MCQ -->
-            <div>
-                <div class="flex space-x-2">
-                    <button id="btnSmart" class="w-full relative group bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-md flex items-center justify-center">
-                        <i class="fas fa-file-alt mr-2"></i> Format as Smart MCQ
-                    </button>
-                    <button onclick="toggleSettings('set-smart')" class="bg-gray-200 text-gray-600 px-4 rounded-lg shadow hover:bg-gray-300 transition"><i class="fas fa-cog"></i></button>
-                </div>
-                <div id="set-smart" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 text-sm">
-                    <label class="text-gray-600 text-xs font-semibold">Answer Font Size</label>
-                    <input type="text" list="size-list" id="smart-ans-size" placeholder="Default: 10" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-blue-400 outline-none">
-                </div>
-            </div>
-
-            <!-- Number & Bold -->
-            <div>
-                <div class="flex space-x-2">
-                    <button id="btnFormatQuestions" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-md flex items-center justify-center mt-2">
-                        <i class="fas fa-list-ul mr-2"></i> Number & Bold Questions
-                    </button>
-                    <button onclick="toggleSettings('set-number')" class="bg-gray-200 text-gray-600 px-4 mt-2 rounded-lg shadow hover:bg-gray-300 transition"><i class="fas fa-cog"></i></button>
-                </div>
-                <div id="set-number" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 text-sm">
-                    <label class="text-gray-600 text-xs font-semibold">Numbering Style</label>
-                    <select id="num-style" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-amber-400 outline-none">
-                        <option value="auto-arabic">1. 2. 3. (MS Word Auto List)</option>
-                        <option value="auto-alpha">a. b. c. (MS Word Auto List)</option>
-                        <option value="auto-roman">i. ii. iii. (MS Word Auto List)</option>
-                        <option value="bn-num">১. ২. ৩. (Bangla Text Numbering)</option>
-                        <option value="bn-alpha">ক. খ. গ. (Bangla Text Numbering)</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 2: CONVERTER -->
-        <div id="converter" class="tab-content space-y-3">
-            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 text-center mb-2">
-                <i class="fas fa-language text-3xl text-indigo-500 mb-2"></i>
-                <h3 class="text-sm font-bold text-gray-700">Smart Bijoy ↔ Unicode</h3>
-                <p class="text-xs text-gray-500 mt-1">Leaves empty inputs to keep original alignment and styling.</p>
-            </div>
-
-            <!-- Unicode to Bijoy -->
-            <div>
-                <div class="flex space-x-2">
-                    <button id="btnUniToBijoy" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all flex items-center justify-center">
-                        Unicode <i class="fas fa-arrow-right mx-3"></i> Bijoy
-                    </button>
-                    <button onclick="toggleSettings('set-u2b')" class="bg-gray-200 text-gray-600 px-4 rounded-lg shadow hover:bg-gray-300 transition"><i class="fas fa-cog"></i></button>
-                </div>
-                <div id="set-u2b" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 space-y-2 text-sm">
-                    <div class="flex space-x-2">
-                        <div class="w-2/3"><label class="text-gray-600 text-xs font-semibold">Target Font Name</label>
-                            <input type="text" list="font-list" id="u2b-font" placeholder="Leave empty for SutonnyMJ" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-indigo-400 outline-none">
-                        </div>
-                        <div class="w-1/3"><label class="text-gray-600 text-xs font-semibold">Font Size</label>
-                            <input type="text" list="size-list" id="u2b-size" placeholder="Keep Original" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-indigo-400 outline-none">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bijoy to Unicode -->
-            <div>
-                <div class="flex space-x-2">
-                    <button id="btnBijoyToUni" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all flex items-center justify-center">
-                        Bijoy <i class="fas fa-arrow-right mx-3"></i> Unicode
-                    </button>
-                    <button onclick="toggleSettings('set-b2u')" class="bg-gray-200 text-gray-600 px-4 rounded-lg shadow hover:bg-gray-300 transition"><i class="fas fa-cog"></i></button>
-                </div>
-                <div id="set-b2u" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 space-y-2 text-sm">
-                    <div class="flex space-x-2">
-                        <div class="w-2/3"><label class="text-gray-600 text-xs font-semibold">Target Font Name</label>
-                            <input type="text" list="font-list" id="b2u-font" placeholder="Leave empty for Kalpurush" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-purple-400 outline-none">
-                        </div>
-                        <div class="w-1/3"><label class="text-gray-600 text-xs font-semibold">Font Size</label>
-                            <input type="text" list="size-list" id="b2u-size" placeholder="Keep Original" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-purple-400 outline-none">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TAB 3: FONTS -->
-        <div id="fonts" class="tab-content space-y-3">
-            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100 text-center mb-2">
-                <i class="fas fa-text-height text-3xl text-cyan-500 mb-2"></i>
-                <h3 class="text-sm font-bold text-gray-700">English Font Fixer</h3>
-                <p class="text-xs text-gray-500 mt-1">Changes English letters/numbers safely.</p>
+    <!-- TOP HEADER: BRAND + WORKSPACE & TIER CONTROLS -->
+    <header class="bg-slate-900 text-white px-4 py-3 shadow-md border-b border-slate-800 flex items-center justify-between shrink-0 z-20">
+        <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-blue-600 flex items-center justify-center font-black text-sm tracking-wider text-white shadow-inner">
+                F
             </div>
             <div>
-                <div class="flex space-x-2">
-                    <button id="btnFixEnglishFont" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-all flex items-center justify-center">
-                        <i class="fas fa-font mr-2"></i> Fix English Fonts
-                    </button>
-                    <button onclick="toggleSettings('set-fixfont')" class="bg-gray-200 text-gray-600 px-4 rounded-lg shadow hover:bg-gray-300 transition"><i class="fas fa-cog"></i></button>
+                <div class="flex items-center space-x-1.5">
+                    <span class="text-base font-extrabold tracking-tight text-white">FOLIORA</span>
+                    <span id="headerTierBadge" class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">PRO</span>
                 </div>
-                <div id="set-fixfont" class="hidden bg-gray-50 border border-gray-200 rounded-lg p-3 mt-2 space-y-2 text-sm">
-                    <div class="flex space-x-2">
-                        <div class="w-2/3"><label class="text-gray-600 text-xs font-semibold">Target Font Name</label>
-                            <input type="text" list="font-list" id="fix-font" placeholder="Default: Times New Roman" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-cyan-400 outline-none">
-                        </div>
-                        <div class="w-1/3"><label class="text-gray-600 text-xs font-semibold">Font Size</label>
-                            <input type="text" list="size-list" id="fix-size" placeholder="Keep Original" class="w-full mt-1 p-2 border rounded bg-white text-gray-700 text-xs focus:ring-2 focus:ring-cyan-400 outline-none">
-                        </div>
-                    </div>
-                </div>
+                <p class="text-[10px] text-slate-400 font-medium">Publishing & Office Suite</p>
             </div>
         </div>
-
-        <!-- TAB 4: STUDIO -->
-        <div id="studio" class="tab-content space-y-3">
-            <div class="bg-gradient-to-r from-gray-800 to-gray-900 p-4 rounded-lg shadow-sm text-center mb-2">
-                <i class="fas fa-layer-group text-3xl text-yellow-400 mb-2"></i>
-                <h3 class="text-sm font-bold text-white">MCQ Studio</h3>
-                <p class="text-xs text-gray-300 mt-1">Duplicate Finder & Question Bank</p>
-            </div>
-
-            <!-- MCQ Duplicate Finder -->
-            <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                <div class="bg-gray-50 px-3 py-2.5 border-b border-gray-200 font-semibold text-sm text-gray-700 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition" onclick="toggleSettings('studio-dup')">
-                    <span><i class="fas fa-clone text-rose-500 mr-2"></i> Duplicate Finder</span>
-                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                </div>
-                <div id="studio-dup" class="hidden p-3 space-y-3">
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-bold text-gray-700">Detection Settings</span>
-                            <button onclick="toggleSettings('duplicateSettings')" type="button" class="text-gray-500 hover:text-gray-800"><i class="fas fa-sliders-h"></i></button>
-                        </div>
-                        <div id="duplicateSettings" class="space-y-2">
-                            <div>
-                                <div class="flex items-center justify-between">
-                                    <label class="text-xs font-semibold text-gray-600">Similarity Threshold</label>
-                                    <span id="duplicateThresholdValue" class="text-xs font-bold text-rose-600">85%</span>
-                                </div>
-                                <input id="duplicateThreshold" type="range" min="70" max="100" value="85" class="w-full accent-rose-600">
-                            </div>
-                            <div class="grid grid-cols-2 gap-2 text-[11px] text-gray-600">
-                                <label class="flex items-center gap-1"><input id="dupIgnoreNumbers" type="checkbox" checked> Ignore Q numbers</label>
-                                <label class="flex items-center gap-1"><input id="dupIgnorePunctuation" type="checkbox" checked> Ignore punctuation</label>
-                                <label class="flex items-center gap-1"><input id="dupIgnoreOptionOrder" type="checkbox" checked> Ignore opt order</label>
-                                <label class="flex items-center gap-1"><input id="dupDetectConflicts" type="checkbox" checked> Detect conflicts</label>
-                                <label class="flex items-center gap-1"><input id="dupProtectNumbers" type="checkbox" checked> Protect numbers</label>
-                                <label class="flex items-center gap-1"><input id="dupCompareOptions" type="checkbox" checked> Compare options</label>
-                            </div>
-                        </div>
-                    </div>
-                    <button id="btnDuplicateFinder" class="w-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-semibold py-2 px-4 rounded transition-all shadow">
-                        Scan Document
-                    </button>
-                    <div id="duplicateSummary" class="hidden grid grid-cols-2 gap-2 mt-2">
-                        <div class="bg-red-50 border border-red-100 rounded p-2 text-center"><div id="dupExactCount" class="text-lg font-extrabold text-red-600">0</div><div class="text-[10px] text-gray-600">Exact Groups</div></div>
-                        <div class="bg-orange-50 border border-orange-100 rounded p-2 text-center"><div id="dupPotentialCount" class="text-lg font-extrabold text-orange-600">0</div><div class="text-[10px] text-gray-600">Potential Groups</div></div>
-                        <div class="bg-yellow-50 border border-yellow-100 rounded p-2 text-center"><div id="dupConflictCount" class="text-lg font-extrabold text-yellow-700">0</div><div class="text-[10px] text-gray-600">Answer Conflicts</div></div>
-                        <div class="bg-blue-50 border border-blue-100 rounded p-2 text-center"><div id="dupQuestionCount" class="text-lg font-extrabold text-blue-600">0</div><div class="text-[10px] text-gray-600">MCQs Scanned</div></div>
-                    </div>
-                    <div id="duplicateResults" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
-                </div>
-            </div>
-
-            <!-- Question Bank Manager -->
-            <div class="border border-gray-200 rounded-lg bg-white overflow-hidden shadow-sm">
-                <div class="bg-gray-50 px-3 py-2.5 border-b border-gray-200 font-semibold text-sm text-gray-700 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition" onclick="toggleSettings('studio-bank')">
-                    <span><i class="fas fa-database text-emerald-500 mr-2"></i> Q-Bank Manager</span>
-                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                </div>
-                <div id="studio-bank" class="p-3 space-y-2 hidden">
-                    <div class="flex space-x-2">
-                        <button id="btnAddBank" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold py-2 px-2 rounded shadow transition-all"><i class="fas fa-plus mr-1"></i> Add Selected</button>
-                        <button id="btnManageBank" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white text-xs font-semibold py-2 px-2 rounded shadow transition-all"><i class="fas fa-folder-open mr-1"></i> Open Bank</button>
-                    </div>
-                    <div class="flex justify-between items-center text-xs text-gray-500 px-1 mt-2">
-                        <span class="bg-gray-100 px-2 py-1 rounded border">Total MCQs: <span id="bank-count" class="font-bold text-gray-800">0</span></span>
-                        <div class="space-x-3 flex items-center">
-                            <input type="file" id="importBankFile" accept=".json" class="hidden">
-                            <label for="importBankFile" class="cursor-pointer text-emerald-600 hover:text-emerald-800 mt-1" title="Import JSON"><i class="fas fa-file-import"></i></label>
-                            <button id="btnExportBank" class="text-blue-600 hover:text-blue-800" title="Export JSON"><i class="fas fa-file-export"></i></button>
-                            <button id="btnClearBank" class="text-red-500 hover:text-red-700" title="Clear Bank"><i class="fas fa-trash-alt"></i></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Set Generator -->
-            <div class="border border-gray-200 rounded-lg bg-white overflow-hidden shadow-sm">
-                <div class="bg-gray-50 px-3 py-2.5 border-b border-gray-200 font-semibold text-sm text-gray-700 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition" onclick="toggleSettings('studio-set')">
-                    <span><i class="fas fa-cubes text-purple-500 mr-2"></i> Set Generator</span>
-                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                </div>
-                <div id="studio-set" class="p-3 space-y-2 hidden">
-                    <div class="flex space-x-2 text-xs">
-                        <div class="w-1/2">
-                            <label class="text-gray-600 font-semibold">MCQ Count</label>
-                            <input type="number" id="set-count" value="25" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-purple-400">
-                        </div>
-                        <div class="w-1/2">
-                            <label class="text-gray-600 font-semibold">Start Num</label>
-                            <input type="number" id="set-start" value="1" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-purple-400">
-                        </div>
-                    </div>
-                    <div class="text-xs mt-1">
-                        <label class="text-gray-600 font-semibold">Number of Sets</label>
-                        <input type="number" id="set-number-of-sets" value="1" min="1" max="10" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-purple-400">
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 mt-1">
-                        <label class="flex items-center"><input type="checkbox" id="set-shuffle-q" checked class="mr-1"> Random Select</label>
-                        <label class="flex items-center"><input type="checkbox" id="set-shuffle-o" checked class="mr-1"> Shuffle Opts</label>
-                    </div>
-                    <button id="btnGenerateSet" class="w-full bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold py-2 px-3 rounded shadow transition-all mt-2">Generate MCQ Set</button>
-                </div>
-            </div>
-
-            <!-- Exam Paper Generator -->
-            <div class="border border-gray-200 rounded-lg bg-white overflow-hidden shadow-sm">
-                <div class="bg-gray-50 px-3 py-2.5 border-b border-gray-200 font-semibold text-sm text-gray-700 flex justify-between items-center cursor-pointer hover:bg-gray-100 transition" onclick="toggleSettings('studio-exam')">
-                    <span><i class="fas fa-graduation-cap text-orange-500 mr-2"></i> Exam Paper Gen.</span>
-                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                </div>
-                <div id="studio-exam" class="p-3 space-y-2 hidden">
-                    <div class="flex space-x-2 text-xs">
-                        <div class="w-3/4">
-                            <label class="text-gray-600 font-semibold">Exam Title / Header</label>
-                            <input type="text" id="exam-title" placeholder="e.g., Weekly Model Test" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-orange-400">
-                        </div>
-                        <div class="w-1/4">
-                            <label class="text-gray-600 font-semibold">Sets</label>
-                            <input type="number" id="exam-sets" value="1" min="1" max="10" title="Number of Sets (Max 10)" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-orange-400 text-center">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 mt-1">
-                        <label class="flex items-center"><input type="checkbox" id="exam-shuffle" checked class="mr-1"> Shuffle Qs & Opts</label>
-                        <label class="flex items-center"><input type="checkbox" id="exam-ans-key" checked class="mr-1"> Answer Key</label>
-                    </div>
-                    <button id="btnGenerateExam" class="w-full bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold py-2 px-3 rounded shadow transition-all mt-2">Create Exam Paper</button>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- TAB 5: VISION (AI SCANNER) -->
-        <div id="vision" class="tab-content space-y-3">
-            <div class="bg-gradient-to-r from-teal-500 to-emerald-600 p-4 rounded-lg shadow-sm text-center mb-2">
-                <i class="fas fa-eye text-3xl text-white mb-2"></i>
-                <h3 class="text-sm font-bold text-white">AI Vision Scanner</h3>
-                <p class="text-xs text-emerald-100 mt-1">Image to Word MCQ Extractor</p>
-            </div>
-
-            <!-- API Key Section -->
-            <div class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
-                <div class="flex justify-between items-center cursor-pointer" onclick="toggleSettings('api-key-settings')">
-                    <span class="text-xs font-bold text-gray-700"><i class="fas fa-key text-yellow-500 mr-1"></i> Gemini API Key</span>
-                    <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
-                </div>
-                <div id="api-key-settings" class="mt-2 hidden space-y-2">
-                    <input type="password" id="gemini-api-key" placeholder="Paste your free Gemini API Key" class="w-full p-2 border rounded text-xs focus:ring-2 focus:ring-teal-400 outline-none">
-                    <button id="btnSaveApiKey" class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold py-1.5 rounded transition shadow-sm">Save Key</button>
-                    <p class="text-[10px] text-gray-500 mt-1"><a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-teal-600 underline">Get a free key</a> from Google AI Studio.</p>
-                    <p class="text-[10px] text-gray-400 mt-1">Vision model: <strong>Gemini 3.5 Flash Lite</strong></p>
-                </div>
-            </div>
-
-            <!-- Upload Area -->
-            <div id="dropzone" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center bg-gray-50 hover:bg-gray-100 transition cursor-pointer flex flex-col items-center justify-center min-h-[140px] relative">
-                <input type="file" id="vision-file-input" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-                <i class="fas fa-cloud-upload-alt text-3xl text-teal-400 mb-2"></i>
-                <span class="text-xs font-semibold text-gray-700 mb-1">Click to upload, Drop an image,</span>
-                <span class="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-1 rounded">or just Paste (Ctrl+V)</span>
-            </div>
-
-            <!-- Image Preview Area -->
-            <div id="vision-preview-container" class="hidden relative border rounded-lg bg-gray-100 p-2 text-center">
-                <button id="btnRemoveImage" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow hover:bg-red-600 z-10 transition"><i class="fas fa-times text-xs"></i></button>
-                <img id="vision-preview" class="w-full max-h-48 object-contain rounded" src="" alt="Preview">
-            </div>
-
-            <button id="btnExtractText" class="w-full bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white text-xs font-semibold py-3 rounded-lg shadow-md transition-all flex items-center justify-center opacity-50 cursor-not-allowed" disabled>
-                <i class="fas fa-magic mr-2"></i> Extract & Insert into Word
+        
+        <div class="flex items-center space-x-1.5">
+            <!-- Dev Entitlement Simulator Button -->
+            <button onclick="openEntitlementModal()" title="Simulate Subscriptions (Dev Mode)" class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition text-xs flex items-center gap-1 border border-slate-700/60 bg-slate-800/40">
+                <i class="fas fa-id-badge text-indigo-400"></i>
+                <span class="text-[10px] font-semibold hidden sm:inline">Tier</span>
+            </button>
+            <!-- Workspace Configurator Button -->
+            <button onclick="openWorkspaceModal()" title="Customize Workspace" class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition text-xs border border-slate-700/60 bg-slate-800/40">
+                <i class="fas fa-sliders-h"></i>
             </button>
         </div>
+    </header>
 
-    </div>
+    <!-- PRIMARY PRODUCT NAVIGATION SWITCHER -->
+    <nav class="bg-slate-100 border-b border-slate-200 px-2 pt-2 flex space-x-1 overflow-x-auto text-xs shrink-0" id="productNav">
+        <button onclick="switchProduct('mcq')" id="pnav-mcq" class="product-nav-btn flex-1 py-2 px-2.5 font-bold rounded-t-lg transition flex items-center justify-center gap-1.5 border-t-2 border-l border-r border-transparent">
+            <i class="fas fa-list-check"></i> <span>MCQ Studio</span>
+        </button>
+        <button onclick="switchProduct('converter')" id="pnav-converter" class="product-nav-btn flex-1 py-2 px-2.5 font-bold rounded-t-lg transition flex items-center justify-center gap-1.5 border-t-2 border-l border-r border-transparent">
+            <i class="fas fa-language"></i> <span>Converter</span> <span class="text-[9px] bg-emerald-100 text-emerald-700 px-1 rounded font-normal">Free</span>
+        </button>
+        <button onclick="switchProduct('ocr')" id="pnav-ocr" class="product-nav-btn flex-1 py-2 px-2.5 font-bold rounded-t-lg transition flex items-center justify-center gap-1.5 border-t-2 border-l border-r border-transparent">
+            <i class="fas fa-eye"></i> <span>OCR Studio</span>
+        </button>
+    </nav>
 
-    <!-- Animated Toast Notification -->
-    <div id="toast" class="fixed bottom-4 left-4 right-4 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center justify-between z-50 pointer-events-none">
-        <div class="flex items-center">
-            <i id="toastIcon" class="fas fa-check-circle text-green-400 mr-2 text-lg"></i>
-            <span id="toastMsg" class="text-sm font-medium">Task completed!</span>
+    <!-- MAIN SCROLLABLE CONTAINER -->
+    <main class="flex-1 overflow-y-auto p-3.5 relative">
+
+        <!-- GLOBAL HELPER NOTICE -->
+        <div id="helper-info" class="bg-blue-50 border border-blue-200/70 rounded-lg p-2.5 mb-3 flex items-start shadow-sm text-xs text-slate-600">
+            <i class="fas fa-info-circle text-blue-500 mt-0.5 mr-2"></i>
+            <span>Select text in Word first, then click any action below to process.</span>
+        </div>
+
+        <!-- ====================================================================== -->
+        <!-- PRODUCT 1: FOLORIA MCQ STUDIO                                           -->
+        <!-- ====================================================================== -->
+        <section id="product-mcq" class="product-pane">
+            <!-- Product Lock Overlay (Shown when user has no entitlement) -->
+            <div id="lock-mcq" class="hidden bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl p-6 text-center shadow-lg my-6">
+                <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3 class="text-sm font-bold text-slate-800">Foliora MCQ Studio Locked</h3>
+                <p class="text-xs text-slate-500 mt-1 mb-4">Upgrade your Foliora plan to access publication-grade MCQ formatting, Question Bank, and Exam generator.</p>
+                <button onclick="openEntitlementModal()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-2 px-4 rounded-lg text-xs shadow hover:from-blue-700 hover:to-indigo-700 transition">
+                    Unlock MCQ Studio (Simulator)
+                </button>
+            </div>
+
+            <div id="content-mcq" class="space-y-3">
+                <!-- Subtab Selector for MCQ Studio -->
+                <div class="flex bg-slate-200/70 p-1 rounded-lg text-xs font-semibold text-slate-600 mb-3">
+                    <button onclick="switchMcqSubtab('formatting')" id="subtab-btn-formatting" class="flex-1 py-1.5 rounded-md bg-white text-blue-700 shadow-sm transition">
+                        <i class="fas fa-align-left mr-1"></i> Formatter
+                    </button>
+                    <button onclick="switchMcqSubtab('studio')" id="subtab-btn-studio" class="flex-1 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition">
+                        <i class="fas fa-cubes mr-1"></i> Q-Bank & Generator
+                    </button>
+                </div>
+
+                <!-- SUBTAB A: FORMATTING -->
+                <div id="mcq-subtab-formatting" class="subtab-content active space-y-3">
+                    <div class="bg-white p-3 rounded-lg shadow-sm border border-slate-200/80">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="shuffleCheck" class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 transition" checked>
+                            <span class="text-xs font-semibold text-slate-700">Shuffle Options (Randomize Pattern)</span>
+                        </label>
+                    </div>
+
+                    <!-- Normal MCQ Button -->
+                    <div>
+                        <div class="flex space-x-2">
+                            <button id="btnNormal" class="w-full relative group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2.5 px-3 rounded-lg transition-all shadow-sm flex items-center justify-center text-xs">
+                                <i class="fas fa-align-left mr-2"></i> Format as Normal MCQ
+                            </button>
+                            <button onclick="toggleSettings('set-normal')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3.5 rounded-lg transition text-xs"><i class="fas fa-cog"></i></button>
+                        </div>
+                        <div id="set-normal" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2 space-y-2 text-xs">
+                            <div><label class="text-slate-600 font-semibold">Options Font Name</label>
+                                <input type="text" list="font-list" id="norm-opt-font" placeholder="Leave empty for BanglaOMR" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-blue-400">
+                            </div>
+                            <div class="flex space-x-2">
+                                <div class="w-1/2"><label class="text-slate-600 font-semibold">Opt Font Size</label>
+                                    <input type="text" list="size-list" id="norm-opt-size" placeholder="Default: 9" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-blue-400">
+                                </div>
+                                <div class="w-1/2"><label class="text-slate-600 font-semibold">Ans Font Size</label>
+                                    <input type="text" list="size-list" id="norm-ans-size" placeholder="Default: 10" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-blue-400">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Smart MCQ Button -->
+                    <div>
+                        <div class="flex space-x-2">
+                            <button id="btnSmart" class="w-full relative group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-2.5 px-3 rounded-lg transition-all shadow-sm flex items-center justify-center text-xs">
+                                <i class="fas fa-file-lines mr-2"></i> Format as Smart MCQ (Ans Page)
+                            </button>
+                            <button onclick="toggleSettings('set-smart')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3.5 rounded-lg transition text-xs"><i class="fas fa-cog"></i></button>
+                        </div>
+                        <div id="set-smart" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2 text-xs">
+                            <label class="text-slate-600 font-semibold">Answer Page Font Size</label>
+                            <input type="text" list="size-list" id="smart-ans-size" placeholder="Default: 10" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-emerald-400">
+                        </div>
+                    </div>
+
+                    <!-- Number & Bold -->
+                    <div>
+                        <div class="flex space-x-2">
+                            <button id="btnFormatQuestions" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 px-3 rounded-lg transition-all shadow-sm flex items-center justify-center text-xs">
+                                <i class="fas fa-list-ol mr-2"></i> Number & Bold Questions
+                            </button>
+                            <button onclick="toggleSettings('set-number')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3.5 rounded-lg transition text-xs"><i class="fas fa-cog"></i></button>
+                        </div>
+                        <div id="set-number" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2 text-xs">
+                            <label class="text-slate-600 font-semibold">Numbering Style</label>
+                            <select id="num-style" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-amber-400">
+                                <option value="auto-arabic">1. 2. 3. (MS Word Auto List)</option>
+                                <option value="auto-alpha">a. b. c. (MS Word Auto List)</option>
+                                <option value="auto-roman">i. ii. iii. (MS Word Auto List)</option>
+                                <option value="bn-num">১. ২. ৩. (Bangla Text Numbering)</option>
+                                <option value="bn-alpha">ক. খ. গ. (Bangla Text Numbering)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBTAB B: STUDIO & QUESTION BANK -->
+                <div id="mcq-subtab-studio" class="subtab-content space-y-3">
+                    
+                    <!-- MCQ Duplicate Finder Card -->
+                    <div class="bg-white rounded-lg shadow-sm border border-slate-200/90 overflow-hidden">
+                        <div class="bg-slate-50 px-3 py-2 border-b border-slate-200 font-semibold text-xs text-slate-700 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition" onclick="toggleSettings('studio-dup')">
+                            <span><i class="fas fa-clone text-rose-500 mr-1.5"></i> Duplicate Finder & Detector</span>
+                            <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
+                        </div>
+                        <div id="studio-dup" class="hidden p-3 space-y-2.5">
+                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <span class="text-[11px] font-bold text-slate-700">Detection Settings</span>
+                                    <button onclick="toggleSettings('duplicateSettings')" type="button" class="text-slate-500 hover:text-slate-800"><i class="fas fa-sliders-h text-xs"></i></button>
+                                </div>
+                                <div id="duplicateSettings" class="space-y-2">
+                                    <div>
+                                        <div class="flex items-center justify-between text-[11px]">
+                                            <span class="text-slate-600 font-semibold">Similarity Threshold</span>
+                                            <span id="duplicateThresholdValue" class="font-bold text-rose-600">85%</span>
+                                        </div>
+                                        <input id="duplicateThreshold" type="range" min="70" max="100" value="85" class="w-full accent-rose-600">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-1.5 text-[10px] text-slate-600">
+                                        <label class="flex items-center gap-1"><input id="dupIgnoreNumbers" type="checkbox" checked> Ignore Q numbers</label>
+                                        <label class="flex items-center gap-1"><input id="dupIgnorePunctuation" type="checkbox" checked> Ignore punctuation</label>
+                                        <label class="flex items-center gap-1"><input id="dupIgnoreOptionOrder" type="checkbox" checked> Ignore opt order</label>
+                                        <label class="flex items-center gap-1"><input id="dupDetectConflicts" type="checkbox" checked> Detect conflicts</label>
+                                        <label class="flex items-center gap-1"><input id="dupProtectNumbers" type="checkbox" checked> Protect numbers</label>
+                                        <label class="flex items-center gap-1"><input id="dupCompareOptions" type="checkbox" checked> Compare options</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="btnDuplicateFinder" class="w-full bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-semibold py-2 px-3 rounded-lg transition text-xs shadow-sm">
+                                Scan Document for Duplicates
+                            </button>
+                            <div id="duplicateSummary" class="hidden grid grid-cols-2 gap-1.5 mt-2">
+                                <div class="bg-red-50 border border-red-100 rounded p-1.5 text-center"><div id="dupExactCount" class="text-base font-extrabold text-red-600">0</div><div class="text-[9px] text-slate-600">Exact Groups</div></div>
+                                <div class="bg-orange-50 border border-orange-100 rounded p-1.5 text-center"><div id="dupPotentialCount" class="text-base font-extrabold text-orange-600">0</div><div class="text-[9px] text-slate-600">Potential Groups</div></div>
+                                <div class="bg-yellow-50 border border-yellow-100 rounded p-1.5 text-center"><div id="dupConflictCount" class="text-base font-extrabold text-yellow-700">0</div><div class="text-[9px] text-slate-600">Answer Conflicts</div></div>
+                                <div class="bg-blue-50 border border-blue-100 rounded p-1.5 text-center"><div id="dupQuestionCount" class="text-base font-extrabold text-blue-600">0</div><div class="text-[9px] text-slate-600">MCQs Scanned</div></div>
+                            </div>
+                            <div id="duplicateResults" class="space-y-1.5 max-h-56 overflow-y-auto pr-1"></div>
+                        </div>
+                    </div>
+
+                    <!-- Question Bank Manager Card -->
+                    <div class="border border-slate-200/90 rounded-lg bg-white overflow-hidden shadow-sm">
+                        <div class="bg-slate-50 px-3 py-2 border-b border-slate-200 font-semibold text-xs text-slate-700 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition" onclick="toggleSettings('studio-bank')">
+                            <span><i class="fas fa-database text-emerald-600 mr-1.5"></i> Question Bank Manager</span>
+                            <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
+                        </div>
+                        <div id="studio-bank" class="p-3 space-y-2 hidden">
+                            <div class="flex space-x-2">
+                                <button id="btnAddBank" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2 px-2 rounded-lg shadow-sm transition"><i class="fas fa-plus mr-1"></i> Add Selected</button>
+                                <button id="btnManageBank" class="flex-1 bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold py-2 px-2 rounded-lg shadow-sm transition"><i class="fas fa-folder-open mr-1"></i> Open Bank</button>
+                            </div>
+                            <div class="flex justify-between items-center text-xs text-slate-500 px-1 pt-1">
+                                <span class="bg-slate-100 px-2 py-0.5 rounded border text-[11px]">Total Stored: <span id="bank-count" class="font-bold text-slate-800">0</span></span>
+                                <div class="space-x-3 flex items-center text-xs">
+                                    <input type="file" id="importBankFile" accept=".json" class="hidden">
+                                    <label for="importBankFile" class="cursor-pointer text-emerald-600 hover:text-emerald-800" title="Import JSON"><i class="fas fa-file-import"></i></label>
+                                    <button id="btnExportBank" class="text-blue-600 hover:text-blue-800" title="Export JSON"><i class="fas fa-file-export"></i></button>
+                                    <button id="btnClearBank" class="text-red-500 hover:text-red-700" title="Clear Bank"><i class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Set Generator Card -->
+                    <div class="border border-slate-200/90 rounded-lg bg-white overflow-hidden shadow-sm">
+                        <div class="bg-slate-50 px-3 py-2 border-b border-slate-200 font-semibold text-xs text-slate-700 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition" onclick="toggleSettings('studio-set')">
+                            <span><i class="fas fa-cubes text-purple-600 mr-1.5"></i> Multi-Set Generator</span>
+                            <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
+                        </div>
+                        <div id="studio-set" class="p-3 space-y-2 hidden text-xs">
+                            <div class="flex space-x-2">
+                                <div class="w-1/2">
+                                    <label class="text-slate-600 font-semibold">MCQ Count</label>
+                                    <input type="number" id="set-count" value="25" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-purple-400">
+                                </div>
+                                <div class="w-1/2">
+                                    <label class="text-slate-600 font-semibold">Start Num</label>
+                                    <input type="number" id="set-start" value="1" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-purple-400">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-slate-600 font-semibold">Number of Sets</label>
+                                <input type="number" id="set-number-of-sets" value="1" min="1" max="10" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-purple-400">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-slate-600">
+                                <label class="flex items-center"><input type="checkbox" id="set-shuffle-q" checked class="mr-1"> Random Select</label>
+                                <label class="flex items-center"><input type="checkbox" id="set-shuffle-o" checked class="mr-1"> Shuffle Opts</label>
+                            </div>
+                            <button id="btnGenerateSet" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition mt-1">Generate MCQ Set(s)</button>
+                        </div>
+                    </div>
+
+                    <!-- Exam Paper Generator Card -->
+                    <div class="border border-slate-200/90 rounded-lg bg-white overflow-hidden shadow-sm">
+                        <div class="bg-slate-50 px-3 py-2 border-b border-slate-200 font-semibold text-xs text-slate-700 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition" onclick="toggleSettings('studio-exam')">
+                            <span><i class="fas fa-graduation-cap text-orange-600 mr-1.5"></i> Exam Paper & Key Gen.</span>
+                            <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
+                        </div>
+                        <div id="studio-exam" class="p-3 space-y-2 hidden text-xs">
+                            <div class="flex space-x-2">
+                                <div class="w-3/4">
+                                    <label class="text-slate-600 font-semibold">Exam Title / Header</label>
+                                    <input type="text" id="exam-title" placeholder="e.g., Model Test 2026" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-orange-400">
+                                </div>
+                                <div class="w-1/4">
+                                    <label class="text-slate-600 font-semibold">Sets</label>
+                                    <input type="number" id="exam-sets" value="1" min="1" max="10" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-orange-400 text-center">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-slate-600">
+                                <label class="flex items-center"><input type="checkbox" id="exam-shuffle" checked class="mr-1"> Shuffle Qs & Opts</label>
+                                <label class="flex items-center"><input type="checkbox" id="exam-ans-key" checked class="mr-1"> Answer Key Grid</label>
+                            </div>
+                            <button id="btnGenerateExam" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition mt-1">Create Exam Paper</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================== -->
+        <!-- PRODUCT 2: FOLORIA CONVERTER (ALWAYS FREE ENTRY PRODUCT)               -->
+        <!-- ====================================================================== -->
+        <section id="product-converter" class="product-pane">
+            <div class="space-y-3">
+                <!-- Subtab Selector for Converter -->
+                <div class="flex bg-slate-200/70 p-1 rounded-lg text-xs font-semibold text-slate-600 mb-3">
+                    <button onclick="switchConverterSubtab('smart-convert')" id="subtab-btn-smart-convert" class="flex-1 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm transition">
+                        <i class="fas fa-exchange-alt mr-1"></i> Bijoy ⇄ Unicode
+                    </button>
+                    <button onclick="switchConverterSubtab('font-fixer')" id="subtab-btn-font-fixer" class="flex-1 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition">
+                        <i class="fas fa-font mr-1"></i> English Font Fixer
+                    </button>
+                </div>
+
+                <!-- SUBTAB A: BIJOY <-> UNICODE -->
+                <div id="converter-subtab-smart-convert" class="subtab-content active space-y-3">
+                    <div class="bg-indigo-50/70 border border-indigo-100 rounded-lg p-3 text-center text-xs">
+                        <i class="fas fa-language text-2xl text-indigo-600 mb-1"></i>
+                        <h3 class="font-bold text-slate-800">Smart Bijoy ⇄ Unicode</h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Retains English formulas, numbering, and paragraph alignments intact.</p>
+                    </div>
+
+                    <!-- Unicode to Bijoy -->
+                    <div>
+                        <div class="flex space-x-2">
+                            <button id="btnUniToBijoy" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-3 rounded-lg shadow-sm transition flex items-center justify-center text-xs">
+                                Unicode <i class="fas fa-arrow-right mx-2.5 text-[10px]"></i> Bijoy
+                            </button>
+                            <button onclick="toggleSettings('set-u2b')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3.5 rounded-lg transition text-xs"><i class="fas fa-cog"></i></button>
+                        </div>
+                        <div id="set-u2b" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2 space-y-2 text-xs">
+                            <div class="flex space-x-2">
+                                <div class="w-2/3"><label class="text-slate-600 font-semibold">Target Font Name</label>
+                                    <input type="text" list="font-list" id="u2b-font" placeholder="Leave empty for SutonnyMJ" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400">
+                                </div>
+                                <div class="w-1/3"><label class="text-slate-600 font-semibold">Font Size</label>
+                                    <input type="text" list="size-list" id="u2b-size" placeholder="Keep Original" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-indigo-400">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bijoy to Unicode -->
+                    <div>
+                        <div class="flex space-x-2">
+                            <button id="btnBijoyToUni" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 px-3 rounded-lg shadow-sm transition flex items-center justify-center text-xs">
+                                Bijoy <i class="fas fa-arrow-right mx-2.5 text-[10px]"></i> Unicode
+                            </button>
+                            <button onclick="toggleSettings('set-b2u')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3.5 rounded-lg transition text-xs"><i class="fas fa-cog"></i></button>
+                        </div>
+                        <div id="set-b2u" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2 space-y-2 text-xs">
+                            <div class="flex space-x-2">
+                                <div class="w-2/3"><label class="text-slate-600 font-semibold">Target Font Name</label>
+                                    <input type="text" list="font-list" id="b2u-font" placeholder="Leave empty for Kalpurush" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-purple-400">
+                                </div>
+                                <div class="w-1/3"><label class="text-slate-600 font-semibold">Font Size</label>
+                                    <input type="text" list="size-list" id="b2u-size" placeholder="Keep Original" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-purple-400">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBTAB B: ENGLISH FONT FIXER -->
+                <div id="converter-subtab-font-fixer" class="subtab-content space-y-3">
+                    <div class="bg-cyan-50/70 border border-cyan-100 rounded-lg p-3 text-center text-xs">
+                        <i class="fas fa-font text-2xl text-cyan-600 mb-1"></i>
+                        <h3 class="font-bold text-slate-800">English Font Fixer</h3>
+                        <p class="text-[11px] text-slate-500 mt-0.5">Fixes mixed English letters, variables, and numbers to standard font without altering Bangla text.</p>
+                    </div>
+
+                    <div>
+                        <div class="flex space-x-2">
+                            <button id="btnFixEnglishFont" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2.5 px-3 rounded-lg shadow-sm transition flex items-center justify-center text-xs">
+                                <i class="fas fa-magic mr-2"></i> Fix English Fonts in Selection
+                            </button>
+                            <button onclick="toggleSettings('set-fixfont')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3.5 rounded-lg transition text-xs"><i class="fas fa-cog"></i></button>
+                        </div>
+                        <div id="set-fixfont" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2 space-y-2 text-xs">
+                            <div class="flex space-x-2">
+                                <div class="w-2/3"><label class="text-slate-600 font-semibold">Target Font Name</label>
+                                    <input type="text" list="font-list" id="fix-font" placeholder="Default: Times New Roman" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-cyan-400">
+                                </div>
+                                <div class="w-1/3"><label class="text-slate-600 font-semibold">Font Size</label>
+                                    <input type="text" list="size-list" id="fix-size" placeholder="Keep Original" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-cyan-400">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================== -->
+        <!-- PRODUCT 3: FOLORIA OCR STUDIO (AI SCANNER & QUOTA TRACKER)             -->
+        <!-- ====================================================================== -->
+        <section id="product-ocr" class="product-pane">
+            
+            <!-- Product Lock Overlay -->
+            <div id="lock-ocr" class="hidden bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl p-6 text-center shadow-lg my-6">
+                <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3 class="text-sm font-bold text-slate-800">Foliora OCR Studio Locked</h3>
+                <p class="text-xs text-slate-500 mt-1 mb-4">You have reached your monthly OCR limit or need an active entitlement.</p>
+                <button onclick="openEntitlementModal()" class="w-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-semibold py-2 px-4 rounded-lg text-xs shadow hover:from-teal-700 hover:to-emerald-700 transition">
+                    Adjust OCR Quota (Simulator)
+                </button>
+            </div>
+
+            <div id="content-ocr" class="space-y-3">
+                
+                <!-- OCR Usage Quota Counter -->
+                <div class="bg-gradient-to-r from-teal-900 to-slate-900 text-white p-3 rounded-lg shadow-sm">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-teal-300"><i class="fas fa-chart-pie mr-1"></i> Monthly Usage</span>
+                        <span id="ocrQuotaText" class="text-[11px] font-semibold bg-teal-800/80 px-2 py-0.5 rounded text-teal-100 border border-teal-600/40">3 / 10 pages used</span>
+                    </div>
+                    <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden mt-2">
+                        <div id="ocrQuotaBar" class="bg-teal-400 h-full rounded-full transition-all duration-300" style="width: 30%"></div>
+                    </div>
+                </div>
+
+                <!-- API Key Section -->
+                <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm text-xs">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleSettings('api-key-settings')">
+                        <span class="font-bold text-slate-700"><i class="fas fa-key text-amber-500 mr-1.5"></i> Gemini AI Engine Key</span>
+                        <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
+                    </div>
+                    <div id="api-key-settings" class="mt-2 hidden space-y-2">
+                        <input type="password" id="gemini-api-key" placeholder="Paste your free Gemini API Key" class="w-full p-2 border rounded text-xs focus:ring-2 focus:ring-teal-400 outline-none">
+                        <button id="btnSaveApiKey" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-1.5 rounded transition shadow-sm">Save Key</button>
+                        <p class="text-[10px] text-slate-500 mt-1"><a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-teal-600 underline">Get free key from Google AI Studio</a></p>
+                    </div>
+                </div>
+
+                <!-- Upload Dropzone Area -->
+                <div id="dropzone" class="border-2 border-dashed border-slate-300 hover:border-teal-500 rounded-lg p-4 text-center bg-slate-50 hover:bg-slate-100/80 transition cursor-pointer flex flex-col items-center justify-center min-h-[130px] relative">
+                    <input type="file" id="vision-file-input" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                    <i class="fas fa-cloud-arrow-up text-3xl text-teal-500 mb-2"></i>
+                    <span class="text-xs font-semibold text-slate-700">Click to upload or Drop image</span>
+                    <span class="text-[11px] font-bold text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded mt-1.5">or paste directly with (Ctrl+V)</span>
+                </div>
+
+                <!-- Image Preview Area -->
+                <div id="vision-preview-container" class="hidden relative border rounded-lg bg-slate-100 p-2 text-center">
+                    <button id="btnRemoveImage" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow hover:bg-red-600 z-10 transition"><i class="fas fa-times text-xs"></i></button>
+                    <img id="vision-preview" class="w-full max-h-44 object-contain rounded" src="" alt="Preview">
+                </div>
+
+                <button id="btnExtractText" class="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-semibold py-3 rounded-lg shadow-sm transition flex items-center justify-center opacity-50 cursor-not-allowed" disabled>
+                    <i class="fas fa-wand-magic-sparkles mr-2"></i> Extract & Reconstruct into Word
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ====================================================================== -->
+    <!-- MODAL 1: WORKSPACE CUSTOMIZER (HIDE / SHOW PRODUCTS)                   -->
+    <!-- ====================================================================== -->
+    <div id="modalWorkspace" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xs border border-slate-200 overflow-hidden">
+            <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-sliders-h text-indigo-400"></i>
+                    <h3 class="text-xs font-bold uppercase tracking-wider">Customize Workspace</h3>
+                </div>
+                <button onclick="closeWorkspaceModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-4 space-y-3 text-xs">
+                <p class="text-slate-500 text-[11px]">Select which Foliora tools to display in your navigation bar. Hiding a tool does not cancel your subscription.</p>
+                <div class="space-y-2 pt-1">
+                    <label class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer">
+                        <span class="font-semibold text-slate-700"><i class="fas fa-list-check text-blue-600 mr-2"></i> MCQ Studio</span>
+                        <input type="checkbox" id="wsCheckMcq" class="form-checkbox h-4 w-4 text-indigo-600 rounded">
+                    </label>
+                    <label class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer">
+                        <span class="font-semibold text-slate-700"><i class="fas fa-language text-indigo-600 mr-2"></i> Converter</span>
+                        <input type="checkbox" id="wsCheckConverter" class="form-checkbox h-4 w-4 text-indigo-600 rounded">
+                    </label>
+                    <label class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer">
+                        <span class="font-semibold text-slate-700"><i class="fas fa-eye text-teal-600 mr-2"></i> OCR Studio</span>
+                        <input type="checkbox" id="wsCheckOcr" class="form-checkbox h-4 w-4 text-indigo-600 rounded">
+                    </label>
+                </div>
+                <button onclick="saveWorkspaceSettings()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 rounded-lg transition text-xs mt-2">
+                    Save Workspace
+                </button>
+            </div>
         </div>
     </div>
 
-    <script>
-        // ==========================================
-        // SINGLE UNIFIED SCRIPT BLOCK
-        // NO DUPLICATE CONSTANTS OR FUNCTIONS
-        // ==========================================
+    <!-- ====================================================================== -->
+    <!-- MODAL 2: DEV ENTITLEMENT SIMULATOR (FOR EASY TESTING)                   -->
+    <!-- ====================================================================== -->
+    <div id="modalEntitlement" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm border border-slate-200 overflow-hidden">
+            <div class="bg-indigo-950 text-white px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-id-badge text-indigo-400"></i>
+                    <h3 class="text-xs font-bold uppercase tracking-wider">Foliora License Simulator</h3>
+                </div>
+                <button onclick="closeEntitlementModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-4 space-y-3.5 text-xs">
+                <p class="text-slate-500 text-[11px]">Test how Foliora behaves under different user subscriptions before backend integration.</p>
+                
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">MCQ Studio Tier</label>
+                    <select id="simMcqTier" class="w-full p-2 border rounded-lg bg-slate-50 text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-400">
+                        <option value="pro">Pro (Unlocked - All Features)</option>
+                        <option value="locked">Locked (Subscription Expired / None)</option>
+                    </select>
+                </div>
 
+                <div>
+                    <label class="font-bold text-slate-700 block mb-1">OCR Studio State & Quota</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <select id="simOcrTier" class="w-full p-2 border rounded-lg bg-slate-50 text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-400">
+                                <option value="free">Free Trial</option>
+                                <option value="pro">Pro (500 pgs)</option>
+                                <option value="locked">Locked (0 Left)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="number" id="simOcrUsed" value="3" min="0" placeholder="Used pages" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex gap-2">
+                    <button onclick="applyEntitlementSimulation()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition">Apply Changes</button>
+                    <button onclick="closeEntitlementModal()" class="px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg transition font-medium">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed bottom-4 left-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center justify-between z-50 pointer-events-none">
+        <div class="flex items-center">
+            <i id="toastIcon" class="fas fa-check-circle text-green-400 mr-2.5 text-base"></i>
+            <span id="toastMsg" class="text-xs font-medium">Task completed successfully!</span>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- JAVASCRIPT: COMBINED ENGINES + NEW FOLIORA ARCHITECTURE LAYER          -->
+    <!-- ====================================================================== -->
+    <script>
+        // ====================================================================
+        // FOLIORA ECOSYSTEM: STATE & ENTITLEMENT LAYER
+        // ====================================================================
+        const FOLIORA_STATE = {
+            activeProduct: 'mcq',
+            entitlements: {
+                mcq: 'pro',       // 'pro' | 'locked'
+                converter: 'free', // always 'free'
+                ocr: 'free'        // 'free' | 'pro' | 'locked'
+            },
+            workspace: {
+                mcq: true,
+                converter: true,
+                ocr: true
+            },
+            ocrQuota: {
+                used: 3,
+                limit: 10
+            }
+        };
+
+        function loadFolioraPersistedState() {
+            try {
+                const savedEnt = localStorage.getItem('foliora_entitlements');
+                if (savedEnt) FOLIORA_STATE.entitlements = JSON.parse(savedEnt);
+
+                const savedWs = localStorage.getItem('foliora_workspace');
+                if (savedWs) FOLIORA_STATE.workspace = JSON.parse(savedWs);
+
+                const savedQuota = localStorage.getItem('foliora_ocr_quota');
+                if (savedQuota) FOLIORA_STATE.ocrQuota = JSON.parse(savedQuota);
+            } catch (e) {
+                console.warn("Could not load local state", e);
+            }
+        }
+
+        function saveFolioraPersistedState() {
+            try {
+                localStorage.setItem('foliora_entitlements', JSON.stringify(FOLIORA_STATE.entitlements));
+                localStorage.setItem('foliora_workspace', JSON.stringify(FOLIORA_STATE.workspace));
+                localStorage.setItem('foliora_ocr_quota', JSON.stringify(FOLIORA_STATE.ocrQuota));
+            } catch (e) {
+                console.warn("Could not save local state", e);
+            }
+        }
+
+        function switchProduct(productId) {
+            FOLIORA_STATE.activeProduct = productId;
+
+            // Update top product tabs
+            document.querySelectorAll('.product-nav-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-indigo-700', 'border-indigo-600', 'shadow-xs');
+                btn.classList.add('text-slate-500', 'border-transparent');
+            });
+            const activeNav = document.getElementById('pnav-' + productId);
+            if (activeNav) {
+                activeNav.classList.remove('text-slate-500', 'border-transparent');
+                activeNav.classList.add('bg-white', 'text-indigo-700', 'border-indigo-600', 'shadow-xs');
+            }
+
+            // Show active product pane
+            document.querySelectorAll('.product-pane').forEach(p => p.classList.remove('active'));
+            const activePane = document.getElementById('product-' + productId);
+            if (activePane) activePane.classList.add('active');
+
+            // Handle Locking per Product Entitlement
+            const isMcqLocked = FOLIORA_STATE.entitlements.mcq === 'locked';
+            document.getElementById('lock-mcq').classList.toggle('hidden', !isMcqLocked);
+            document.getElementById('content-mcq').classList.toggle('hidden', isMcqLocked);
+
+            const isOcrLocked = FOLIORA_STATE.entitlements.ocr === 'locked' || FOLIORA_STATE.ocrQuota.used >= FOLIORA_STATE.ocrQuota.limit;
+            document.getElementById('lock-ocr').classList.toggle('hidden', !isOcrLocked);
+            document.getElementById('content-ocr').classList.toggle('hidden', isOcrLocked);
+
+            // Update OCR Quota UI
+            updateOcrQuotaDisplay();
+
+            // Hide helper notice on vision or studio
+            const helper = document.getElementById('helper-info');
+            if (helper) helper.style.display = (productId === 'ocr') ? 'none' : 'flex';
+        }
+
+        function switchMcqSubtab(subtabId) {
+            document.querySelectorAll('#product-mcq .subtab-content').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById('mcq-subtab-' + subtabId);
+            if (target) target.classList.add('active');
+
+            const btnForm = document.getElementById('subtab-btn-formatting');
+            const btnStudio = document.getElementById('subtab-btn-studio');
+            if (subtabId === 'formatting') {
+                btnForm.className = "flex-1 py-1.5 rounded-md bg-white text-blue-700 shadow-sm transition";
+                btnStudio.className = "flex-1 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition";
+            } else {
+                btnStudio.className = "flex-1 py-1.5 rounded-md bg-white text-blue-700 shadow-sm transition";
+                btnForm.className = "flex-1 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition";
+            }
+        }
+
+        function switchConverterSubtab(subtabId) {
+            document.querySelectorAll('#product-converter .subtab-content').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById('converter-subtab-' + subtabId);
+            if (target) target.classList.add('active');
+
+            const btnSmart = document.getElementById('subtab-btn-smart-convert');
+            const btnFix = document.getElementById('subtab-btn-font-fixer');
+            if (subtabId === 'smart-convert') {
+                btnSmart.className = "flex-1 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm transition";
+                btnFix.className = "flex-1 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition";
+            } else {
+                btnFix.className = "flex-1 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm transition";
+                btnSmart.className = "flex-1 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition";
+            }
+        }
+
+        function updateOcrQuotaDisplay() {
+            const { used, limit } = FOLIORA_STATE.ocrQuota;
+            const textEl = document.getElementById('ocrQuotaText');
+            const barEl = document.getElementById('ocrQuotaBar');
+            if (textEl) textEl.textContent = `${used} / ${limit} pages used`;
+            if (barEl) {
+                const pct = Math.min(100, Math.round((used / limit) * 100));
+                barEl.style.width = pct + '%';
+                barEl.className = pct >= 100 ? "bg-red-500 h-full rounded-full transition-all duration-300" : "bg-teal-400 h-full rounded-full transition-all duration-300";
+            }
+        }
+
+        // --- WORKSPACE CUSTOMIZATION LOGIC ---
+        function openWorkspaceModal() {
+            document.getElementById('wsCheckMcq').checked = FOLIORA_STATE.workspace.mcq;
+            document.getElementById('wsCheckConverter').checked = FOLIORA_STATE.workspace.converter;
+            document.getElementById('wsCheckOcr').checked = FOLIORA_STATE.workspace.ocr;
+            document.getElementById('modalWorkspace').classList.remove('hidden');
+        }
+
+        function closeWorkspaceModal() {
+            document.getElementById('modalWorkspace').classList.add('hidden');
+        }
+
+        function saveWorkspaceSettings() {
+            const mcq = document.getElementById('wsCheckMcq').checked;
+            const conv = document.getElementById('wsCheckConverter').checked;
+            const ocr = document.getElementById('wsCheckOcr').checked;
+
+            if (!mcq && !conv && !ocr) {
+                showStatus("Please keep at least one tool visible in your workspace.", true);
+                return;
+            }
+
+            FOLIORA_STATE.workspace.mcq = mcq;
+            FOLIORA_STATE.workspace.converter = conv;
+            FOLIORA_STATE.workspace.ocr = ocr;
+
+            document.getElementById('pnav-mcq').style.display = mcq ? 'flex' : 'none';
+            document.getElementById('pnav-converter').style.display = conv ? 'flex' : 'none';
+            document.getElementById('pnav-ocr').style.display = ocr ? 'flex' : 'none';
+
+            saveFolioraPersistedState();
+            closeWorkspaceModal();
+
+            // If current product was hidden, switch to first visible
+            if (!FOLIORA_STATE.workspace[FOLIORA_STATE.activeProduct]) {
+                if (mcq) switchProduct('mcq');
+                else if (conv) switchProduct('converter');
+                else if (ocr) switchProduct('ocr');
+            }
+            showStatus("Workspace updated successfully!");
+        }
+
+        // --- SIMULATOR / TIER CONTROLS ---
+        function openEntitlementModal() {
+            document.getElementById('simMcqTier').value = FOLIORA_STATE.entitlements.mcq;
+            document.getElementById('simOcrTier').value = FOLIORA_STATE.entitlements.ocr;
+            document.getElementById('simOcrUsed').value = FOLIORA_STATE.ocrQuota.used;
+            document.getElementById('modalEntitlement').classList.remove('hidden');
+        }
+
+        function closeEntitlementModal() {
+            document.getElementById('modalEntitlement').classList.add('hidden');
+        }
+
+        function applyEntitlementSimulation() {
+            FOLIORA_STATE.entitlements.mcq = document.getElementById('simMcqTier').value;
+            FOLIORA_STATE.entitlements.ocr = document.getElementById('simOcrTier').value;
+            
+            const usedVal = parseInt(document.getElementById('simOcrUsed').value) || 0;
+            const ocrTier = FOLIORA_STATE.entitlements.ocr;
+            FOLIORA_STATE.ocrQuota.limit = ocrTier === 'pro' ? 500 : 10;
+            FOLIORA_STATE.ocrQuota.used = usedVal;
+
+            // Update Header Tier badge
+            const badge = document.getElementById('headerTierBadge');
+            if (FOLIORA_STATE.entitlements.mcq === 'pro') {
+                badge.textContent = "PRO";
+                badge.className = "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-400/30";
+            } else {
+                badge.textContent = "FREE";
+                badge.className = "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-700 text-slate-300 border border-slate-600";
+            }
+
+            saveFolioraPersistedState();
+            switchProduct(FOLIORA_STATE.activeProduct);
+            closeEntitlementModal();
+            showStatus("License simulation applied!");
+        }
+
+        // ====================================================================
+        // CORE ENGINES: MCQ FORMATTER, PARSER, SHUFFLE, CONVERTER, OCR
+        // ====================================================================
         const BENGALI_ALPHABET = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহ";
         const BANGLA_DIGITS = {'0':'০','1':'১','2':'২','3':'৩','4':'৪','5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
         const OPTION_ORDER = ["ক", "খ", "গ", "ঘ"];
@@ -409,25 +788,6 @@
         const MCQ_DUPLICATE_STATE = { results: [], mcqs: [], selectedText: "" };
         let currentVisionImageBase64 = null;
         let currentVisionImageMime = null;
-
-        // --- UI UTILITIES ---
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => {
-                b.classList.remove('text-blue-700', 'border-blue-700');
-                b.classList.add('text-gray-500', 'border-transparent');
-            });
-            const activeTab = document.getElementById(tabId);
-            if (!activeTab) return;
-            activeTab.classList.add('active');
-            const activeBtn = document.getElementById('tab-' + tabId);
-            if (activeBtn) {
-                activeBtn.classList.remove('text-gray-500', 'border-transparent');
-                activeBtn.classList.add('text-blue-700', 'border-blue-700');
-            }
-            const helper = document.getElementById('helper-info');
-            if (helper) helper.style.display = (tabId === 'studio' || tabId === 'vision') ? 'none' : 'flex';
-        }
 
         function toggleSettings(id) {
             const el = document.getElementById(id);
@@ -440,11 +800,11 @@
             document.getElementById("toastMsg").textContent = msg;
             
             if (isError) {
-                toastIcon.className = "fas fa-exclamation-circle text-red-400 mr-2 text-lg";
-                toast.classList.replace("bg-gray-900", "bg-red-900");
+                toastIcon.className = "fas fa-exclamation-circle text-red-400 mr-2.5 text-base";
+                toast.classList.replace("bg-slate-900", "bg-red-950");
             } else {
-                toastIcon.className = "fas fa-check-circle text-green-400 mr-2 text-lg";
-                toast.classList.replace("bg-red-900", "bg-gray-900");
+                toastIcon.className = "fas fa-check-circle text-green-400 mr-2.5 text-base";
+                toast.classList.replace("bg-red-950", "bg-slate-900");
             }
             toast.classList.add("show");
             setTimeout(() => { toast.classList.remove("show"); }, 3500);
@@ -479,9 +839,7 @@
             return toBanglaNumber(index + 1) + ". ";
         }
 
-        // ==========================================
-        // CONVERTER (BIJOY <-> UNICODE) CORE
-        // ==========================================
+        // --- CONVERTER (BIJOY <-> UNICODE) CORE ---
         function convertUnicodeToBijoy(text) {
             if (!text) return "";
             let str = text;
@@ -812,7 +1170,7 @@
             return { mode: allFit ? "two-per-line" : "one-per-line" };
         }
 
-        // --- FORMATTER INSERTERS (SAFE FONT LOCK) ---
+        // --- FORMATTER INSERTERS ---
         function mcqApplyFontSafe(range, fontName, fontSize, bold, italic) {
             if (fontName) range.font.name = fontName;
             if (fontSize) range.font.size = fontSize;
@@ -1104,9 +1462,7 @@
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
-        // ==========================================
-        // SMART CONVERTER ENGINE
-        // ==========================================
+        // --- SMART CONVERTER ENGINE ---
         async function runSmartConverter(direction) {
             try {
                 await Word.run(async (context) => {
@@ -1198,9 +1554,7 @@
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
-        // ==========================================
-        // ENGLISH FONT FIXER ENGINE
-        // ==========================================
+        // --- ENGLISH FONT FIXER ENGINE ---
         async function fixEnglishFont() {
             try {
                 await Word.run(async (context) => {
@@ -1251,13 +1605,10 @@
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
-        // ============================================================
-        // MCQ DUPLICATE FINDER ENGINE
-        // ============================================================
+        // --- MCQ DUPLICATE FINDER ENGINE ---
         function dupNormalizeUnicode(text) { return String(text || "").normalize("NFC").replace(/[\u200B-\u200D\uFEFF]/g, ""); }
         function dupNormalizeDigits(text) { return text.replace(/[০-৯]/g, ch => ({"০":"0","১":"1","২":"2","৩":"3","৪":"4","৫":"5","৬":"6","৭":"7","৮":"8","৯":"9"}[ch])); }
         function dupNormalizeWhitespace(text) { return text.replace(/[\t\r\n\v\u00A0]+/g, " ").replace(/\s{2,}/g, " ").trim(); }
-        function dupStripQuestionNumber(text) { return text.replace(/^\s*(?:\d+|[০-৯]+|[A-Za-z])\s*[\.\)\]\}।:]\s*/, ""); }
         function dupStripPunctuation(text) { return text.replace(/[?!?।,:;؛'"“”‘’`~|\/\\()[\]{}<>+=*_\-–—]/g, " "); }
         function dupNormalizeText(text, opts = {}) {
             let out = dupNormalizeUnicode(text);
@@ -1405,20 +1756,20 @@
         }
         function dupRenderQuestionSummary(mcq) {
             const n = String(mcq && mcq.questionNumber || "").trim().replace(/[\s]+$/, "") || "Unnumbered";
-            return `<div class="font-semibold text-gray-700">Q${dupEscapeHtml(n)}</div><div class="dup-question-text text-[11px] text-gray-600 mt-0.5">${dupEscapeHtml(mcq.question)}</div>`;
+            return `<div class="font-semibold text-slate-700 text-xs">Q${dupEscapeHtml(n)}</div><div class="dup-question-text text-[11px] text-slate-600 mt-0.5">${dupEscapeHtml(mcq.question)}</div>`;
         }
         function renderDuplicateFinderResults(groups, mcqs, threshold) {
             const root = document.getElementById("duplicateResults");
-            if (!groups.length) { root.innerHTML = `<div class="bg-green-50 border border-green-100 rounded-lg p-3 text-center text-xs text-green-700"><i class="fas fa-check-circle mr-1"></i>No duplicate or high-similarity MCQ groups found at ${threshold}% threshold.</div>`; return; }
+            if (!groups.length) { root.innerHTML = `<div class="bg-green-50 border border-green-200 rounded-lg p-3 text-center text-xs text-green-700"><i class="fas fa-check-circle mr-1"></i>No duplicate or high-similarity MCQ groups found at ${threshold}% threshold.</div>`; return; }
             root.innerHTML = groups.map(group => {
                 const pct = Math.round(group.strongest.analysis.score * 100);
                 const type = group.conflict ? "conflict" : (group.exact ? "exact" : (pct >= 95 ? "very-high" : "potential"));
                 const color = type === "exact" ? "red" : type === "conflict" ? "yellow" : type === "very-high" ? "orange" : "amber";
                 const label = type === "exact" ? "Exact Duplicate" : type === "conflict" ? "Answer Conflict" : type === "very-high" ? "Very High Similarity" : "Potential Duplicate";
-                const cards = group.ids.map(id => `<div class="border border-gray-100 rounded p-2 bg-white cursor-pointer hover:border-blue-300" onclick="navigateToDuplicateQuestion(${id})">${dupRenderQuestionSummary(mcqs[id])}</div>`).join("");
-                return `<details class="dup-result-card bg-${color}-50 border border-${color}-100 rounded-lg p-2" open>
-                    <summary class="cursor-pointer list-none flex items-center justify-between"><span class="text-xs font-bold text-${color}-700"><i class="fas ${type === 'conflict' ? 'fa-exclamation-triangle' : type === 'exact' ? 'fa-copy' : 'fa-clone'} mr-1"></i>Group ${group.id} · ${label}</span><span class="text-xs font-extrabold text-${color}-700">${pct}%</span></summary>
-                    <div class="mt-2 space-y-2">${cards}<div class="flex gap-2"><button class="flex-1 text-[11px] bg-white border border-gray-200 rounded py-1 hover:bg-gray-50" onclick="event.stopPropagation(); compareDuplicateQuestions(${group.strongest.a},${group.strongest.b})"><i class="fas fa-columns mr-1"></i>Compare</button></div></div>
+                const cards = group.ids.map(id => `<div class="border border-slate-200/80 rounded p-2 bg-white cursor-pointer hover:border-blue-400" onclick="navigateToDuplicateQuestion(${id})">${dupRenderQuestionSummary(mcqs[id])}</div>`).join("");
+                return `<details class="dup-result-card bg-${color}-50 border border-${color}-200 rounded-lg p-2" open>
+                    <summary class="cursor-pointer list-none flex items-center justify-between"><span class="text-xs font-bold text-${color}-800"><i class="fas ${type === 'conflict' ? 'fa-exclamation-triangle' : type === 'exact' ? 'fa-copy' : 'fa-clone'} mr-1"></i>Group ${group.id} · ${label}</span><span class="text-xs font-extrabold text-${color}-800">${pct}%</span></summary>
+                    <div class="mt-2 space-y-2">${cards}<div class="flex gap-2"><button class="flex-1 text-[11px] bg-white border border-slate-200 rounded py-1 hover:bg-slate-50 font-medium" onclick="event.stopPropagation(); compareDuplicateQuestions(${group.strongest.a},${group.strongest.b})"><i class="fas fa-columns mr-1"></i>Compare</button></div></div>
                 </details>`;
             }).join("");
         }
@@ -1447,7 +1798,6 @@
                     }
                     const groups = dupMakeGroups(matches, mcqs.length);
                     MCQ_DUPLICATE_STATE.results = groups; MCQ_DUPLICATE_STATE.mcqs = mcqs;
-                    document.getElementById("duplicateFinderPanel").classList.remove("hidden");
                     document.getElementById("duplicateSummary").classList.remove("hidden");
                     document.getElementById("dupExactCount").textContent = groups.filter(g => g.exact).length;
                     document.getElementById("dupPotentialCount").textContent = groups.filter(g => !g.exact && !g.conflict).length;
@@ -1468,7 +1818,7 @@
                     const searchText = dupNormalizeWhitespace(mcq.question).slice(0, 255);
                     const ranges = context.document.body.search(searchText, {matchCase:false, matchWholeWord:false});
                     ranges.load("items/text"); await context.sync();
-                    if (!ranges.items.length) { showStatus("Could not locate.", true); return; }
+                    if (!ranges.items.length) { showStatus("Could not locate question.", true); return; }
                     ranges.items[Number.isInteger(mcq.wordDocumentOccurrence) ? Math.min(mcq.wordDocumentOccurrence, ranges.items.length - 1) : 0].select();
                     await context.sync();
                 });
@@ -1476,13 +1826,11 @@
         }
         function compareDuplicateQuestions(aId, bId) {
             const a = MCQ_DUPLICATE_STATE.mcqs[aId], b = MCQ_DUPLICATE_STATE.mcqs[bId]; if (!a || !b) return;
-            const compareHtml = `<div id="duplicateComparePanel" class="fixed inset-x-3 top-20 bottom-3 bg-white border border-gray-200 rounded-xl shadow-2xl z-40 overflow-y-auto p-3"><div class="flex items-center justify-between mb-2"><h3 class="text-sm font-extrabold text-gray-800"><i class="fas fa-columns mr-1 text-blue-600"></i> Compare MCQs</h3><button onclick="document.getElementById('duplicateComparePanel').remove()" class="text-gray-500 hover:text-gray-800"><i class="fas fa-times"></i></button></div><div class="grid grid-cols-1 gap-3"><div class="border rounded-lg p-2"><div class="text-xs font-bold text-blue-700 mb-1">Question A</div><div class="text-xs text-gray-700 dup-question-text">${dupEscapeHtml(a.question)}</div>${dupOptionTexts(a).map((x,i)=>`<div class="mt-1 text-[11px] text-gray-600">${OPTION_ORDER[i]||(i+1)+'.'} ${dupEscapeHtml(x)}</div>`).join('')}</div><div class="border rounded-lg p-2"><div class="text-xs font-bold text-purple-700 mb-1">Question B</div><div class="text-xs text-gray-700 dup-question-text">${dupEscapeHtml(b.question)}</div>${dupOptionTexts(b).map((x,i)=>`<div class="mt-1 text-[11px] text-gray-600">${OPTION_ORDER[i]||(i+1)+'.'} ${dupEscapeHtml(x)}</div>`).join('')}</div></div></div>`;
+            const compareHtml = `<div id="duplicateComparePanel" class="fixed inset-x-3 top-16 bottom-3 bg-white border border-slate-300 rounded-xl shadow-2xl z-50 overflow-y-auto p-3.5 animate-[fadeIn_0.15s_ease-out]"><div class="flex items-center justify-between mb-2"><h3 class="text-xs font-bold uppercase tracking-wider text-slate-800"><i class="fas fa-columns mr-1 text-indigo-600"></i> Compare MCQs</h3><button onclick="document.getElementById('duplicateComparePanel').remove()" class="text-slate-400 hover:text-slate-800"><i class="fas fa-times"></i></button></div><div class="grid grid-cols-1 gap-2.5"><div class="border border-blue-200 rounded-lg p-2.5 bg-blue-50/40"><div class="text-xs font-bold text-blue-800 mb-1">Question A</div><div class="text-xs text-slate-700 dup-question-text">${dupEscapeHtml(a.question)}</div>${dupOptionTexts(a).map((x,i)=>`<div class="mt-1 text-[11px] text-slate-600">${OPTION_ORDER[i]||(i+1)+'.'} ${dupEscapeHtml(x)}</div>`).join('')}</div><div class="border border-purple-200 rounded-lg p-2.5 bg-purple-50/40"><div class="text-xs font-bold text-purple-800 mb-1">Question B</div><div class="text-xs text-slate-700 dup-question-text">${dupEscapeHtml(b.question)}</div>${dupOptionTexts(b).map((x,i)=>`<div class="mt-1 text-[11px] text-slate-600">${OPTION_ORDER[i]||(i+1)+'.'} ${dupEscapeHtml(x)}</div>`).join('')}</div></div></div>`;
             const old = document.getElementById("duplicateComparePanel"); if (old) old.remove(); document.body.insertAdjacentHTML("beforeend", compareHtml);
         }
 
-        // ==========================================
-        // Q-BANK LOGIC
-        // ==========================================
+        // --- QUESTION BANK LOGIC ---
         function updateBankCount() {
             let bank = JSON.parse(localStorage.getItem("mcq_studio_bank") || "[]");
             let countEl = document.getElementById("bank-count");
@@ -1524,7 +1872,7 @@
             let url = URL.createObjectURL(blob);
             let a = document.createElement("a");
             a.href = url;
-            a.download = "MCQ_Studio_Bank_Export.json";
+            a.download = "Foliora_MCQ_Bank_Export.json";
             a.click();
             showStatus("Bank exported successfully!");
         }
@@ -1558,14 +1906,14 @@
             const old = document.getElementById("bankViewerPanel");
             if (old) old.remove();
             const panelHtml = `
-            <div id="bankViewerPanel" class="fixed inset-x-3 top-16 bottom-3 bg-white border border-gray-200 rounded-xl shadow-2xl z-40 flex flex-col p-3 animate-[fadeIn_0.2s_ease-in-out]">
+            <div id="bankViewerPanel" class="fixed inset-x-3 top-16 bottom-3 bg-white border border-slate-300 rounded-xl shadow-2xl z-50 flex flex-col p-3.5 animate-[fadeIn_0.15s_ease-out]">
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-sm font-extrabold text-gray-800"><i class="fas fa-database mr-1 text-emerald-600"></i> Question Bank</h3>
-                    <button onclick="document.getElementById('bankViewerPanel').remove()" class="text-gray-500 hover:text-red-500 transition"><i class="fas fa-times text-lg"></i></button>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800"><i class="fas fa-database mr-1 text-emerald-600"></i> Foliora Question Bank</h3>
+                    <button onclick="document.getElementById('bankViewerPanel').remove()" class="text-slate-400 hover:text-red-500 transition"><i class="fas fa-times text-base"></i></button>
                 </div>
                 <div class="mb-2 relative">
-                    <input type="text" id="bankSearchInput" placeholder="Search questions or options..." class="w-full pl-8 p-2 border rounded-lg text-xs focus:ring-2 focus:ring-emerald-400 outline-none">
-                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                    <input type="text" id="bankSearchInput" placeholder="Search questions or options..." class="w-full pl-8 p-1.5 border rounded-lg text-xs focus:ring-2 focus:ring-emerald-400 outline-none bg-slate-50">
+                    <i class="fas fa-search absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
                 </div>
                 <div id="bankListContainer" class="flex-1 overflow-y-auto space-y-2 p-1"></div>
             </div>`;
@@ -1600,16 +1948,16 @@
                 bank = bank.filter(q => q.question.toLowerCase().includes(lowerQ) || (q.options && q.options.some(o => o[1].toLowerCase().includes(lowerQ))));
             }
             if (bank.length === 0) {
-                container.innerHTML = `<div class="text-center text-gray-500 text-xs mt-10"><i class="fas fa-box-open text-3xl mb-2 opacity-50"></i><br>${query ? "No questions match your search." : "Bank is empty. Add some MCQs!"}</div>`;
+                container.innerHTML = `<div class="text-center text-slate-400 text-xs mt-10"><i class="fas fa-box-open text-3xl mb-2 opacity-40"></i><br>${query ? "No questions match your search." : "Bank is empty. Add some MCQs!"}</div>`;
                 return;
             }
             container.innerHTML = bank.slice().reverse().map((q, i) => {
-                let optionsHtml = (q.options || []).map((opt, idx) => `<div class="mt-0.5 text-gray-600">${OPTION_ORDER[idx] || (idx+1)+'.'} ${dupEscapeHtml(opt[1])}</div>`).join('');
-                let answerHtml = q.answer ? `<div class="mt-1 font-semibold text-emerald-600"><i class="fas fa-check-circle mr-1"></i>Ans: ${q.answer}</div>` : '';
+                let optionsHtml = (q.options || []).map((opt, idx) => `<div class="mt-0.5 text-slate-600">${OPTION_ORDER[idx] || (idx+1)+'.'} ${dupEscapeHtml(opt[1])}</div>`).join('');
+                let answerHtml = q.answer ? `<div class="mt-1 font-semibold text-emerald-600 text-[11px]"><i class="fas fa-check-circle mr-1"></i>Ans: ${q.answer}</div>` : '';
                 return `
-                <div class="border border-gray-100 rounded-lg p-2.5 bg-gray-50 relative group hover:border-emerald-200 transition">
-                    <button type="button" data-delete-bank-id="${dupEscapeHtml(q.id)}" class="bank-delete-btn absolute top-2.5 right-2.5 text-gray-400 hover:text-red-500 transition" title="Delete MCQ"><i class="fas fa-trash-alt"></i></button>
-                    <div class="text-xs font-bold text-gray-700 dup-question-text pr-6">${dupEscapeHtml(q.question)}</div>
+                <div class="border border-slate-200 rounded-lg p-2.5 bg-slate-50/70 relative group hover:border-emerald-300 transition">
+                    <button type="button" data-delete-bank-id="${dupEscapeHtml(q.id)}" class="bank-delete-btn absolute top-2.5 right-2.5 text-slate-400 hover:text-red-500 transition" title="Delete MCQ"><i class="fas fa-trash-alt text-xs"></i></button>
+                    <div class="text-xs font-bold text-slate-800 dup-question-text pr-6">${dupEscapeHtml(q.question)}</div>
                     <div class="text-[11px] mt-1.5">${optionsHtml}${answerHtml}</div>
                 </div>`;
             }).join("");
@@ -1618,11 +1966,11 @@
         function deleteFromBank(id, btnElement) {
             if (btnElement && btnElement.dataset.confirm !== "true") {
                 btnElement.dataset.confirm = "true";
-                btnElement.innerHTML = '<span class="text-[10px] font-bold text-red-600">Sure?</span>';
+                btnElement.innerHTML = '<span class="text-[9px] font-bold text-red-600">Sure?</span>';
                 setTimeout(() => {
                     if(btnElement && btnElement.dataset.confirm === "true") {
                         btnElement.dataset.confirm = "false";
-                        btnElement.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                        btnElement.innerHTML = '<i class="fas fa-trash-alt text-xs"></i>';
                     }
                 }, 3000);
                 return;
@@ -1638,12 +1986,10 @@
             updateBankCount();
             let searchInput = document.getElementById("bankSearchInput");
             renderBankItems(searchInput ? searchInput.value : "");
-            showStatus("Question deleted!");
+            showStatus("Question removed from Bank!");
         }
 
-        // ==========================================
-        // SET GENERATOR & EXAM PAPER GENERATOR
-        // ==========================================
+        // --- SET GENERATOR & EXAM PAPER GENERATOR ---
         function mcqInsertSetOptionsWithAnswer(anchorRange, question, layout, optionFont, optionSize, targetFont, targetSize, origAlign, answerSize) {
             const count = Math.min(4, (question.options || []).length);
             let lastParagraph = null;
@@ -1793,7 +2139,7 @@
             try {
                 await Word.run(async (context) => {
                     let bank = JSON.parse(localStorage.getItem("mcq_studio_bank") || "[]");
-                    if (bank.length === 0) { showStatus("Question Bank is empty! Add MCQs to bank first.", true); return; }
+                    if (bank.length === 0) { showStatus("Question Bank is empty! Add MCQs first.", true); return; }
 
                     let title = document.getElementById("exam-title").value.trim() || "Exam Paper";
                     let numSets = parseInt(document.getElementById("exam-sets").value) || 1;
@@ -1928,9 +2274,7 @@
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
-        // ==========================================
-        // BUTTON CLICK WIRING 
-        // ==========================================
+        // --- BUTTON CLICK WIRING ---
         let _eventsBound = false;
 
         function bindAppEvents() {
@@ -1961,7 +2305,7 @@
                 const btn = document.getElementById("btnClearBank");
                 if (btn.dataset.confirming !== "true") {
                     btn.dataset.originalHtml = btn.innerHTML;
-                    btn.innerHTML = `<span class="text-[10px] font-bold text-red-600 bg-red-50 px-1 rounded border border-red-200">Sure?</span>`;
+                    btn.innerHTML = `<span class="text-[9px] font-bold text-red-600 bg-red-50 px-1 rounded border border-red-200">Sure?</span>`;
                     btn.dataset.confirming = "true";
                     
                     setTimeout(() => {
@@ -1992,7 +2336,18 @@
             const threshInput = document.getElementById("duplicateThreshold");
             if (threshInput) threshInput.addEventListener("input", (e) => { document.getElementById("duplicateThresholdValue").textContent = e.target.value + "%"; });
 
+            // Initialize Foliora Ecosystem
+            loadFolioraPersistedState();
+            
+            // Sync workspace visibility
+            document.getElementById('pnav-mcq').style.display = FOLIORA_STATE.workspace.mcq ? 'flex' : 'none';
+            document.getElementById('pnav-converter').style.display = FOLIORA_STATE.workspace.converter ? 'flex' : 'none';
+            document.getElementById('pnav-ocr').style.display = FOLIORA_STATE.workspace.ocr ? 'flex' : 'none';
+
+            // Start on MCQ Studio
+            switchProduct('mcq');
             updateBankCount();
+
             const savedKey = localStorage.getItem("gemini_api_key");
             const keyInput = document.getElementById("gemini-api-key");
             if (keyInput && savedKey) keyInput.value = savedKey;
@@ -2004,9 +2359,7 @@
             window.onload = bindAppEvents;
         }
 
-        // ==========================================
-        // VISION AI
-        // ==========================================
+        // --- VISION AI ENGINE ---
         document.getElementById("btnSaveApiKey").onclick = () => {
             const key = document.getElementById("gemini-api-key").value.trim();
             if(key) {
@@ -2057,7 +2410,7 @@
         visionFileInput.addEventListener('change', (e) => { handleImageFile(e.target.files[0]); });
 
         document.addEventListener('paste', (e) => {
-            if(!document.getElementById('vision').classList.contains('active')) return;
+            if(FOLIORA_STATE.activeProduct !== 'ocr') return;
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             for (let index in items) {
                 const item = items[index];
@@ -2086,10 +2439,17 @@
             if (!currentVisionImageBase64 || !currentVisionImageMime) { showStatus("Please upload or paste an image first.", true); return; }
             if (currentVisionImageBase64.length > 12 * 1024 * 1024) { showStatus("This image is very large. Please use a smaller image.", true); return; }
 
+            // Check quota limit
+            if (FOLIORA_STATE.ocrQuota.used >= FOLIORA_STATE.ocrQuota.limit) {
+                showStatus("Monthly OCR quota reached! Please upgrade your tier.", true);
+                switchProduct('ocr');
+                return;
+            }
+
             setLoading("btnExtractText", true);
             
             try {
-                const prompt = `You are the document understanding and formatting engine of MCQ Studio.
+                const prompt = `You are the document understanding and formatting engine of Foliora OCR Studio.
 
 Your job is to analyze user-provided documents, images, PDFs, screenshots, clipboard text, and other extracted text, then reconstruct the content while preserving the original document's structure, order, wording, and formatting relationships.
 
@@ -2158,7 +2518,7 @@ If answer or explanation does not exist, use null.`;
                     generationConfig: { responseMimeType: "application/json" }
                 };
 
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${encodeURIComponent(apiKey)}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${encodeURIComponent(apiKey)}`;
                 const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) });
                 const responseText = await response.text();
 
@@ -2205,7 +2565,13 @@ If answer or explanation does not exist, use null.`;
                     }
                     targetRange.delete();
                     await context.sync();
-                    showStatus("Smart JSON Extraction Successful!");
+                    
+                    // Increment Quota Counter
+                    FOLIORA_STATE.ocrQuota.used += 1;
+                    saveFolioraPersistedState();
+                    updateOcrQuotaDisplay();
+                    
+                    showStatus("Smart AI Extraction Completed!");
                 });
             } catch (error) { showStatus("Error: " + (error.message || "Unknown issue"), true); } finally { setLoading("btnExtractText", false); }
         };
