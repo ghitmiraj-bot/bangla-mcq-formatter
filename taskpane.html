@@ -48,8 +48,8 @@
         <option value="13"></option><option value="14"></option><option value="16"></option>
     </datalist>
 
-    <!-- TOP HEADER: BRAND + WORKSPACE & TIER CONTROLS -->
-    <header class="bg-slate-900 text-white px-4 py-3 shadow-md border-b border-slate-800 flex items-center justify-between shrink-0 z-20">
+    <!-- TOP HEADER: BRAND + ACCOUNT WIDGET & WORKSPACE CONTROLS -->
+    <header class="bg-slate-900 text-white px-4 py-2.5 shadow-md border-b border-slate-800 flex items-center justify-between shrink-0 z-20">
         <div class="flex items-center space-x-2.5">
             <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-blue-600 flex items-center justify-center font-black text-sm tracking-wider text-white shadow-inner">
                 F
@@ -57,18 +57,24 @@
             <div>
                 <div class="flex items-center space-x-1.5">
                     <span class="text-base font-extrabold tracking-tight text-white">FOLIORA</span>
-                    <span id="headerTierBadge" class="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">PRO</span>
+                    <span id="headerTierBadge" class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">PRO</span>
                 </div>
-                <p class="text-[10px] text-slate-400 font-medium">Publishing & Office Suite</p>
+                <p class="text-[10px] text-slate-400 font-medium">Publishing Suite</p>
             </div>
         </div>
         
         <div class="flex items-center space-x-1.5">
-            <!-- Dev Entitlement Simulator Button -->
-            <button onclick="openEntitlementModal()" title="Simulate Subscriptions (Dev Mode)" class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition text-xs flex items-center gap-1 border border-slate-700/60 bg-slate-800/40">
-                <i class="fas fa-id-badge text-indigo-400"></i>
-                <span class="text-[10px] font-semibold hidden sm:inline">Tier</span>
+            <!-- Account Profile / Sign In Button -->
+            <button id="btnHeaderAccount" onclick="handleAccountClick()" class="px-2 py-1 text-slate-200 hover:text-white hover:bg-slate-800 rounded-md transition text-xs flex items-center gap-1.5 border border-slate-700/70 bg-slate-800/50 shadow-sm">
+                <i id="headerAccountIcon" class="fas fa-user-circle text-indigo-400 text-sm"></i>
+                <span id="headerAccountLabel" class="text-[11px] font-semibold">Sign In</span>
             </button>
+
+            <!-- Dev Entitlement Simulator Button -->
+            <button onclick="openEntitlementModal()" title="License Simulator (Dev)" class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition text-xs border border-slate-700/60 bg-slate-800/40">
+                <i class="fas fa-id-badge text-indigo-400"></i>
+            </button>
+
             <!-- Workspace Configurator Button -->
             <button onclick="openWorkspaceModal()" title="Customize Workspace" class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition text-xs border border-slate-700/60 bg-slate-800/40">
                 <i class="fas fa-sliders-h"></i>
@@ -102,13 +108,29 @@
         <!-- PRODUCT 1: FOLORIA MCQ STUDIO                                           -->
         <!-- ====================================================================== -->
         <section id="product-mcq" class="product-pane">
-            <!-- Product Lock Overlay (Shown when user has no entitlement) -->
+            
+            <!-- Auth Required Lock State (Shown when logged out) -->
+            <div id="auth-lock-mcq" class="hidden bg-white border border-slate-200 rounded-xl p-6 text-center shadow-md my-6">
+                <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i class="fas fa-user-lock"></i>
+                </div>
+                <h3 class="text-sm font-bold text-slate-800">Foliora Account Required</h3>
+                <p class="text-xs text-slate-500 mt-1 mb-4">Sign in with your Foliora account to access MCQ Studio, Question Bank, and Exam generator.</p>
+                <button onclick="openAuthModal('signin')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg text-xs shadow transition">
+                    Sign In to Foliora
+                </button>
+                <button onclick="openAuthModal('signup')" class="w-full mt-2 text-indigo-600 hover:text-indigo-800 text-xs font-semibold py-1">
+                    Don't have an account? Create one
+                </button>
+            </div>
+
+            <!-- Product Entitlement Lock Overlay (Logged in but expired/unsubscribed) -->
             <div id="lock-mcq" class="hidden bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl p-6 text-center shadow-lg my-6">
                 <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
                     <i class="fas fa-lock"></i>
                 </div>
                 <h3 class="text-sm font-bold text-slate-800">Foliora MCQ Studio Locked</h3>
-                <p class="text-xs text-slate-500 mt-1 mb-4">Upgrade your Foliora plan to access publication-grade MCQ formatting, Question Bank, and Exam generator.</p>
+                <p class="text-xs text-slate-500 mt-1 mb-4">You need an active MCQ Studio subscription to use these professional features.</p>
                 <button onclick="openEntitlementModal()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-2 px-4 rounded-lg text-xs shadow hover:from-blue-700 hover:to-indigo-700 transition">
                     Unlock MCQ Studio (Simulator)
                 </button>
@@ -418,13 +440,25 @@
         <!-- ====================================================================== -->
         <section id="product-ocr" class="product-pane">
             
-            <!-- Product Lock Overlay -->
+            <!-- Auth Required Lock State -->
+            <div id="auth-lock-ocr" class="hidden bg-white border border-slate-200 rounded-xl p-6 text-center shadow-md my-6">
+                <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i class="fas fa-user-lock"></i>
+                </div>
+                <h3 class="text-sm font-bold text-slate-800">Foliora Account Required</h3>
+                <p class="text-xs text-slate-500 mt-1 mb-4">Sign in with your Foliora account to access OCR Studio and use your monthly page quota.</p>
+                <button onclick="openAuthModal('signin')" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg text-xs shadow transition">
+                    Sign In to Foliora
+                </button>
+            </div>
+
+            <!-- Quota Exceeded Lock State -->
             <div id="lock-ocr" class="hidden bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl p-6 text-center shadow-lg my-6">
                 <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
                     <i class="fas fa-lock"></i>
                 </div>
-                <h3 class="text-sm font-bold text-slate-800">Foliora OCR Studio Locked</h3>
-                <p class="text-xs text-slate-500 mt-1 mb-4">You have reached your monthly OCR limit or need an active entitlement.</p>
+                <h3 class="text-sm font-bold text-slate-800">OCR Monthly Quota Reached</h3>
+                <p class="text-xs text-slate-500 mt-1 mb-4">You have used all available pages for this cycle. Upgrade your Foliora plan to increase your limit.</p>
                 <button onclick="openEntitlementModal()" class="w-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-semibold py-2 px-4 rounded-lg text-xs shadow hover:from-teal-700 hover:to-emerald-700 transition">
                     Adjust OCR Quota (Simulator)
                 </button>
@@ -479,7 +513,125 @@
     </main>
 
     <!-- ====================================================================== -->
-    <!-- MODAL 1: WORKSPACE CUSTOMIZER (HIDE / SHOW PRODUCTS)                   -->
+    <!-- MODAL 1: AUTHENTICATION MODAL (SIGN IN / CREATE ACCOUNT)              -->
+    <!-- ====================================================================== -->
+    <div id="modalAuth" class="hidden fixed inset-0 bg-slate-900/65 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xs border border-slate-200 overflow-hidden">
+            
+            <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-5 h-5 rounded bg-indigo-600 flex items-center justify-center text-[10px] font-extrabold text-white">F</div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider">Foliora Account</h3>
+                </div>
+                <button onclick="closeAuthModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- Modal Nav Tabs -->
+            <div class="flex border-b border-slate-200 bg-slate-50 text-xs font-semibold">
+                <button onclick="switchAuthTab('signin')" id="authTabBtnSignIn" class="flex-1 py-2.5 text-indigo-700 border-b-2 border-indigo-600 transition">Sign In</button>
+                <button onclick="switchAuthTab('signup')" id="authTabBtnSignUp" class="flex-1 py-2.5 text-slate-500 hover:text-slate-800 transition">Create Account</button>
+            </div>
+
+            <div class="p-4 text-xs space-y-3">
+                
+                <!-- Sign In Form -->
+                <form id="formSignIn" onsubmit="handleSignInSubmit(event)" class="space-y-2.5">
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Email Address</label>
+                        <input type="email" id="signInEmail" required placeholder="name@example.com" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Password</label>
+                        <input type="password" id="signInPassword" required placeholder="••••••••" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition text-xs shadow-sm mt-1">
+                        Sign In
+                    </button>
+                </form>
+
+                <!-- Create Account Form -->
+                <form id="formSignUp" onsubmit="handleSignUpSubmit(event)" class="space-y-2.5 hidden">
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Full Name</label>
+                        <input type="text" id="signUpName" required placeholder="Your Name" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Email Address</label>
+                        <input type="email" id="signUpEmail" required placeholder="name@example.com" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-slate-700 block mb-1">Password</label>
+                        <input type="password" id="signUpPassword" required placeholder="At least 6 characters" minlength="6" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
+                    </div>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition text-xs shadow-sm mt-1">
+                        Create Foliora Account
+                    </button>
+                </form>
+
+                <div class="pt-2 border-t border-slate-100 text-center">
+                    <button type="button" onclick="continueAsGuest()" class="text-[11px] text-slate-500 hover:text-slate-800 underline">
+                        Continue as Guest (Free Converter only)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- MODAL 2: "MY FOLORIA" ACCOUNT PROFILE DRAWER                            -->
+    <!-- ====================================================================== -->
+    <div id="modalAccount" class="hidden fixed inset-0 bg-slate-900/65 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xs border border-slate-200 overflow-hidden">
+            
+            <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-circle-user text-indigo-400 text-sm"></i>
+                    <h3 class="text-xs font-bold uppercase tracking-wider">My Foliora</h3>
+                </div>
+                <button onclick="closeAccountModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="p-4 space-y-3.5 text-xs">
+                <!-- User Profile Card -->
+                <div class="flex items-center space-x-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    <div id="accountAvatar" class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-blue-500 text-white font-bold flex items-center justify-center text-sm shadow-inner">
+                        M
+                    </div>
+                    <div class="overflow-hidden">
+                        <div id="accountUserName" class="font-bold text-slate-800 truncate">Miraj</div>
+                        <div id="accountUserEmail" class="text-[11px] text-slate-500 truncate">user@foliora.com</div>
+                    </div>
+                </div>
+
+                <!-- Entitlements Summary -->
+                <div class="space-y-1.5">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Your Subscriptions</span>
+                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px]">
+                        <span class="font-semibold text-slate-700"><i class="fas fa-list-check text-blue-600 mr-1.5"></i> MCQ Studio</span>
+                        <span id="accountMcqStatus" class="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Active (Pro)</span>
+                    </div>
+                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px]">
+                        <span class="font-semibold text-slate-700"><i class="fas fa-language text-indigo-600 mr-1.5"></i> Converter</span>
+                        <span class="font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Free Suite</span>
+                    </div>
+                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px]">
+                        <span class="font-semibold text-slate-700"><i class="fas fa-eye text-teal-600 mr-1.5"></i> OCR Studio</span>
+                        <span id="accountOcrStatus" class="font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">10 Pages / Mo</span>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="pt-2 border-t border-slate-100 space-y-2">
+                    <button onclick="handleLogout()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-semibold py-2 rounded-lg transition text-xs flex items-center justify-center gap-1.5">
+                        <i class="fas fa-arrow-right-from-bracket"></i> Sign Out
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- MODAL 3: WORKSPACE CUSTOMIZER (HIDE / SHOW PRODUCTS)                   -->
     <!-- ====================================================================== -->
     <div id="modalWorkspace" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-xs border border-slate-200 overflow-hidden">
@@ -514,7 +666,7 @@
     </div>
 
     <!-- ====================================================================== -->
-    <!-- MODAL 2: DEV ENTITLEMENT SIMULATOR (FOR EASY TESTING)                   -->
+    <!-- MODAL 4: DEV ENTITLEMENT SIMULATOR (FOR EASY TESTING)                   -->
     <!-- ====================================================================== -->
     <div id="modalEntitlement" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm border border-slate-200 overflow-hidden">
@@ -573,10 +725,19 @@
     <!-- ====================================================================== -->
     <script>
         // ====================================================================
-        // FOLIORA ECOSYSTEM: STATE & ENTITLEMENT LAYER
+        // FOLIORA ECOSYSTEM: STATE, AUTH & ENTITLEMENT LAYER
         // ====================================================================
         const FOLIORA_STATE = {
             activeProduct: 'mcq',
+            auth: {
+                isAuthenticated: true,
+                user: {
+                    name: "Miraj",
+                    email: "miraj@foliora.com",
+                    plan: "pro"
+                },
+                token: "mock-session-token-foliora"
+            },
             entitlements: {
                 mcq: 'pro',       // 'pro' | 'locked'
                 converter: 'free', // always 'free'
@@ -595,6 +756,9 @@
 
         function loadFolioraPersistedState() {
             try {
+                const savedAuth = localStorage.getItem('foliora_auth');
+                if (savedAuth) FOLIORA_STATE.auth = JSON.parse(savedAuth);
+
                 const savedEnt = localStorage.getItem('foliora_entitlements');
                 if (savedEnt) FOLIORA_STATE.entitlements = JSON.parse(savedEnt);
 
@@ -610,11 +774,35 @@
 
         function saveFolioraPersistedState() {
             try {
+                localStorage.setItem('foliora_auth', JSON.stringify(FOLIORA_STATE.auth));
                 localStorage.setItem('foliora_entitlements', JSON.stringify(FOLIORA_STATE.entitlements));
                 localStorage.setItem('foliora_workspace', JSON.stringify(FOLIORA_STATE.workspace));
                 localStorage.setItem('foliora_ocr_quota', JSON.stringify(FOLIORA_STATE.ocrQuota));
             } catch (e) {
                 console.warn("Could not save local state", e);
+            }
+        }
+
+        function updateHeaderAccountUI() {
+            const btn = document.getElementById('btnHeaderAccount');
+            const label = document.getElementById('headerAccountLabel');
+            const icon = document.getElementById('headerAccountIcon');
+            const tierBadge = document.getElementById('headerTierBadge');
+
+            if (FOLIORA_STATE.auth.isAuthenticated && FOLIORA_STATE.auth.user) {
+                const firstInitial = (FOLIORA_STATE.auth.user.name || "U")[0].toUpperCase();
+                label.textContent = FOLIORA_STATE.auth.user.name || "Account";
+                icon.className = "fas fa-user text-indigo-400 text-xs";
+                
+                tierBadge.textContent = (FOLIORA_STATE.entitlements.mcq === 'pro') ? "PRO" : "FREE";
+                tierBadge.className = (FOLIORA_STATE.entitlements.mcq === 'pro') 
+                    ? "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-400/30"
+                    : "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-700 text-slate-300 border border-slate-600";
+            } else {
+                label.textContent = "Sign In";
+                icon.className = "fas fa-arrow-right-to-bracket text-indigo-400 text-xs";
+                tierBadge.textContent = "GUEST";
+                tierBadge.className = "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-700 text-slate-400 border border-slate-600";
             }
         }
 
@@ -637,19 +825,50 @@
             const activePane = document.getElementById('product-' + productId);
             if (activePane) activePane.classList.add('active');
 
-            // Handle Locking per Product Entitlement
-            const isMcqLocked = FOLIORA_STATE.entitlements.mcq === 'locked';
-            document.getElementById('lock-mcq').classList.toggle('hidden', !isMcqLocked);
-            document.getElementById('content-mcq').classList.toggle('hidden', isMcqLocked);
+            // Handle Product Lock vs Auth Lock
+            const isAuth = FOLIORA_STATE.auth.isAuthenticated;
 
-            const isOcrLocked = FOLIORA_STATE.entitlements.ocr === 'locked' || FOLIORA_STATE.ocrQuota.used >= FOLIORA_STATE.ocrQuota.limit;
-            document.getElementById('lock-ocr').classList.toggle('hidden', !isOcrLocked);
-            document.getElementById('content-ocr').classList.toggle('hidden', isOcrLocked);
+            // MCQ Studio Gates
+            const authLockMcq = document.getElementById('auth-lock-mcq');
+            const licenseLockMcq = document.getElementById('lock-mcq');
+            const contentMcq = document.getElementById('content-mcq');
 
-            // Update OCR Quota UI
+            if (!isAuth) {
+                authLockMcq.classList.remove('hidden');
+                licenseLockMcq.classList.add('hidden');
+                contentMcq.classList.add('hidden');
+            } else if (FOLIORA_STATE.entitlements.mcq === 'locked') {
+                authLockMcq.classList.add('hidden');
+                licenseLockMcq.classList.remove('hidden');
+                contentMcq.classList.add('hidden');
+            } else {
+                authLockMcq.classList.add('hidden');
+                licenseLockMcq.classList.add('hidden');
+                contentMcq.classList.remove('hidden');
+            }
+
+            // OCR Studio Gates
+            const authLockOcr = document.getElementById('auth-lock-ocr');
+            const licenseLockOcr = document.getElementById('lock-ocr');
+            const contentOcr = document.getElementById('content-ocr');
+
+            if (!isAuth) {
+                authLockOcr.classList.remove('hidden');
+                licenseLockOcr.classList.add('hidden');
+                contentOcr.classList.add('hidden');
+            } else if (FOLIORA_STATE.entitlements.ocr === 'locked' || FOLIORA_STATE.ocrQuota.used >= FOLIORA_STATE.ocrQuota.limit) {
+                authLockOcr.classList.add('hidden');
+                licenseLockOcr.classList.remove('hidden');
+                contentOcr.classList.add('hidden');
+            } else {
+                authLockOcr.classList.add('hidden');
+                licenseLockOcr.classList.add('hidden');
+                contentOcr.classList.remove('hidden');
+            }
+
             updateOcrQuotaDisplay();
 
-            // Hide helper notice on vision or studio
+            // Converter is ALWAYS free and requires no login
             const helper = document.getElementById('helper-info');
             if (helper) helper.style.display = (productId === 'ocr') ? 'none' : 'flex';
         }
@@ -698,7 +917,144 @@
             }
         }
 
-        // --- WORKSPACE CUSTOMIZATION LOGIC ---
+        // ====================================================================
+        // AUTH & PROFILE ACTIONS
+        // ====================================================================
+        function handleAccountClick() {
+            if (FOLIORA_STATE.auth.isAuthenticated) {
+                openAccountModal();
+            } else {
+                openAuthModal('signin');
+            }
+        }
+
+        function openAuthModal(defaultTab = 'signin') {
+            switchAuthTab(defaultTab);
+            document.getElementById('modalAuth').classList.remove('hidden');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('modalAuth').classList.add('hidden');
+        }
+
+        function switchAuthTab(tab) {
+            const btnIn = document.getElementById('authTabBtnSignIn');
+            const btnUp = document.getElementById('authTabBtnSignUp');
+            const formIn = document.getElementById('formSignIn');
+            const formUp = document.getElementById('formSignUp');
+
+            if (tab === 'signin') {
+                btnIn.className = "flex-1 py-2.5 text-indigo-700 border-b-2 border-indigo-600 transition font-bold";
+                btnUp.className = "flex-1 py-2.5 text-slate-500 hover:text-slate-800 transition font-normal";
+                formIn.classList.remove('hidden');
+                formUp.classList.add('hidden');
+            } else {
+                btnUp.className = "flex-1 py-2.5 text-indigo-700 border-b-2 border-indigo-600 transition font-bold";
+                btnIn.className = "flex-1 py-2.5 text-slate-500 hover:text-slate-800 transition font-normal";
+                formUp.classList.remove('hidden');
+                formIn.classList.add('hidden');
+            }
+        }
+
+        function handleSignInSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('signInEmail').value.trim();
+            const password = document.getElementById('signInPassword').value;
+
+            if (!email || !password) return;
+
+            // Mock successful sign-in
+            const name = email.split('@')[0];
+            FOLIORA_STATE.auth = {
+                isAuthenticated: true,
+                user: {
+                    name: name.charAt(0).toUpperCase() + name.slice(1),
+                    email: email,
+                    plan: "pro"
+                },
+                token: "token_" + Date.now()
+            };
+            FOLIORA_STATE.entitlements.mcq = 'pro';
+
+            saveFolioraPersistedState();
+            updateHeaderAccountUI();
+            closeAuthModal();
+            switchProduct(FOLIORA_STATE.activeProduct);
+            showStatus(`Welcome back, ${FOLIORA_STATE.auth.user.name}!`);
+        }
+
+        function handleSignUpSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('signUpName').value.trim();
+            const email = document.getElementById('signUpEmail').value.trim();
+            const password = document.getElementById('signUpPassword').value;
+
+            if (!name || !email || !password) return;
+
+            // Mock successful sign-up
+            FOLIORA_STATE.auth = {
+                isAuthenticated: true,
+                user: {
+                    name: name,
+                    email: email,
+                    plan: "pro"
+                },
+                token: "token_" + Date.now()
+            };
+            FOLIORA_STATE.entitlements.mcq = 'pro';
+
+            saveFolioraPersistedState();
+            updateHeaderAccountUI();
+            closeAuthModal();
+            switchProduct(FOLIORA_STATE.activeProduct);
+            showStatus(`Account created! Welcome to Foliora, ${name}.`);
+        }
+
+        function continueAsGuest() {
+            closeAuthModal();
+            switchProduct('converter');
+            showStatus("Continuing as Guest with free Foliora Converter.");
+        }
+
+        function openAccountModal() {
+            const user = FOLIORA_STATE.auth.user || { name: "User", email: "guest@foliora.com" };
+            document.getElementById('accountUserName').textContent = user.name;
+            document.getElementById('accountUserEmail').textContent = user.email;
+            document.getElementById('accountAvatar').textContent = (user.name || "U")[0].toUpperCase();
+
+            // Sync statuses
+            const mcqStatus = document.getElementById('accountMcqStatus');
+            if (FOLIORA_STATE.entitlements.mcq === 'pro') {
+                mcqStatus.textContent = "Active (Pro)";
+                mcqStatus.className = "font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200";
+            } else {
+                mcqStatus.textContent = "Inactive";
+                mcqStatus.className = "font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200";
+            }
+
+            document.getElementById('modalAccount').classList.remove('hidden');
+        }
+
+        function closeAccountModal() {
+            document.getElementById('modalAccount').classList.add('hidden');
+        }
+
+        function handleLogout() {
+            FOLIORA_STATE.auth = {
+                isAuthenticated: false,
+                user: null,
+                token: null
+            };
+            saveFolioraPersistedState();
+            updateHeaderAccountUI();
+            closeAccountModal();
+            switchProduct(FOLIORA_STATE.activeProduct);
+            showStatus("Signed out of Foliora.");
+        }
+
+        // ====================================================================
+        // WORKSPACE CUSTOMIZATION LOGIC
+        // ====================================================================
         function openWorkspaceModal() {
             document.getElementById('wsCheckMcq').checked = FOLIORA_STATE.workspace.mcq;
             document.getElementById('wsCheckConverter').checked = FOLIORA_STATE.workspace.converter;
@@ -731,7 +1087,6 @@
             saveFolioraPersistedState();
             closeWorkspaceModal();
 
-            // If current product was hidden, switch to first visible
             if (!FOLIORA_STATE.workspace[FOLIORA_STATE.activeProduct]) {
                 if (mcq) switchProduct('mcq');
                 else if (conv) switchProduct('converter');
@@ -740,7 +1095,9 @@
             showStatus("Workspace updated successfully!");
         }
 
-        // --- SIMULATOR / TIER CONTROLS ---
+        // ====================================================================
+        // SIMULATOR / TIER CONTROLS
+        // ====================================================================
         function openEntitlementModal() {
             document.getElementById('simMcqTier').value = FOLIORA_STATE.entitlements.mcq;
             document.getElementById('simOcrTier').value = FOLIORA_STATE.entitlements.ocr;
@@ -761,17 +1118,8 @@
             FOLIORA_STATE.ocrQuota.limit = ocrTier === 'pro' ? 500 : 10;
             FOLIORA_STATE.ocrQuota.used = usedVal;
 
-            // Update Header Tier badge
-            const badge = document.getElementById('headerTierBadge');
-            if (FOLIORA_STATE.entitlements.mcq === 'pro') {
-                badge.textContent = "PRO";
-                badge.className = "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-400/30";
-            } else {
-                badge.textContent = "FREE";
-                badge.className = "text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-700 text-slate-300 border border-slate-600";
-            }
-
             saveFolioraPersistedState();
+            updateHeaderAccountUI();
             switchProduct(FOLIORA_STATE.activeProduct);
             closeEntitlementModal();
             showStatus("License simulation applied!");
@@ -880,49 +1228,100 @@
 
         function convertBijoyToUnicode(text) {
             if (!text) return "";
-            let str = text;
-            str = str.replace(/[\u200B-\u200D\uFEFF\+]/g, '');
+
+            let str = text.replace(/[\u200B-\u200D\uFEFF\+]/g, "");
 
             const b2uJukta = {
                 '›U':'ন্ট', 'Þ':'প্ট', '®‹':'ষ্ক', 'é':'ল্ক', 'ê':'ল্গ', 'ì':'ল্ড', 'ð':'শ্চ', '¯‹…':'স্কৃ',
-                'M¦':'গ্ব', 'fz':'ভু', 'L¡':'খ্ব', '°':'ক্ক', '±':'ক্ট', '³':'ক্ত', 'K¡':'ক্ব', '·':'ক্স', '¶':'ক্ষ', '²':'ক্ষ্ম', '¶¨':'ক্ষ্য', '¶z':'ক্ষু',
-                'Á':'জ্ঞ', '¼':'ঙ্ক', '¼L':'ঙ্খ', '½':'ঙ্গ', '½N':'ঙ্ঘ', 'Æ':'ট্ট', 'Ç':'ড্ড', 'È':'ণ্ট', 'É':'ণ্ঠ', 'Û':'ণ্ড', '\xDB':'ণ্ড',
-                'Ë':'ত্ত', 'Ì':'ত্থ', 'Î':'ত্র', 'Ï':'দ্দ', '×':'দ্ধ', 'Ø':'দ্ব', 'Ù':'দ্ম', '›`':'ন্দ', 'Ü':'ন্ধ', 'bœ':'ন্ন', 'b¦':'ন্ব', 'b¥':'ন্ম', '›`«':'ন্দ্র', '`ª':'দ্র',
-                '¤ú':'ম্প', '¤^':'ম্ব', '¤§':'ম্ম', '¤¢':'ম্ভ', 'Ý':'ন্স', 'Z¥':'ত্ম', 'Zœ':'ত্ন', 'Z¥¨':'ত্ম্য', '÷':'স্ট', 'ó':'ষ্ট', 'ô':'ষ্ঠ', 'ò':'ষ্ণ', '®ú':'ষ্প', '®ù':'ষ্ফ', '®§':'ষ্ম',
-                '¯‹':'স্ক', '¯Œ':'স্খ', '¯’':'স্থ', 'mœ':'স্ন', '¯ú':'স্প', 'ù':'স্ফ', '¯§':'স্ম', '¯^':'স্ব', '¯Í':'স্ত', 'm&m':'স্স',
-                'þ':'হ্ম', 'û':'হু', 'ü':'হৃ', 'ý':'হ্ন', 'nŸ':'হ্ব', 'ß':'প্ত', 'ã':'ব্দ', 'ä':'ব্ধ', 'e&e':'ব্ব', 'e&R':'ব্জ',
-                'kÖ':'শ্র', 'µ':'ক্র', 'MÖ':'গ্র', 'cÖ':'প্র', 'W«':'ড্র', 'U«':'ট্র', 'd«':'ফ্র', 'eª':'ব্র',
-                'eø':'ব্ল', 'K¬':'ক্ল', 'Mø':'গ্ল', 'cø':'প্ল', 'd¬':'ফ্ল', 'gø':'ম্ল', 'kø':'শ্ল', 'mø':'স্ল', 'n&j':'হ্ল',
-                '\xC2':'ঞ্চ', 'Â':'ঞ্চ', '\xC3':'ঞ্ছ', 'Ã':'ঞ্ছ', '\xC4':'ঞ্জ', 'Ä':'ঞ্জ', 'iæ':'রু', 'i~':'রূ', 'ï':'শু', '¸':'গু', 'š‘':'ন্তু', '¯‘':'স্তু',
-                '”P':'চ্চ', '\x94P':'চ্চ', '”Q':'চ্ছ', '\x94Q':'চ্ছ', '”':'চ্', '\x94':'চ্', '•':'চ্ছ', '¾':'জ্জ', 'S&S':'ঝ্ঝ', '`&N':'দ্ঘ', 'šÍ':'ন্ত', 'š’':'ন্থ',
-                'í':'ল্প', 'j&e':'ল্ব', 'j&g':'ল্ম', 'jø':'ল্ল', 'j&d':'ল্ফ', 'aŸ':'ধ্ব', 'k¦':'শ্ব', 'Z¡':'ত্ব', '_¡':'থ্ব', 'gœ':'ম্ন', 'k&g':'শ্ম',
-                '`¨':'দ্য', 'š¿':'ন্ত্র', '¤cÖ':'ম্প্র', '¯’¨':'স্থ্য', 'ó«':'ষ্ট্র', 'kœ':'শ্ন', 'e¨':'ব্য', '¯¿':'স্ত্র', 'Ë¡':'ত্ত্ব', '›Ø':'ন্দ্ব', 'cœ':'প্ন', 'Z¨':'ত্য', '¯‹«':'স্ক্র',
-                '÷«':'স্ট্র', '_«':'থ্র', 'c&c':'প্প', 'c&m':'প্স', '¼¶':'ঙ্ক্ষ', 'O&g':'ঙ্ম', '\xBB':'গ্ধ', '»':'গ্ধ', '¨':'্য', '«':'্র', '&':'্',
-                'Kz':'কু', 'K‚':'কূ', 'Pz':'চু', 'P‚':'চূ', 'Sz':'ঝু', 'S‚':'ঝূ', 'Zz':'তু', 'Z‚':'তূ', 'f‚':'ভূ', 'K…':'কৃ', 'Z…':'তৃ',
-                'Zz¨':'ত্যু', 'cz¨':'প্যু', 'dz¨':'ফ্যু', 'fz¨':'ভ্যু', 'n~¨':'হ্যু', 'Ky¨':'ক্যু', 'My¨':'গ্যু', 'Py¨':'চ্যু', 'Ry¨':'জ্যু', 'Wy¨':'ড্যু', '`y¨':'দ্যু', 'ay¨':'ধ্যু', 'ey¨':'ব্যু', 'jy¨':'ল্যু', 'k~¨':'শ্যু', 'Z‚¨':'ত্যূ'
+                'M¦':'গ্ব', 'fz':'ভু', 'L¡':'খ্ব', '°':'ক্ক', '±':'ক্ট', '³':'ক্ত', 'K¡':'ক্ব',
+                '·':'ক্স', '¶':'ক্ষ', '²':'ক্ষ্ম', '¶¨':'ক্ষ্য', '¶z':'ক্ষু',
+                'Á':'জ্ঞ', '¼':'ঙ্ক', '¼L':'ঙ্খ', '½':'ঙ্গ', '½N':'ঙ্ঘ', 'Æ':'ট্ট', 'Ç':'ড্ড',
+                'È':'ণ্ট', 'É':'ণ্ঠ', 'Û':'ণ্ড', '\xDB':'ণ্ড',
+                'Ë':'ত্ত', 'Ì':'ত্থ', 'Î':'ত্র', 'Ï':'দ্দ', '×':'দ্ধ', 'Ø':'দ্ব', 'Ù':'দ্ম',
+                '›`':'ন্দ', 'Ü':'ন্ধ', 'bœ':'ন্ন', 'b¦':'ন্ব', 'b¥':'ন্ম', '›`«':'ন্দ্র', '`ª':'দ্র',
+                '¤ú':'ম্প', '¤^':'ম্ব', '¤§':'ম্ম', '¤¢':'ম্ভ', 'Ý':'ন্স', 'Z¥':'ত্ম', 'Zœ':'ত্ন',
+                'Z¥¨':'ত্ম্য', '÷':'স্ট', 'ó':'ষ্ট', 'ô':'ষ্ঠ', 'ò':'ষ্ণ', '®ú':'ষ্প', '®ù':'ষ্ফ',
+                '®§':'ষ্ম', '¯‹':'স্ক', '¯Œ':'স্খ', '¯’':'স্থ', 'mœ':'স্ন', '¯ú':'স্প', 'ù':'স্ফ',
+                '¯§':'স্ম', '¯^':'স্ব', '¯Í':'স্ত', 'm&m':'স্স',
+                'þ':'হ্ম', 'û':'হু', 'ü':'হৃ', 'ý':'হ্ন', 'nŸ':'হ্ব', 'ß':'প্ত', 'ã':'ব্দ',
+                'ä':'ব্ধ', 'e&e':'ব্ব', 'e&R':'ব্জ',
+                'kÖ':'শ্র', 'µ':'ক্র', 'MÖ':'গ্র', 'cÖ':'প্র', 'W«':'ড্র', 'U«':'ট্র',
+                'd«':'ফ্র', 'eª':'ব্র',
+                'eø':'ব্ল', 'K¬':'ক্ল', 'Mø':'গ্ল', 'cø':'প্ল', 'd¬':'ফ্ল', 'gø':'ম্ল',
+                'kø':'শ্ল', 'mø':'স্ল', 'n&j':'হ্ল',
+                '\xC2':'ঞ্চ', 'Â':'ঞ্চ', '\xC3':'ঞ্ছ', 'Ã':'ঞ্ছ', '\xC4':'ঞ্জ', 'Ä':'ঞ্জ',
+                'iæ':'রু', 'i~':'রূ', 'ï':'শু', '¸':'গু', 'š‘':'ন্তু', '¯‘':'স্তু',
+                '”P':'চ্চ', '\x94P':'চ্চ', '”Q':'চ্ছ', '\x94Q':'চ্ছ', '”':'চ্', '\x94':'চ্',
+                '•':'চ্ছ', '¾':'জ্জ', 'S&S':'ঝ্ঝ', '`&N':'দ্ঘ', 'šÍ':'ন্ত', 'š’':'ন্থ',
+                'í':'ল্প', 'j&e':'ল্ব', 'j&g':'ল্ম', 'jø':'ল্ল', 'j&d':'ল্ফ',
+                'aŸ':'ধ্ব', 'k¦':'শ্ব', 'Z¡':'ত্ব', '_¡':'থ্ব', 'gœ':'ম্ন', 'k&g':'শ্ম',
+                '`¨':'দ্য', 'š¿':'ন্ত্র', '¤cÖ':'ম্প্র',
+                '¯’¨':'স্থ্য', 'ó«':'ষ্ট্র',
+                'kœ':'শ্ন', 'e¨':'ব্য', '¯¿':'স্ত্র', 'Ë¡':'ত্ত্ব', '›Ø':'ন্দ্ব',
+                'cœ':'প্ন', 'Z¨':'ত্য', '¯‹«':'স্ক্র', '÷«':'স্ট্র', '_«':'থ্র',
+                'c&c':'প্প', 'c&m':'প্স', '¼¶':'ঙ্ক্ষ', 'O&g':'ঙ্ম', '\xBB':'গ্ধ', '»':'গ্ধ',
+                '¨':'্য', '«':'্র', '&':'্',
+                'Kz':'কু', 'K‚':'কূ', 'Pz':'চু', 'P‚':'চূ', 'Sz':'ঝু', 'S‚':'ঝূ',
+                'Zz':'তু', 'Z‚':'তূ', 'f‚':'ভূ', 'K…':'কৃ', 'Z…':'তৃ',
+                'Zz¨':'ত্যু', 'cz¨':'প্যু', 'dz¨':'ফ্যু', 'fz¨':'ভ্যু', 'n~¨':'হ্যু',
+                'Ky¨':'ক্যু', 'My¨':'গ্যু', 'Py¨':'চ্যু', 'Ry¨':'জ্যু', 'Wy¨':'ড্যু',
+                '`y¨':'দ্যু', 'ay¨':'ধ্যু', 'ey¨':'ব্যু', 'jy¨':'ল্যু', 'k~¨':'শ্যু',
+                'Z‚¨':'ত্যূ'
             };
-            let keys = Object.keys(b2uJukta).sort((a, b) => b.length - a.length);
-            for (let k of keys) { str = str.split(k).join(b2uJukta[k]); }
+
+            const keys = Object.keys(b2uJukta).sort((a, b) => b.length - a.length);
+            for (const key of keys) {
+                str = str.split(key).join(b2uJukta[key]);
+            }
 
             const b2u = {
-                'A':'অ', 'B':'ই', 'C':'ঈ', 'D':'উ', 'E':'ঊ', 'F':'ঋ', 'G':'এ', 'H':'ঐ', 'I':'ও', 'J':'ঔ', 'K':'ক', 'L':'খ', 'M':'গ', 'N':'ঘ', 'O':'ঙ', 'P':'চ', 'Q':'ছ', 'R':'জ', 'S':'ঝ', 'T':'ঞ', 'U':'ট', 'V':'ঠ', 'W':'ড', 'X':'ঢ', 'Y':'ণ', 'Z':'ত', '_':'থ', '`':'দ', 'a':'ধ', 'b':'ন', 'c':'প', 'd':'ফ', 'e':'ব', 'f':'ভ', 'g':'ম', 'h':'য', 'i':'র', 'j':'ল', 'k':'শ', 'l':'ষ', 'm':'স', 'n':'হ', 'o':'ড়', 'p':'ঢ়', 'q':'য়', 'r':'ৎ', 's':'ং', 't':'ঃ', 'u':'ঁ', 'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', 'z':'ু', '‚':'ূ', '\x82':'ূ', '\x85':'ৃ', '…':'ৃ', '„':'ৃ', '\x84':'ৃ', '\x86':'ে', '†':'ে', '\x87':'ে', '‡':'ে', '\x88':'ৈ', 'ˆ':'ৈ', '\x8A':'ৗ', 'Š':'ৗ', '|':'।', '0':'০', '১':'1', '২':'2', '৩':'3', '৪':'4', '৫':'5', '৬':'6', '৭':'৭', '৮':'8', '৯':'9', '©':'©' 
+                'A':'অ', 'B':'ই', 'C':'ঈ', 'D':'উ', 'E':'ঊ', 'F':'ঋ', 'G':'এ', 'H':'ঐ',
+                'I':'ও', 'J':'ঔ', 'K':'ক', 'L':'খ', 'M':'গ', 'N':'ঘ', 'O':'ঙ', 'P':'চ',
+                'Q':'ছ', 'R':'জ', 'S':'ঝ', 'T':'ঞ', 'U':'ট', 'V':'ঠ', 'W':'ড', 'X':'ঢ',
+                'Y':'ণ', 'Z':'ত', '_':'থ', '`':'দ', 'a':'ধ', 'b':'ন', 'c':'প', 'd':'ফ',
+                'e':'ব', 'f':'ভ', 'g':'ম', 'h':'য', 'i':'র', 'j':'ল', 'k':'শ', 'l':'ষ',
+                'm':'স', 'n':'হ', 'o':'ড়', 'p':'ঢ়', 'q':'য়', 'r':'ৎ', 's':'ং', 't':'ঃ',
+                'u':'ঁ', 'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', 'z':'ু', '‚':'ূ',
+                '\x82':'ূ', '\x85':'ৃ', '…':'ৃ', '„':'ৃ', '\x84':'ৃ',
+                '\x86':'ে', '†':'ে', '\x87':'ে', '‡':'ে',
+                '\x88':'ৈ', 'ˆ':'ৈ', '\x8A':'ৗ', 'Š':'ৗ',
+                '|':'।',
+                '0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪',
+                '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯',
+                '©':'©'
             };
+
             str = str.replace(/Av/g, 'আ');
+
             let out = "";
-            for (let i = 0; i < str.length; i++) { out += b2u[str[i]] || str[i]; }
-            
-            let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ";
-            let regexOrder = new RegExp("([িেৈ])?([" + cons + "](?:\u09CD[" + cons + "])*)(©)?([াীুূৃৗ])?", "g");
+            for (let i = 0; i < str.length; i++) {
+                out += b2u[str[i]] || str[i];
+            }
+
+            str = out;
+
+            const cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ";
+            const regexOrder = new RegExp(
+                "([িেৈ])?([" + cons + "](?:\u09CD[" + cons + "])*)(©)?([াীুূৃৗ])?",
+                "g"
+            );
+
             str = str.replace(regexOrder, function(match, preKar, cluster, ref, postKar) {
                 return (ref ? "র্" : "") + cluster + (preKar || "") + (postKar || "");
             });
-            str = str.replace(/অা/g, 'আ'); str = str.replace(/েৃ/g, 'ৃ'); str = str.replace(/ৌ/g, 'ৌ'); str = str.replace(/ো/g, 'ো');
-            str = str.replace(/([ুূৃ])্য/g, '্য$1');
-            return str;
+
+            str = str
+                .replace(/অা/g, 'আ')
+                .replace(/েৃ/g, 'ৃ')
+                .replace(/ৌ/g, 'ৌ')
+                .replace(/ো/g, 'ো')
+                .replace(/([ুূৃ])্য/g, '্য$1');
+
+            return str.normalize("NFC");
         }
 
         // --- MCQ PARSER & SHUFFLE ---
-        window.sanitizeQuestionAnswers = function(q) {
+        function sanitizeQuestionAnswers(q) {
             if (!q || !q.options) return;
             for (let j = 0; j < q.options.length; j++) {
                 let text = q.options[j][1];
@@ -938,65 +1337,61 @@
                     }
                 }
             }
-        };
+        }
 
         function parseQuestions(text) {
-            const cleanText = String(text || "").replace(/[\r\v]+/g, "\n");
-            const lines = cleanText.split("\n");
-            const questions = [];
+            let cleanText = String(text || "").replace(/([\r\n\v]+)/g, "\n");
+            let lines = cleanText.split('\n');
+            let questions = [];
             let current = null;
 
             function flush() {
-                if (current && current.question && current.options.length) {
-                    window.sanitizeQuestionAnswers(current);
+                if (current && current.question && current.options.length > 0) {
+                    sanitizeQuestionAnswers(current);
                     questions.push(current);
                 }
                 current = null;
             }
 
             for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
+                let line = lines[i].trim();
                 if (!line) continue;
 
-                const expMatch = line.match(/^\s*(?:ব্যাখ্যা|Explanation|e¨vL¨v)\s*[:：\-–—]\s*(.+)$/i);
-                if (expMatch && current) {
-                    current.explanation = expMatch[1].trim();
-                    continue;
-                }
+                let expMatch = line.match(/^\s*(?:ব্যাখ্যা|Explanation|e¨vL¨v)\s*[:：\-\u2013\u2014]\s*(.+)$/i);
+                if (expMatch && current) { current.explanation = expMatch[1].trim(); continue; }
 
-                const ansMatch = line.match(/^\s*(?:সঠিক উত্তর|উত্তর|Ans|Answer|mwVK DËi|DËi)\s*[:：]?\s*(.*)$/i);
+                let ansMatch = line.match(/^\s*(?:সঠিক উত্তর|উত্তর|Ans|Answer|mwVK DËi|DËi)\s*[:：]?\s*(.*)$/i);
                 if (ansMatch && current) {
-                    const found = ansMatch[1].match(/[\(\[\{]?\s*([কখগঘA-DK-NS])\s*[\)\]\}]?/i);
-                    if (found) {
-                        current.answer = normalizeAnswerLabel(found[1]);
+                    let ansExtr = ansMatch[1].match(/[\(\[]?([ক-ঘA-DK-Na-dk-n])[\)\]]?/);
+                    if (ansExtr) {
+                        current.answer = normalizeAnswerLabel(ansExtr[1]);
                         current.original_answer = current.answer;
                     }
                     continue;
                 }
 
-                const qMatch = line.match(/^\s*((?:\d+|[০-৯]+))\s*[\.।\)\]]\s*(.*)$/);
+                let qMatch = line.match(/^\s*((?:\d+|[০-৯]+))\s*[\.।\)\]]\s*(.*)$/);
                 if (qMatch || /^[^\(]+?\?$/.test(line)) {
                     flush();
-                    const rawQuestion = qMatch ? qMatch[2] : line;
-                    let questionText = rawQuestion;
-                    const optionsFound = [];
-
-                    const inlinePattern = /(?:^|\s|\t)([কখগঘA-DK-N])(?:[\.।\)\]:：]|\s+)\s*(.+?)(?=\s+[কখগঘA-DK-N](?:[\.।\)\]:：]|\s+)\s*|$)/ig;
-                    const firstOption = rawQuestion.search(/(?:^|\s|\t)([কখগঘA-DK-N])(?:[\.।\)\]:：]|\s+)\s*/i);
-
-                    if (firstOption !== -1 && firstOption !== 0) {
-                        questionText = rawQuestion.slice(0, firstOption).trim();
-                        let optionsPart = rawQuestion.slice(firstOption).trim();
-                        let m;
-                        while ((m = inlinePattern.exec(optionsPart)) !== null) {
-                            optionsFound.push([normalizeAnswerLabel(m[1]), m[2].trim()]);
+                    let rawQ = qMatch ? qMatch[2] : line;
+                    let optPattern = /([কখগঘK-N])[\.\)।:]\s*(.+?)(?=\s+[কখগঘK-N][\.\)।:]|$)/g;
+                    let optionsFound = [];
+                    let questionText = rawQ;
+                    
+                    let firstOptIndex = rawQ.search(/(?:\s+|^)([কখগঘK-N])[\.\)।:]/);
+                    if(firstOptIndex !== -1) {
+                        questionText = rawQ.substring(0, firstOptIndex).trim();
+                        let optionsPart = rawQ.substring(firstOptIndex).trim();
+                        let match;
+                        while ((match = optPattern.exec(optionsPart)) !== null) {
+                            optionsFound.push([normalizeAnswerLabel(match[1]), match[2].trim()]);
                         }
-                        if (optionsFound.length === 0) questionText = rawQuestion; 
                     }
 
                     current = {
                         question: questionText,
                         questionNumber: qMatch ? qMatch[1] : null,
+                        _sourceLineIndex: i,
                         options: optionsFound,
                         answer: null,
                         explanation: null,
@@ -1007,22 +1402,22 @@
 
                 if (!current) continue;
 
-                const inlineOptionPattern = /(?:^|\s|\t)([কখগঘA-DK-N])(?:[\.।\)\]:：]|\s+)\s*(.+?)(?=\s+[কখগঘA-DK-N](?:[\.।\)\]:：]|\s+)\s*|$)/ig;
+                let optPattern = /([কখগঘK-N])[\.\)।:]\s*(.+?)(?=\s+[কখগঘK-N][\.\)।:]|$)/g;
+                let match;
                 let foundInline = false;
-                let inlineMatch;
-                while ((inlineMatch = inlineOptionPattern.exec(line)) !== null) {
-                    current.options.push([normalizeAnswerLabel(inlineMatch[1]), inlineMatch[2].trim()]);
+                while ((match = optPattern.exec(line)) !== null) {
+                    current.options.push([normalizeAnswerLabel(match[1]), match[2].trim()]);
                     foundInline = true;
                 }
                 if (foundInline) continue;
 
-                const optionMatch = line.match(/^\s*\(?([কখগঘA-DK-N])\)?(?:[\.।:：\-]|\s+)\s+(.+?)\s*$/i);
-                if (optionMatch) {
-                    current.options.push([normalizeAnswerLabel(optionMatch[1]), optionMatch[2].trim()]);
+                let singleOptMatch = line.match(/^\s*\(?([কখগঘA-DKLMNa-dklmn])\)?[.।:]?\s*(.+?)$/);
+                if (singleOptMatch) {
+                    current.options.push([normalizeAnswerLabel(singleOptMatch[1]), singleOptMatch[2].trim()]);
                     continue;
                 }
 
-                if (current.options.length) {
+                if (current.options.length > 0) {
                     current.options[current.options.length - 1][1] += " " + line;
                 } else {
                     current.question += " " + line;
@@ -1034,28 +1429,25 @@
 
         function shuffleOptions(question) {
             if (!question.options || question.options.length < 2 || !question.answer) return question;
-            const originalAnswer = question.original_answer || question.answer;
+            let originalAns = question.original_answer || question.answer;
             let correctText = null;
-            for (const option of question.options) {
-                if (option[0] === originalAnswer) {
-                    correctText = option[1];
-                    break;
-                }
+            for (let i = 0; i < question.options.length; i++) {
+                if (question.options[i][0] === originalAns) { correctText = question.options[i][1]; break; }
             }
-            if (correctText === null) return question;
+            if (!correctText) return question;
 
-            const shuffled = question.options.slice();
+            let shuffled = question.options.slice();
             for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
+                let j = Math.floor(Math.random() * (i + 1));
                 [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
             }
 
-            const newOptions = [];
+            let newOptions = [];
             let newAnswer = null;
             for (let i = 0; i < shuffled.length; i++) {
-                const newLabel = OPTION_ORDER[i] || shuffled[i][0];
+                let newLabel = OPTION_ORDER[i] || shuffled[i][0];
                 newOptions.push([newLabel, shuffled[i][1]]);
-                if (shuffled[i][1] === correctText) newAnswer = newLabel;
+                if (shuffled[i][1] === correctText) { newAnswer = newLabel; }
             }
             question.options = newOptions;
             question.answer = newAnswer;
@@ -1486,11 +1878,7 @@
                     let origItalic = selection.font.italic === true;
                     let origSize = selection.font.size || 10.5;
 
-                    let isUnicode = /[\u0980-\u09FF]/.test(rawText);
                     let targetDirection = direction;
-                    if (isUnicode && direction === "BijoyToUni") targetDirection = "UniToBijoy";
-                    else if (!isUnicode && direction === "UniToBijoy") targetDirection = "BijoyToUni";
-
                     let prefix = targetDirection === "UniToBijoy" ? "u2b" : "b2u";
                     let customFontName = document.getElementById(`${prefix}-font`).value.trim();
                     let customFontSize = document.getElementById(`${prefix}-size`).value.trim();
@@ -1609,6 +1997,7 @@
         function dupNormalizeUnicode(text) { return String(text || "").normalize("NFC").replace(/[\u200B-\u200D\uFEFF]/g, ""); }
         function dupNormalizeDigits(text) { return text.replace(/[০-৯]/g, ch => ({"০":"0","১":"1","২":"2","৩":"3","৪":"4","৫":"5","৬":"6","৭":"7","৮":"8","৯":"9"}[ch])); }
         function dupNormalizeWhitespace(text) { return text.replace(/[\t\r\n\v\u00A0]+/g, " ").replace(/\s{2,}/g, " ").trim(); }
+        function dupStripQuestionNumber(text) { return text.replace(/^\s*(?:\d+|[০-৯]+|[A-Za-z])\s*[\.\)\]\}।:]\s*/, ""); }
         function dupStripPunctuation(text) { return text.replace(/[?!?।,:;؛'"“”‘’`~|\/\\()[\]{}<>+=*_\-–—]/g, " "); }
         function dupNormalizeText(text, opts = {}) {
             let out = dupNormalizeUnicode(text);
@@ -1818,7 +2207,7 @@
                     const searchText = dupNormalizeWhitespace(mcq.question).slice(0, 255);
                     const ranges = context.document.body.search(searchText, {matchCase:false, matchWholeWord:false});
                     ranges.load("items/text"); await context.sync();
-                    if (!ranges.items.length) { showStatus("Could not locate question.", true); return; }
+                    if (!ranges.items.length) { showStatus("Could not locate.", true); return; }
                     ranges.items[Number.isInteger(mcq.wordDocumentOccurrence) ? Math.min(mcq.wordDocumentOccurrence, ranges.items.length - 1) : 0].select();
                     await context.sync();
                 });
@@ -2112,7 +2501,7 @@
 
                         for (let i = 0; i < selectedQs.length; i++) {
                             let q = JSON.parse(JSON.stringify(selectedQs[i]));
-                            window.sanitizeQuestionAnswers(q);
+                            sanitizeQuestionAnswers(q);
                             if (shuffleO) q = shuffleOptions(q);
 
                             const qNum = startNum + i;
@@ -2139,7 +2528,7 @@
             try {
                 await Word.run(async (context) => {
                     let bank = JSON.parse(localStorage.getItem("mcq_studio_bank") || "[]");
-                    if (bank.length === 0) { showStatus("Question Bank is empty! Add MCQs first.", true); return; }
+                    if (bank.length === 0) { showStatus("Question Bank is empty! Add MCQs to bank first.", true); return; }
 
                     let title = document.getElementById("exam-title").value.trim() || "Exam Paper";
                     let numSets = parseInt(document.getElementById("exam-sets").value) || 1;
@@ -2206,7 +2595,7 @@
                         for (let i = 0; i < pool.length; i++) {
                             let q = pool[i];
                             
-                            window.sanitizeQuestionAnswers(q);
+                            sanitizeQuestionAnswers(q);
                             if (doShuffle) q = shuffleOptions(q);
 
                             let currentNum = i + 1;
@@ -2221,9 +2610,42 @@
                                 q.options, tabStops, columnWidth, optFont, optSize, targetFont, origSize, false
                             );
 
-                            mcqInsertSmartOptions(
-                                anchorRange, q, layout, optFont, optSize, targetFont, origSize, origAlign, false, false
-                            );
+                            const count = Math.min(4, q.options.length);
+
+                            if (layout.mode === "two-per-line") {
+                                for (let j = 0; j < count; j += 2) {
+                                    const p = anchorRange.insertParagraph("", "Before");
+                                    p.alignment = origAlign;
+                                    
+                                    let tab1 = p.insertText("\t", "End");
+                                    mcqApplyFontSafe(tab1, targetFont, origSize, false, false);
+                                    let mk1 = p.insertText(OPTION_EXPORT_MAP[q.options[j][0]] || q.options[j][0], "End");
+                                    mcqApplyFontSafe(mk1, optFont, optSize, false, false);
+                                    let txt1 = p.insertText(` ${q.options[j][1].trim()}`, "End");
+                                    mcqApplyFontSafe(txt1, targetFont, origSize, false, false);
+
+                                    if (q.options[j + 1]) {
+                                        let tab2 = p.insertText("\t", "End");
+                                        mcqApplyFontSafe(tab2, targetFont, origSize, false, false);
+                                        let mk2 = p.insertText(OPTION_EXPORT_MAP[q.options[j+1][0]] || q.options[j+1][0], "End");
+                                        mcqApplyFontSafe(mk2, optFont, optSize, false, false);
+                                        let txt2 = p.insertText(` ${q.options[j+1][1].trim()}`, "End");
+                                        mcqApplyFontSafe(txt2, targetFont, origSize, false, false);
+                                    }
+                                }
+                            } else {
+                                for (let j = 0; j < count; j++) {
+                                    const p = anchorRange.insertParagraph("", "Before");
+                                    p.alignment = origAlign;
+
+                                    let tab1 = p.insertText("\t", "End");
+                                    mcqApplyFontSafe(tab1, targetFont, origSize, false, false);
+                                    let mk1 = p.insertText(OPTION_EXPORT_MAP[q.options[j][0]] || q.options[j][0], "End");
+                                    mcqApplyFontSafe(mk1, optFont, optSize, false, false);
+                                    let txt1 = p.insertText(` ${q.options[j][1].trim()}`, "End");
+                                    mcqApplyFontSafe(txt1, targetFont, origSize, false, false);
+                                }
+                            }
                             
                             if (q.answer) {
                                 const ansMap = { "P": "ক", "Q": "খ", "R": "গ", "S": "ঘ", "K": "ক", "L": "খ", "M": "গ", "N": "ঘ", "A":"ক", "B":"খ", "C":"গ", "D":"ঘ", "ক":"ক", "খ":"খ", "গ":"গ", "ঘ":"ঘ" };
@@ -2274,7 +2696,7 @@
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
-        // --- BUTTON CLICK WIRING ---
+        // --- BUTTON EVENT WIRING ---
         let _eventsBound = false;
 
         function bindAppEvents() {
@@ -2307,7 +2729,6 @@
                     btn.dataset.originalHtml = btn.innerHTML;
                     btn.innerHTML = `<span class="text-[9px] font-bold text-red-600 bg-red-50 px-1 rounded border border-red-200">Sure?</span>`;
                     btn.dataset.confirming = "true";
-                    
                     setTimeout(() => {
                         if (btn) {
                             btn.innerHTML = btn.dataset.originalHtml;
@@ -2338,13 +2759,12 @@
 
             // Initialize Foliora Ecosystem
             loadFolioraPersistedState();
-            
-            // Sync workspace visibility
+            updateHeaderAccountUI();
+
             document.getElementById('pnav-mcq').style.display = FOLIORA_STATE.workspace.mcq ? 'flex' : 'none';
             document.getElementById('pnav-converter').style.display = FOLIORA_STATE.workspace.converter ? 'flex' : 'none';
             document.getElementById('pnav-ocr').style.display = FOLIORA_STATE.workspace.ocr ? 'flex' : 'none';
 
-            // Start on MCQ Studio
             switchProduct('mcq');
             updateBankCount();
 
@@ -2439,7 +2859,6 @@
             if (!currentVisionImageBase64 || !currentVisionImageMime) { showStatus("Please upload or paste an image first.", true); return; }
             if (currentVisionImageBase64.length > 12 * 1024 * 1024) { showStatus("This image is very large. Please use a smaller image.", true); return; }
 
-            // Check quota limit
             if (FOLIORA_STATE.ocrQuota.used >= FOLIORA_STATE.ocrQuota.limit) {
                 showStatus("Monthly OCR quota reached! Please upgrade your tier.", true);
                 switchProduct('ocr');
@@ -2566,7 +2985,6 @@ If answer or explanation does not exist, use null.`;
                     targetRange.delete();
                     await context.sync();
                     
-                    // Increment Quota Counter
                     FOLIORA_STATE.ocrQuota.used += 1;
                     saveFolioraPersistedState();
                     updateOcrQuotaDisplay();
