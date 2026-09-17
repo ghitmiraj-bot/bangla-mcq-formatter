@@ -6,6 +6,7 @@
     <title>Foliora Studio Suite</title>
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #f8fafc; }
@@ -48,49 +49,50 @@
         <option value="13"></option><option value="14"></option><option value="16"></option>
     </datalist>
 
-    <!-- TOP HEADER: BRAND + ACCOUNT WIDGET & WORKSPACE CONTROLS -->
-    <header class="bg-slate-900 text-white px-4 py-2.5 shadow-md border-b border-slate-800 flex items-center justify-between shrink-0 z-20">
+    <!-- TOP HEADER: BRAND + ACCOUNT, TIER & WORKSPACE CONTROLS -->
+    <header class="bg-slate-900 text-white px-3.5 py-2.5 shadow-md border-b border-slate-800 flex items-center justify-between shrink-0 z-20">
         <div class="flex items-center space-x-2.5">
             <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-blue-600 flex items-center justify-center font-black text-sm tracking-wider text-white shadow-inner">
                 F
             </div>
             <div>
                 <div class="flex items-center space-x-1.5">
-                    <span class="text-base font-extrabold tracking-tight text-white">FOLIORA</span>
-                    <span id="headerTierBadge" class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">PRO</span>
+                    <span class="text-sm font-extrabold tracking-tight text-white">FOLIORA</span>
+                    <span id="headerTierBadge" class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">GUEST</span>
                 </div>
-                <p class="text-[10px] text-slate-400 font-medium">Publishing Suite</p>
+                <p class="text-[10px] text-slate-400 font-medium">Publishing & Office Suite</p>
             </div>
         </div>
         
         <div class="flex items-center space-x-1.5">
-            <!-- Account Profile / Sign In Button -->
-            <button id="btnHeaderAccount" onclick="handleAccountClick()" class="px-2 py-1 text-slate-200 hover:text-white hover:bg-slate-800 rounded-md transition text-xs flex items-center gap-1.5 border border-slate-700/70 bg-slate-800/50 shadow-sm">
-                <i id="headerAccountIcon" class="fas fa-user-circle text-indigo-400 text-sm"></i>
-                <span id="headerAccountLabel" class="text-[11px] font-semibold">Sign In</span>
+            <!-- Account / Profile Button -->
+            <button onclick="handleAccountButtonClick()" id="btnHeaderAccount" title="My Foliora Account" class="h-7 px-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition text-xs flex items-center gap-1.5 border border-slate-700/60 bg-slate-800/50">
+                <span id="userAvatarIcon" class="w-4 h-4 rounded-full bg-slate-600 text-[10px] font-bold flex items-center justify-center text-slate-300">?</span>
+                <span id="userDisplayName" class="text-[11px] font-medium max-w-[65px] truncate hidden sm:inline">Sign In</span>
             </button>
 
-            <!-- Dev Entitlement Simulator Button -->
-            <button onclick="openEntitlementModal()" title="License Simulator (Dev)" class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition text-xs border border-slate-700/60 bg-slate-800/40">
-                <i class="fas fa-id-badge text-indigo-400"></i>
+            <!-- Dev & Supabase Settings Button -->
+            <button onclick="openEntitlementModal()" title="Backend & Tier Config" class="h-7 px-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition text-xs flex items-center gap-1 border border-slate-700/60 bg-slate-800/40">
+                <i class="fas fa-plug text-emerald-400 text-xs"></i>
+                <span class="text-[10px] font-semibold hidden sm:inline">API</span>
             </button>
 
             <!-- Workspace Configurator Button -->
-            <button onclick="openWorkspaceModal()" title="Customize Workspace" class="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition text-xs border border-slate-700/60 bg-slate-800/40">
-                <i class="fas fa-sliders-h"></i>
+            <button onclick="openWorkspaceModal()" title="Customize Workspace" class="w-7 h-7 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded-md transition text-xs border border-slate-700/60 bg-slate-800/40">
+                <i class="fas fa-sliders-h text-xs"></i>
             </button>
         </div>
     </header>
 
     <!-- PRIMARY PRODUCT NAVIGATION SWITCHER -->
     <nav class="bg-slate-100 border-b border-slate-200 px-2 pt-2 flex space-x-1 overflow-x-auto text-xs shrink-0" id="productNav">
-        <button onclick="switchProduct('mcq')" id="pnav-mcq" class="product-nav-btn flex-1 py-2 px-2.5 font-bold rounded-t-lg transition flex items-center justify-center gap-1.5 border-t-2 border-l border-r border-transparent">
+        <button onclick="switchProduct('mcq')" id="pnav-mcq" class="product-nav-btn flex-1 py-2 px-2 font-bold rounded-t-lg transition flex items-center justify-center gap-1.5 border-t-2 border-l border-r border-transparent">
             <i class="fas fa-list-check"></i> <span>MCQ Studio</span>
         </button>
-        <button onclick="switchProduct('converter')" id="pnav-converter" class="product-nav-btn flex-1 py-2 px-2.5 font-bold rounded-t-lg transition flex items-center justify-center gap-1.5 border-t-2 border-l border-r border-transparent">
+        <button onclick="switchProduct('converter')" id="pnav-converter" class="product-nav-btn flex-1 py-2 px-2 font-bold rounded-t-lg transition flex items-center justify-center gap-1.5 border-t-2 border-l border-r border-transparent">
             <i class="fas fa-language"></i> <span>Converter</span> <span class="text-[9px] bg-emerald-100 text-emerald-700 px-1 rounded font-normal">Free</span>
         </button>
-        <button onclick="switchProduct('ocr')" id="pnav-ocr" class="product-nav-btn flex-1 py-2 px-2.5 font-bold rounded-t-lg transition flex items-center justify-center gap-1.5 border-t-2 border-l border-r border-transparent">
+        <button onclick="switchProduct('ocr')" id="pnav-ocr" class="product-nav-btn flex-1 py-2 px-2 font-bold rounded-t-lg transition flex items-center justify-center gap-1.5 border-t-2 border-l border-r border-transparent">
             <i class="fas fa-eye"></i> <span>OCR Studio</span>
         </button>
     </nav>
@@ -104,40 +106,20 @@
             <span>Select text in Word first, then click any action below to process.</span>
         </div>
 
-        <!-- ====================================================================== -->
-        <!-- PRODUCT 1: FOLORIA MCQ STUDIO                                           -->
-        <!-- ====================================================================== -->
+        <!-- PRODUCT 1: FOLORIA MCQ STUDIO -->
         <section id="product-mcq" class="product-pane">
-            
-            <!-- Auth Required Lock State (Shown when logged out) -->
-            <div id="auth-lock-mcq" class="hidden bg-white border border-slate-200 rounded-xl p-6 text-center shadow-md my-6">
-                <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
-                    <i class="fas fa-user-lock"></i>
-                </div>
-                <h3 class="text-sm font-bold text-slate-800">Foliora Account Required</h3>
-                <p class="text-xs text-slate-500 mt-1 mb-4">Sign in with your Foliora account to access MCQ Studio, Question Bank, and Exam generator.</p>
-                <button onclick="openAuthModal('signin')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg text-xs shadow transition">
-                    Sign In to Foliora
-                </button>
-                <button onclick="openAuthModal('signup')" class="w-full mt-2 text-indigo-600 hover:text-indigo-800 text-xs font-semibold py-1">
-                    Don't have an account? Create one
-                </button>
-            </div>
-
-            <!-- Product Entitlement Lock Overlay (Logged in but expired/unsubscribed) -->
             <div id="lock-mcq" class="hidden bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl p-6 text-center shadow-lg my-6">
                 <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
                     <i class="fas fa-lock"></i>
                 </div>
                 <h3 class="text-sm font-bold text-slate-800">Foliora MCQ Studio Locked</h3>
-                <p class="text-xs text-slate-500 mt-1 mb-4">You need an active MCQ Studio subscription to use these professional features.</p>
-                <button onclick="openEntitlementModal()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-2 px-4 rounded-lg text-xs shadow hover:from-blue-700 hover:to-indigo-700 transition">
-                    Unlock MCQ Studio (Simulator)
+                <p id="lockMcqReason" class="text-xs text-slate-500 mt-1 mb-4">Please sign in to your Foliora account to access MCQ Studio.</p>
+                <button onclick="handleLockAction('mcq')" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-2 px-4 rounded-lg text-xs shadow hover:from-blue-700 hover:to-indigo-700 transition">
+                    <span id="lockMcqBtnText">Sign In to Unlock</span>
                 </button>
             </div>
 
             <div id="content-mcq" class="space-y-3">
-                <!-- Subtab Selector for MCQ Studio -->
                 <div class="flex bg-slate-200/70 p-1 rounded-lg text-xs font-semibold text-slate-600 mb-3">
                     <button onclick="switchMcqSubtab('formatting')" id="subtab-btn-formatting" class="flex-1 py-1.5 rounded-md bg-white text-blue-700 shadow-sm transition">
                         <i class="fas fa-align-left mr-1"></i> Formatter
@@ -156,7 +138,6 @@
                         </label>
                     </div>
 
-                    <!-- Normal MCQ Button -->
                     <div>
                         <div class="flex space-x-2">
                             <button id="btnNormal" class="w-full relative group bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2.5 px-3 rounded-lg transition-all shadow-sm flex items-center justify-center text-xs">
@@ -165,6 +146,13 @@
                             <button onclick="toggleSettings('set-normal')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3.5 rounded-lg transition text-xs"><i class="fas fa-cog"></i></button>
                         </div>
                         <div id="set-normal" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2 space-y-2 text-xs">
+                            <div>
+                                <label class="text-slate-600 font-semibold">Marker Style</label>
+                                <select id="norm-marker-style" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-blue-400">
+                                    <option value="symbol">OMR & ProshnaP Symbols</option>
+                                    <option value="text">Standard Text (Same Font)</option>
+                                </select>
+                            </div>
                             <div><label class="text-slate-600 font-semibold">Options Font Name</label>
                                 <input type="text" list="font-list" id="norm-opt-font" placeholder="Leave empty for BanglaOMR" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-blue-400">
                             </div>
@@ -179,7 +167,6 @@
                         </div>
                     </div>
 
-                    <!-- Smart MCQ Button -->
                     <div>
                         <div class="flex space-x-2">
                             <button id="btnSmart" class="w-full relative group bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold py-2.5 px-3 rounded-lg transition-all shadow-sm flex items-center justify-center text-xs">
@@ -187,13 +174,21 @@
                             </button>
                             <button onclick="toggleSettings('set-smart')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3.5 rounded-lg transition text-xs"><i class="fas fa-cog"></i></button>
                         </div>
-                        <div id="set-smart" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2 text-xs">
-                            <label class="text-slate-600 font-semibold">Answer Page Font Size</label>
-                            <input type="text" list="size-list" id="smart-ans-size" placeholder="Default: 10" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-emerald-400">
+                        <div id="set-smart" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-3 mt-2 space-y-2 text-xs">
+                            <div>
+                                <label class="text-slate-600 font-semibold">Marker Style</label>
+                                <select id="smart-marker-style" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-emerald-400">
+                                    <option value="symbol">OMR & ProshnaP Symbols</option>
+                                    <option value="text">Standard Text (Same Font)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-slate-600 font-semibold">Answer Page Font Size</label>
+                                <input type="text" list="size-list" id="smart-ans-size" placeholder="Default: 10" class="w-full mt-1 p-1.5 border rounded bg-white text-slate-700 outline-none focus:ring-2 focus:ring-emerald-400">
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Number & Bold -->
                     <div>
                         <div class="flex space-x-2">
                             <button id="btnFormatQuestions" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2.5 px-3 rounded-lg transition-all shadow-sm flex items-center justify-center text-xs">
@@ -216,8 +211,6 @@
 
                 <!-- SUBTAB B: STUDIO & QUESTION BANK -->
                 <div id="mcq-subtab-studio" class="subtab-content space-y-3">
-                    
-                    <!-- MCQ Duplicate Finder Card -->
                     <div class="bg-white rounded-lg shadow-sm border border-slate-200/90 overflow-hidden">
                         <div class="bg-slate-50 px-3 py-2 border-b border-slate-200 font-semibold text-xs text-slate-700 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition" onclick="toggleSettings('studio-dup')">
                             <span><i class="fas fa-clone text-rose-500 mr-1.5"></i> Duplicate Finder & Detector</span>
@@ -260,7 +253,6 @@
                         </div>
                     </div>
 
-                    <!-- Question Bank Manager Card -->
                     <div class="border border-slate-200/90 rounded-lg bg-white overflow-hidden shadow-sm">
                         <div class="bg-slate-50 px-3 py-2 border-b border-slate-200 font-semibold text-xs text-slate-700 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition" onclick="toggleSettings('studio-bank')">
                             <span><i class="fas fa-database text-emerald-600 mr-1.5"></i> Question Bank Manager</span>
@@ -283,7 +275,6 @@
                         </div>
                     </div>
 
-                    <!-- Set Generator Card -->
                     <div class="border border-slate-200/90 rounded-lg bg-white overflow-hidden shadow-sm">
                         <div class="bg-slate-50 px-3 py-2 border-b border-slate-200 font-semibold text-xs text-slate-700 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition" onclick="toggleSettings('studio-set')">
                             <span><i class="fas fa-cubes text-purple-600 mr-1.5"></i> Multi-Set Generator</span>
@@ -304,7 +295,14 @@
                                 <label class="text-slate-600 font-semibold">Number of Sets</label>
                                 <input type="number" id="set-number-of-sets" value="1" min="1" max="10" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-purple-400">
                             </div>
-                            <div class="grid grid-cols-2 gap-2 text-slate-600">
+                            <div class="mt-2">
+                                <label class="text-slate-600 font-semibold">Marker Style</label>
+                                <select id="set-marker-style" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-purple-400">
+                                    <option value="symbol">OMR & ProshnaP Symbols</option>
+                                    <option value="text">Standard Text (Same Font)</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-slate-600 mt-2">
                                 <label class="flex items-center"><input type="checkbox" id="set-shuffle-q" checked class="mr-1"> Random Select</label>
                                 <label class="flex items-center"><input type="checkbox" id="set-shuffle-o" checked class="mr-1"> Shuffle Opts</label>
                             </div>
@@ -312,7 +310,6 @@
                         </div>
                     </div>
 
-                    <!-- Exam Paper Generator Card -->
                     <div class="border border-slate-200/90 rounded-lg bg-white overflow-hidden shadow-sm">
                         <div class="bg-slate-50 px-3 py-2 border-b border-slate-200 font-semibold text-xs text-slate-700 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition" onclick="toggleSettings('studio-exam')">
                             <span><i class="fas fa-graduation-cap text-orange-600 mr-1.5"></i> Exam Paper & Key Gen.</span>
@@ -329,24 +326,27 @@
                                     <input type="number" id="exam-sets" value="1" min="1" max="10" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-orange-400 text-center">
                                 </div>
                             </div>
-                            <div class="grid grid-cols-2 gap-2 text-slate-600">
+                            <div class="mt-2">
+                                <label class="text-slate-600 font-semibold">Marker Style</label>
+                                <select id="exam-marker-style" class="w-full mt-1 p-1.5 border rounded outline-none focus:ring-2 focus:ring-orange-400">
+                                    <option value="symbol">OMR & ProshnaP Symbols</option>
+                                    <option value="text">Standard Text (Same Font)</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-slate-600 mt-2">
                                 <label class="flex items-center"><input type="checkbox" id="exam-shuffle" checked class="mr-1"> Shuffle Qs & Opts</label>
                                 <label class="flex items-center"><input type="checkbox" id="exam-ans-key" checked class="mr-1"> Answer Key Grid</label>
                             </div>
                             <button id="btnGenerateExam" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-2 px-3 rounded-lg shadow-sm transition mt-1">Create Exam Paper</button>
                         </div>
                     </div>
-
                 </div>
             </div>
         </section>
 
-        <!-- ====================================================================== -->
-        <!-- PRODUCT 2: FOLORIA CONVERTER (ALWAYS FREE ENTRY PRODUCT)               -->
-        <!-- ====================================================================== -->
+        <!-- PRODUCT 2: FOLORIA CONVERTER -->
         <section id="product-converter" class="product-pane">
             <div class="space-y-3">
-                <!-- Subtab Selector for Converter -->
                 <div class="flex bg-slate-200/70 p-1 rounded-lg text-xs font-semibold text-slate-600 mb-3">
                     <button onclick="switchConverterSubtab('smart-convert')" id="subtab-btn-smart-convert" class="flex-1 py-1.5 rounded-md bg-white text-indigo-700 shadow-sm transition">
                         <i class="fas fa-exchange-alt mr-1"></i> Bijoy ⇄ Unicode
@@ -356,7 +356,6 @@
                     </button>
                 </div>
 
-                <!-- SUBTAB A: BIJOY <-> UNICODE -->
                 <div id="converter-subtab-smart-convert" class="subtab-content active space-y-3">
                     <div class="bg-indigo-50/70 border border-indigo-100 rounded-lg p-3 text-center text-xs">
                         <i class="fas fa-language text-2xl text-indigo-600 mb-1"></i>
@@ -364,7 +363,6 @@
                         <p class="text-[11px] text-slate-500 mt-0.5">Retains English formulas, numbering, and paragraph alignments intact.</p>
                     </div>
 
-                    <!-- Unicode to Bijoy -->
                     <div>
                         <div class="flex space-x-2">
                             <button id="btnUniToBijoy" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-3 rounded-lg shadow-sm transition flex items-center justify-center text-xs">
@@ -384,7 +382,6 @@
                         </div>
                     </div>
 
-                    <!-- Bijoy to Unicode -->
                     <div>
                         <div class="flex space-x-2">
                             <button id="btnBijoyToUni" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 px-3 rounded-lg shadow-sm transition flex items-center justify-center text-xs">
@@ -405,7 +402,6 @@
                     </div>
                 </div>
 
-                <!-- SUBTAB B: ENGLISH FONT FIXER -->
                 <div id="converter-subtab-font-fixer" class="subtab-content space-y-3">
                     <div class="bg-cyan-50/70 border border-cyan-100 rounded-lg p-3 text-center text-xs">
                         <i class="fas fa-font text-2xl text-cyan-600 mb-1"></i>
@@ -435,49 +431,30 @@
             </div>
         </section>
 
-        <!-- ====================================================================== -->
-        <!-- PRODUCT 3: FOLORIA OCR STUDIO (AI SCANNER & QUOTA TRACKER)             -->
-        <!-- ====================================================================== -->
+        <!-- PRODUCT 3: FOLORIA OCR STUDIO -->
         <section id="product-ocr" class="product-pane">
-            
-            <!-- Auth Required Lock State -->
-            <div id="auth-lock-ocr" class="hidden bg-white border border-slate-200 rounded-xl p-6 text-center shadow-md my-6">
-                <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
-                    <i class="fas fa-user-lock"></i>
-                </div>
-                <h3 class="text-sm font-bold text-slate-800">Foliora Account Required</h3>
-                <p class="text-xs text-slate-500 mt-1 mb-4">Sign in with your Foliora account to access OCR Studio and use your monthly page quota.</p>
-                <button onclick="openAuthModal('signin')" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg text-xs shadow transition">
-                    Sign In to Foliora
-                </button>
-            </div>
-
-            <!-- Quota Exceeded Lock State -->
             <div id="lock-ocr" class="hidden bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl p-6 text-center shadow-lg my-6">
                 <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
                     <i class="fas fa-lock"></i>
                 </div>
-                <h3 class="text-sm font-bold text-slate-800">OCR Monthly Quota Reached</h3>
-                <p class="text-xs text-slate-500 mt-1 mb-4">You have used all available pages for this cycle. Upgrade your Foliora plan to increase your limit.</p>
-                <button onclick="openEntitlementModal()" class="w-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-semibold py-2 px-4 rounded-lg text-xs shadow hover:from-teal-700 hover:to-emerald-700 transition">
-                    Adjust OCR Quota (Simulator)
+                <h3 class="text-sm font-bold text-slate-800">Foliora OCR Studio Locked</h3>
+                <p id="lockOcrReason" class="text-xs text-slate-500 mt-1 mb-4">You have reached your monthly OCR limit or need an active entitlement.</p>
+                <button onclick="handleLockAction('ocr')" class="w-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-semibold py-2 px-4 rounded-lg text-xs shadow hover:from-teal-700 hover:to-emerald-700 transition">
+                    <span id="lockOcrBtnText">Adjust OCR Quota or Sign In</span>
                 </button>
             </div>
 
             <div id="content-ocr" class="space-y-3">
-                
-                <!-- OCR Usage Quota Counter -->
                 <div class="bg-gradient-to-r from-teal-900 to-slate-900 text-white p-3 rounded-lg shadow-sm">
                     <div class="flex items-center justify-between text-xs">
                         <span class="font-bold text-teal-300"><i class="fas fa-chart-pie mr-1"></i> Monthly Usage</span>
-                        <span id="ocrQuotaText" class="text-[11px] font-semibold bg-teal-800/80 px-2 py-0.5 rounded text-teal-100 border border-teal-600/40">3 / 10 pages used</span>
+                        <span id="ocrQuotaText" class="text-[11px] font-semibold bg-teal-800/80 px-2 py-0.5 rounded text-teal-100 border border-teal-600/40">0 / 10 pages used</span>
                     </div>
                     <div class="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden mt-2">
-                        <div id="ocrQuotaBar" class="bg-teal-400 h-full rounded-full transition-all duration-300" style="width: 30%"></div>
+                        <div id="ocrQuotaBar" class="bg-teal-400 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </div>
 
-                <!-- API Key Section -->
                 <div class="bg-white border border-slate-200 rounded-lg p-3 shadow-sm text-xs">
                     <div class="flex justify-between items-center cursor-pointer" onclick="toggleSettings('api-key-settings')">
                         <span class="font-bold text-slate-700"><i class="fas fa-key text-amber-500 mr-1.5"></i> Gemini AI Engine Key</span>
@@ -490,7 +467,6 @@
                     </div>
                 </div>
 
-                <!-- Upload Dropzone Area -->
                 <div id="dropzone" class="border-2 border-dashed border-slate-300 hover:border-teal-500 rounded-lg p-4 text-center bg-slate-50 hover:bg-slate-100/80 transition cursor-pointer flex flex-col items-center justify-center min-h-[130px] relative">
                     <input type="file" id="vision-file-input" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                     <i class="fas fa-cloud-arrow-up text-3xl text-teal-500 mb-2"></i>
@@ -498,7 +474,6 @@
                     <span class="text-[11px] font-bold text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded mt-1.5">or paste directly with (Ctrl+V)</span>
                 </div>
 
-                <!-- Image Preview Area -->
                 <div id="vision-preview-container" class="hidden relative border rounded-lg bg-slate-100 p-2 text-center">
                     <button id="btnRemoveImage" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow hover:bg-red-600 z-10 transition"><i class="fas fa-times text-xs"></i></button>
                     <img id="vision-preview" class="w-full max-h-44 object-contain rounded" src="" alt="Preview">
@@ -512,127 +487,138 @@
 
     </main>
 
-    <!-- ====================================================================== -->
-    <!-- MODAL 1: AUTHENTICATION MODAL (SIGN IN / CREATE ACCOUNT)              -->
-    <!-- ====================================================================== -->
-    <div id="modalAuth" class="hidden fixed inset-0 bg-slate-900/65 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xs border border-slate-200 overflow-hidden">
-            
+    <!-- MODAL 1: AUTHENTICATION (SUPABASE LIVE AUTH) -->
+    <div id="modalAuth" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm border border-slate-200 overflow-hidden">
             <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
                 <div class="flex items-center space-x-2">
-                    <div class="w-5 h-5 rounded bg-indigo-600 flex items-center justify-center text-[10px] font-extrabold text-white">F</div>
+                    <div class="w-5 h-5 rounded bg-indigo-500 flex items-center justify-center text-[10px] font-black text-white">F</div>
                     <h3 class="text-xs font-bold uppercase tracking-wider">Foliora Account</h3>
                 </div>
                 <button onclick="closeAuthModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
             </div>
 
-            <!-- Modal Nav Tabs -->
-            <div class="flex border-b border-slate-200 bg-slate-50 text-xs font-semibold">
-                <button onclick="switchAuthTab('signin')" id="authTabBtnSignIn" class="flex-1 py-2.5 text-indigo-700 border-b-2 border-indigo-600 transition">Sign In</button>
-                <button onclick="switchAuthTab('signup')" id="authTabBtnSignUp" class="flex-1 py-2.5 text-slate-500 hover:text-slate-800 transition">Create Account</button>
+            <div class="flex border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                <button onclick="switchAuthTab('signin')" id="authTabSignIn" class="flex-1 py-2.5 text-center text-indigo-600 border-b-2 border-indigo-600 bg-white transition">
+                    Sign In
+                </button>
+                <button onclick="switchAuthTab('signup')" id="authTabSignUp" class="flex-1 py-2.5 text-center hover:text-slate-800 transition">
+                    Create Account
+                </button>
             </div>
 
-            <div class="p-4 text-xs space-y-3">
-                
+            <div class="p-4 space-y-3.5 text-xs">
                 <!-- Sign In Form -->
-                <form id="formSignIn" onsubmit="handleSignInSubmit(event)" class="space-y-2.5">
+                <form id="formSignIn" onsubmit="handleLiveSignIn(event)" class="space-y-3">
                     <div>
-                        <label class="font-semibold text-slate-700 block mb-1">Email Address</label>
-                        <input type="email" id="signInEmail" required placeholder="name@example.com" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
+                        <label class="font-bold text-slate-700 block mb-1">Email Address</label>
+                        <input type="email" id="authSignInEmail" required placeholder="you@example.com" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
                     </div>
                     <div>
-                        <label class="font-semibold text-slate-700 block mb-1">Password</label>
-                        <input type="password" id="signInPassword" required placeholder="••••••••" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
+                        <label class="font-bold text-slate-700 block mb-1">Password</label>
+                        <input type="password" id="authSignInPassword" required placeholder="••••••••" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
                     </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition text-xs shadow-sm mt-1">
-                        Sign In
+                    <button type="submit" id="btnSubmitSignIn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition mt-1">
+                        Sign In to Foliora
                     </button>
                 </form>
 
-                <!-- Create Account Form -->
-                <form id="formSignUp" onsubmit="handleSignUpSubmit(event)" class="space-y-2.5 hidden">
+                <!-- Sign Up Form -->
+                <form id="formSignUp" onsubmit="handleLiveSignUp(event)" class="space-y-3 hidden">
                     <div>
-                        <label class="font-semibold text-slate-700 block mb-1">Full Name</label>
-                        <input type="text" id="signUpName" required placeholder="Your Name" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
+                        <label class="font-bold text-slate-700 block mb-1">Full Name</label>
+                        <input type="text" id="authSignUpName" required placeholder="Your Name" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
                     </div>
                     <div>
-                        <label class="font-semibold text-slate-700 block mb-1">Email Address</label>
-                        <input type="email" id="signUpEmail" required placeholder="name@example.com" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
+                        <label class="font-bold text-slate-700 block mb-1">Email Address</label>
+                        <input type="email" id="authSignUpEmail" required placeholder="you@example.com" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
                     </div>
                     <div>
-                        <label class="font-semibold text-slate-700 block mb-1">Password</label>
-                        <input type="password" id="signUpPassword" required placeholder="At least 6 characters" minlength="6" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
+                        <label class="font-bold text-slate-700 block mb-1">Password</label>
+                        <input type="password" id="authSignUpPassword" required minlength="6" placeholder="At least 6 characters" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
                     </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition text-xs shadow-sm mt-1">
+                    <button type="submit" id="btnSubmitSignUp" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg shadow-sm transition mt-1">
                         Create Foliora Account
                     </button>
                 </form>
 
-                <div class="pt-2 border-t border-slate-100 text-center">
-                    <button type="button" onclick="continueAsGuest()" class="text-[11px] text-slate-500 hover:text-slate-800 underline">
-                        Continue as Guest (Free Converter only)
+                <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Converter is always free.</span>
+                    <button type="button" onclick="continueAsGuest()" class="text-indigo-600 font-semibold hover:underline">
+                        Continue as Guest →
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ====================================================================== -->
-    <!-- MODAL 2: "MY FOLORIA" ACCOUNT PROFILE DRAWER                            -->
-    <!-- ====================================================================== -->
-    <div id="modalAccount" class="hidden fixed inset-0 bg-slate-900/65 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xs border border-slate-200 overflow-hidden">
-            
-            <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+    <!-- MODAL 2: USER PROFILE & SUBSCRIPTION (MY FOLIORA) -->
+    <div id="modalProfile" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-900 text-white px-4 py-3.5 flex items-center justify-between">
                 <div class="flex items-center space-x-2">
-                    <i class="fas fa-circle-user text-indigo-400 text-sm"></i>
+                    <i class="fas fa-user-circle text-indigo-400 text-base"></i>
                     <h3 class="text-xs font-bold uppercase tracking-wider">My Foliora</h3>
                 </div>
-                <button onclick="closeAccountModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
+                <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
             </div>
 
             <div class="p-4 space-y-3.5 text-xs">
-                <!-- User Profile Card -->
-                <div class="flex items-center space-x-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                    <div id="accountAvatar" class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-blue-500 text-white font-bold flex items-center justify-center text-sm shadow-inner">
-                        M
+                <div class="flex items-center space-x-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div id="profileAvatarBig" class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-blue-500 text-white text-base font-bold flex items-center justify-center shadow-sm">
+                        U
                     </div>
-                    <div class="overflow-hidden">
-                        <div id="accountUserName" class="font-bold text-slate-800 truncate">Miraj</div>
-                        <div id="accountUserEmail" class="text-[11px] text-slate-500 truncate">user@foliora.com</div>
-                    </div>
-                </div>
-
-                <!-- Entitlements Summary -->
-                <div class="space-y-1.5">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Your Subscriptions</span>
-                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px]">
-                        <span class="font-semibold text-slate-700"><i class="fas fa-list-check text-blue-600 mr-1.5"></i> MCQ Studio</span>
-                        <span id="accountMcqStatus" class="font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Active (Pro)</span>
-                    </div>
-                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px]">
-                        <span class="font-semibold text-slate-700"><i class="fas fa-language text-indigo-600 mr-1.5"></i> Converter</span>
-                        <span class="font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">Free Suite</span>
-                    </div>
-                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between text-[11px]">
-                        <span class="font-semibold text-slate-700"><i class="fas fa-eye text-teal-600 mr-1.5"></i> OCR Studio</span>
-                        <span id="accountOcrStatus" class="font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">10 Pages / Mo</span>
+                    <div class="flex-1 min-w-0">
+                        <div id="profileNameDisplay" class="font-bold text-slate-800 text-sm truncate">User Name</div>
+                        <div id="profileEmailDisplay" class="text-slate-500 text-[11px] truncate">user@foliora.com</div>
                     </div>
                 </div>
 
-                <!-- Actions -->
-                <div class="pt-2 border-t border-slate-100 space-y-2">
-                    <button onclick="handleLogout()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-semibold py-2 rounded-lg transition text-xs flex items-center justify-center gap-1.5">
-                        <i class="fas fa-arrow-right-from-bracket"></i> Sign Out
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-slate-700 text-[11px] uppercase tracking-wider">Live Entitlements</span>
+                        <button onclick="refreshLiveEntitlements(true)" title="Refresh from server" class="text-indigo-600 hover:text-indigo-800 text-[11px]">
+                            <i class="fas fa-rotate-right mr-1"></i>Sync
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
+                            <span class="font-medium text-slate-700 flex items-center gap-1.5">
+                                <i class="fas fa-list-check text-blue-600"></i> MCQ Studio
+                            </span>
+                            <span id="profileBadgeMcq" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">Pro Active</span>
+                        </div>
+
+                        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
+                            <span class="font-medium text-slate-700 flex items-center gap-1.5">
+                                <i class="fas fa-language text-indigo-600"></i> Converter
+                            </span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">Free Lifetime</span>
+                        </div>
+
+                        <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200">
+                            <span class="font-medium text-slate-700 flex items-center gap-1.5">
+                                <i class="fas fa-eye text-teal-600"></i> OCR Studio
+                            </span>
+                            <span id="profileBadgeOcr" class="text-[10px] font-bold px-2 py-0.5 rounded bg-teal-100 text-teal-800">10 pgs/mo (Trial)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex flex-col gap-2">
+                    <button onclick="handleLiveSignOut()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-2 rounded-lg transition text-xs border border-red-200 flex items-center justify-center gap-1.5">
+                        <i class="fas fa-right-from-bracket"></i> Sign Out
+                    </button>
+                    <button onclick="closeProfileModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-1.5 rounded-lg transition text-xs">
+                        Close
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ====================================================================== -->
-    <!-- MODAL 3: WORKSPACE CUSTOMIZER (HIDE / SHOW PRODUCTS)                   -->
-    <!-- ====================================================================== -->
+    <!-- MODAL 3: WORKSPACE CUSTOMIZER -->
     <div id="modalWorkspace" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-xs border border-slate-200 overflow-hidden">
             <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
@@ -665,47 +651,62 @@
         </div>
     </div>
 
-    <!-- ====================================================================== -->
-    <!-- MODAL 4: DEV ENTITLEMENT SIMULATOR (FOR EASY TESTING)                   -->
-    <!-- ====================================================================== -->
+    <!-- MODAL 4: SUPABASE CREDENTIALS & DEV SIMULATOR -->
     <div id="modalEntitlement" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-[fadeIn_0.15s_ease-out]">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm border border-slate-200 overflow-hidden">
-            <div class="bg-indigo-950 text-white px-4 py-3 flex items-center justify-between">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="bg-slate-900 text-white px-4 py-3 flex items-center justify-between shrink-0">
                 <div class="flex items-center space-x-2">
-                    <i class="fas fa-id-badge text-indigo-400"></i>
-                    <h3 class="text-xs font-bold uppercase tracking-wider">Foliora License Simulator</h3>
+                    <i class="fas fa-database text-emerald-400"></i>
+                    <h3 class="text-xs font-bold uppercase tracking-wider">Backend API & Tiers</h3>
                 </div>
                 <button onclick="closeEntitlementModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
             </div>
-            <div class="p-4 space-y-3.5 text-xs">
-                <p class="text-slate-500 text-[11px]">Test how Foliora behaves under different user subscriptions before backend integration.</p>
-                
-                <div>
-                    <label class="font-bold text-slate-700 block mb-1">MCQ Studio Tier</label>
-                    <select id="simMcqTier" class="w-full p-2 border rounded-lg bg-slate-50 text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-400">
-                        <option value="pro">Pro (Unlocked - All Features)</option>
-                        <option value="locked">Locked (Subscription Expired / None)</option>
-                    </select>
+            
+            <div class="p-4 space-y-3.5 text-xs overflow-y-auto">
+                <!-- Supabase Connection Config -->
+                <div class="bg-emerald-50/70 border border-emerald-200 rounded-lg p-3 space-y-2">
+                    <span class="font-bold text-emerald-900 block text-[11px] uppercase tracking-wider">
+                        <i class="fas fa-link mr-1"></i> Supabase Connection
+                    </span>
+                    <div>
+                        <label class="text-slate-600 text-[10px] font-semibold">Project URL</label>
+                        <input type="text" id="supabaseUrlInput" placeholder="https://xyz.supabase.co" class="w-full p-1.5 border rounded bg-white text-xs outline-none focus:ring-1 focus:ring-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-slate-600 text-[10px] font-semibold">Anon / Public Key</label>
+                        <input type="password" id="supabaseAnonKeyInput" placeholder="eyJhbGciOi..." class="w-full p-1.5 border rounded bg-white text-xs outline-none focus:ring-1 focus:ring-emerald-500">
+                    </div>
+                    <button onclick="saveSupabaseConfig()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1.5 rounded transition text-xs shadow-sm">
+                        Connect Supabase
+                    </button>
                 </div>
 
-                <div>
-                    <label class="font-bold text-slate-700 block mb-1">OCR Studio State & Quota</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <select id="simOcrTier" class="w-full p-2 border rounded-lg bg-slate-50 text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-400">
-                                <option value="free">Free Trial</option>
+                <!-- Dev Simulator Fallback -->
+                <div class="space-y-2 border-t border-slate-200 pt-2">
+                    <span class="font-bold text-slate-700 block text-[11px] uppercase tracking-wider">Local Simulator Override</span>
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">MCQ Studio Tier</label>
+                        <select id="simMcqTier" class="w-full p-1.5 border rounded-lg bg-slate-50 text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-400">
+                            <option value="pro">Pro (Unlocked)</option>
+                            <option value="locked">Locked</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="font-bold text-slate-700 block mb-1">OCR Studio Quota Override</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <select id="simOcrTier" class="w-full p-1.5 border rounded-lg bg-slate-50 text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-400">
+                                <option value="free">Free Trial (10 pgs)</option>
                                 <option value="pro">Pro (500 pgs)</option>
                                 <option value="locked">Locked (0 Left)</option>
                             </select>
-                        </div>
-                        <div>
-                            <input type="number" id="simOcrUsed" value="3" min="0" placeholder="Used pages" class="w-full p-2 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
+                            <input type="number" id="simOcrUsed" value="0" min="0" placeholder="Used pgs" class="w-full p-1.5 border rounded-lg bg-slate-50 text-xs outline-none focus:ring-2 focus:ring-indigo-400">
                         </div>
                     </div>
                 </div>
 
-                <div class="pt-2 flex gap-2">
-                    <button onclick="applyEntitlementSimulation()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition">Apply Changes</button>
+                <div class="pt-1 flex gap-2">
+                    <button onclick="applyEntitlementSimulation()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition">Apply Simulator</button>
                     <button onclick="closeEntitlementModal()" class="px-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg transition font-medium">Cancel</button>
                 </div>
             </div>
@@ -720,28 +721,26 @@
         </div>
     </div>
 
-    <!-- ====================================================================== -->
-    <!-- JAVASCRIPT: COMBINED ENGINES + NEW FOLIORA ARCHITECTURE LAYER          -->
-    <!-- ====================================================================== -->
+    <!-- JAVASCRIPT: SUPABASE AUTH + ENTITLEMENT ENGINE -->
     <script>
         // ====================================================================
-        // FOLIORA ECOSYSTEM: STATE, AUTH & ENTITLEMENT LAYER
+        // FOLIORA ECOSYSTEM: STATE & SUPABASE CLIENT INITIALIZATION
         // ====================================================================
+        let supabaseClient = null;
+
         const FOLIORA_STATE = {
-            activeProduct: 'mcq',
-            auth: {
-                isAuthenticated: true,
-                user: {
-                    name: "Miraj",
-                    email: "miraj@foliora.com",
-                    plan: "pro"
-                },
-                token: "mock-session-token-foliora"
+            user: {
+                isLoggedIn: false,
+                id: null,
+                name: "",
+                email: "",
+                token: null
             },
+            activeProduct: 'mcq',
             entitlements: {
-                mcq: 'pro',       // 'pro' | 'locked'
-                converter: 'free', // always 'free'
-                ocr: 'free'        // 'free' | 'pro' | 'locked'
+                mcq: 'locked',     // Live synced from DB
+                converter: 'free',  // Always free
+                ocr: 'free'         // Live synced from DB
             },
             workspace: {
                 mcq: true,
@@ -749,16 +748,224 @@
                 ocr: true
             },
             ocrQuota: {
-                used: 3,
+                used: 0,
                 limit: 10
             }
         };
 
+        function initSupabase() {
+            const url = localStorage.getItem('foliora_supabase_url');
+            const key = localStorage.getItem('foliora_supabase_key');
+            if (url && key && window.supabase) {
+                try {
+                    supabaseClient = window.supabase.createClient(url, key);
+                } catch (err) {
+                    console.error("Failed to initialize Supabase:", err);
+                }
+            }
+        }
+
+        function saveSupabaseConfig() {
+            const url = document.getElementById('supabaseUrlInput').value.trim();
+            const key = document.getElementById('supabaseAnonKeyInput').value.trim();
+            if (!url || !key) {
+                showStatus("Please enter both Supabase URL and Anon Key.", true);
+                return;
+            }
+            localStorage.setItem('foliora_supabase_url', url);
+            localStorage.setItem('foliora_supabase_key', key);
+            initSupabase();
+            showStatus("Supabase connected! Checking active session...");
+            closeEntitlementModal();
+            checkLiveSession();
+        }
+
+        // --- REAL LIVE ENTITLEMENT & QUOTA FETCHING ---
+        async function refreshLiveEntitlements(notify = false) {
+            if (!supabaseClient || !FOLIORA_STATE.user || !FOLIORA_STATE.user.isLoggedIn) return;
+
+            try {
+                const userId = FOLIORA_STATE.user.id;
+                const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+
+                // 1. Fetch Entitlements from Supabase
+                const { data: entRows, error: entError } = await supabaseClient
+                    .from('entitlements')
+                    .select('product_id, tier, is_active')
+                    .eq('user_id', userId);
+
+                if (!entError && Array.isArray(entRows)) {
+                    let hasMcq = false;
+                    let hasOcr = false;
+                    entRows.forEach(row => {
+                        if (row.product_id === 'foliora-mcq' && row.is_active) {
+                            FOLIORA_STATE.entitlements.mcq = row.tier || 'pro';
+                            hasMcq = true;
+                        }
+                        if (row.product_id === 'foliora-ocr' && row.is_active) {
+                            FOLIORA_STATE.entitlements.ocr = row.tier || 'free';
+                            hasOcr = true;
+                        }
+                    });
+                    if (!hasMcq) FOLIORA_STATE.entitlements.mcq = 'locked';
+                    if (!hasOcr) FOLIORA_STATE.entitlements.ocr = 'locked';
+                }
+
+                // 2. Fetch Usage Quota from Supabase
+                const { data: quotaRows, error: quotaError } = await supabaseClient
+                    .from('usage_quotas')
+                    .select('used_units, unit_limit')
+                    .eq('user_id', userId)
+                    .eq('product_id', 'foliora-ocr')
+                    .eq('billing_cycle_month', currentMonth)
+                    .maybeSingle();
+
+                if (!quotaError && quotaRows) {
+                    FOLIORA_STATE.ocrQuota.used = quotaRows.used_units;
+                    FOLIORA_STATE.ocrQuota.limit = quotaRows.unit_limit;
+                }
+
+                saveFolioraPersistedState();
+                updateHeaderAccountUI();
+                switchProduct(FOLIORA_STATE.activeProduct);
+                if (notify) showStatus("Entitlements synced with Supabase!");
+            } catch (err) {
+                console.warn("Could not sync with Supabase:", err);
+            }
+        }
+
+        // --- SESSION RESTORATION ---
+        async function checkLiveSession() {
+            if (!supabaseClient) return;
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (session && session.user) {
+                    const u = session.user;
+                    FOLIORA_STATE.user = {
+                        isLoggedIn: true,
+                        id: u.id,
+                        name: u.user_metadata?.full_name || u.email.split('@')[0],
+                        email: u.email,
+                        token: session.access_token
+                    };
+                    await refreshLiveEntitlements();
+                } else {
+                    FOLIORA_STATE.user.isLoggedIn = false;
+                    FOLIORA_STATE.entitlements.mcq = 'locked';
+                }
+                updateHeaderAccountUI();
+                switchProduct(FOLIORA_STATE.activeProduct);
+            } catch (err) {
+                console.warn("Session check error:", err);
+            }
+        }
+
+        // --- AUTHENTICATION ACTIONS ---
+        async function handleLiveSignIn(e) {
+            e.preventDefault();
+            const email = document.getElementById('authSignInEmail').value.trim();
+            const password = document.getElementById('authSignInPassword').value.trim();
+
+            if (!supabaseClient) {
+                // Fallback to local simulator if Supabase not configured yet
+                FOLIORA_STATE.user = { isLoggedIn: true, id: 'sim-user', name: email.split('@')[0], email: email, token: 'mock' };
+                FOLIORA_STATE.entitlements.mcq = 'pro';
+                saveFolioraPersistedState();
+                updateHeaderAccountUI();
+                switchProduct(FOLIORA_STATE.activeProduct);
+                closeAuthModal();
+                showStatus(`Signed in (Simulator mode). Connect Supabase in API tab.`);
+                return;
+            }
+
+            setLoading('btnSubmitSignIn', true);
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+
+                const u = data.user;
+                FOLIORA_STATE.user = {
+                    isLoggedIn: true,
+                    id: u.id,
+                    name: u.user_metadata?.full_name || u.email.split('@')[0],
+                    email: u.email,
+                    token: data.session.access_token
+                };
+
+                await refreshLiveEntitlements();
+                closeAuthModal();
+                showStatus(`Welcome back, ${FOLIORA_STATE.user.name}!`);
+            } catch (err) {
+                showStatus("Sign in failed: " + (err.message || "Invalid credentials"), true);
+            } finally {
+                setLoading('btnSubmitSignIn', false);
+            }
+        }
+
+        async function handleLiveSignUp(e) {
+            e.preventDefault();
+            const name = document.getElementById('authSignUpName').value.trim();
+            const email = document.getElementById('authSignUpEmail').value.trim();
+            const password = document.getElementById('authSignUpPassword').value.trim();
+
+            if (!supabaseClient) {
+                FOLIORA_STATE.user = { isLoggedIn: true, id: 'sim-user', name: name, email: email, token: 'mock' };
+                FOLIORA_STATE.entitlements.mcq = 'pro';
+                saveFolioraPersistedState();
+                updateHeaderAccountUI();
+                switchProduct(FOLIORA_STATE.activeProduct);
+                closeAuthModal();
+                showStatus(`Account created (Simulator mode). Connect Supabase in API tab.`);
+                return;
+            }
+
+            setLoading('btnSubmitSignUp', true);
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: { data: { full_name: name } }
+                });
+                if (error) throw error;
+
+                if (data.session && data.user) {
+                    const u = data.user;
+                    FOLIORA_STATE.user = {
+                        isLoggedIn: true,
+                        id: u.id,
+                        name: name,
+                        email: u.email,
+                        token: data.session.access_token
+                    };
+                    await refreshLiveEntitlements();
+                    closeAuthModal();
+                    showStatus(`Account created! Welcome, ${name}.`);
+                } else {
+                    closeAuthModal();
+                    showStatus("Registration successful! Check your email to confirm your account.");
+                }
+            } catch (err) {
+                showStatus("Registration failed: " + (err.message || "Unknown error"), true);
+            } finally {
+                setLoading('btnSubmitSignUp', false);
+            }
+        }
+
+        async function handleLiveSignOut() {
+            if (supabaseClient) {
+                try { await supabaseClient.auth.signOut(); } catch (e) { }
+            }
+            FOLIORA_STATE.user = { isLoggedIn: false, id: null, name: "", email: "", token: null };
+            FOLIORA_STATE.entitlements.mcq = 'locked';
+            saveFolioraPersistedState();
+            updateHeaderAccountUI();
+            closeProfileModal();
+            switchProduct(FOLIORA_STATE.activeProduct);
+            showStatus("Signed out of Foliora.");
+        }
+
         function loadFolioraPersistedState() {
             try {
-                const savedAuth = localStorage.getItem('foliora_auth');
-                if (savedAuth) FOLIORA_STATE.auth = JSON.parse(savedAuth);
-
                 const savedEnt = localStorage.getItem('foliora_entitlements');
                 if (savedEnt) FOLIORA_STATE.entitlements = JSON.parse(savedEnt);
 
@@ -767,49 +974,117 @@
 
                 const savedQuota = localStorage.getItem('foliora_ocr_quota');
                 if (savedQuota) FOLIORA_STATE.ocrQuota = JSON.parse(savedQuota);
-            } catch (e) {
-                console.warn("Could not load local state", e);
-            }
+            } catch (e) { }
         }
 
         function saveFolioraPersistedState() {
             try {
-                localStorage.setItem('foliora_auth', JSON.stringify(FOLIORA_STATE.auth));
                 localStorage.setItem('foliora_entitlements', JSON.stringify(FOLIORA_STATE.entitlements));
                 localStorage.setItem('foliora_workspace', JSON.stringify(FOLIORA_STATE.workspace));
                 localStorage.setItem('foliora_ocr_quota', JSON.stringify(FOLIORA_STATE.ocrQuota));
-            } catch (e) {
-                console.warn("Could not save local state", e);
-            }
+            } catch (e) { }
         }
 
         function updateHeaderAccountUI() {
-            const btn = document.getElementById('btnHeaderAccount');
-            const label = document.getElementById('headerAccountLabel');
-            const icon = document.getElementById('headerAccountIcon');
+            const user = FOLIORA_STATE.user;
+            const avatar = document.getElementById('userAvatarIcon');
+            const nameEl = document.getElementById('userDisplayName');
             const tierBadge = document.getElementById('headerTierBadge');
 
-            if (FOLIORA_STATE.auth.isAuthenticated && FOLIORA_STATE.auth.user) {
-                const firstInitial = (FOLIORA_STATE.auth.user.name || "U")[0].toUpperCase();
-                label.textContent = FOLIORA_STATE.auth.user.name || "Account";
-                icon.className = "fas fa-user text-indigo-400 text-xs";
+            if (user && user.isLoggedIn) {
+                const initial = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+                avatar.textContent = initial;
+                avatar.className = "w-4 h-4 rounded-full bg-indigo-500 text-[10px] font-bold flex items-center justify-center text-white";
+                nameEl.textContent = user.name.split(' ')[0];
                 
-                tierBadge.textContent = (FOLIORA_STATE.entitlements.mcq === 'pro') ? "PRO" : "FREE";
-                tierBadge.className = (FOLIORA_STATE.entitlements.mcq === 'pro') 
-                    ? "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-400/30"
-                    : "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-700 text-slate-300 border border-slate-600";
+                if (FOLIORA_STATE.entitlements.mcq === 'pro') {
+                    tierBadge.textContent = "PRO";
+                    tierBadge.className = "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/30 text-indigo-300 border border-indigo-400/30";
+                } else {
+                    tierBadge.textContent = "FREE";
+                    tierBadge.className = "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-700 text-slate-300 border border-slate-600";
+                }
             } else {
-                label.textContent = "Sign In";
-                icon.className = "fas fa-arrow-right-to-bracket text-indigo-400 text-xs";
+                avatar.textContent = "?";
+                avatar.className = "w-4 h-4 rounded-full bg-slate-600 text-[10px] font-bold flex items-center justify-center text-slate-300";
+                nameEl.textContent = "Sign In";
                 tierBadge.textContent = "GUEST";
-                tierBadge.className = "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-700 text-slate-400 border border-slate-600";
+                tierBadge.className = "text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700";
+            }
+        }
+
+        function handleAccountButtonClick() {
+            if (FOLIORA_STATE.user && FOLIORA_STATE.user.isLoggedIn) {
+                openProfileModal();
+            } else {
+                openAuthModal('signin');
+            }
+        }
+
+        function openAuthModal(tab = 'signin') {
+            switchAuthTab(tab);
+            document.getElementById('modalAuth').classList.remove('hidden');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('modalAuth').classList.add('hidden');
+        }
+
+        function switchAuthTab(tab) {
+            const isSignIn = tab === 'signin';
+            document.getElementById('formSignIn').classList.toggle('hidden', !isSignIn);
+            document.getElementById('formSignUp').classList.toggle('hidden', isSignIn);
+
+            const tabSignIn = document.getElementById('authTabSignIn');
+            const tabSignUp = document.getElementById('authTabSignUp');
+
+            if (isSignIn) {
+                tabSignIn.className = "flex-1 py-2.5 text-center text-indigo-600 border-b-2 border-indigo-600 bg-white transition";
+                tabSignUp.className = "flex-1 py-2.5 text-center hover:text-slate-800 transition";
+            } else {
+                tabSignUp.className = "flex-1 py-2.5 text-center text-indigo-600 border-b-2 border-indigo-600 bg-white transition";
+                tabSignIn.className = "flex-1 py-2.5 text-center hover:text-slate-800 transition";
+            }
+        }
+
+        function continueAsGuest() {
+            closeAuthModal();
+            showStatus("Continuing in guest mode. Converter is fully usable.");
+        }
+
+        function openProfileModal() {
+            const user = FOLIORA_STATE.user;
+            document.getElementById('profileNameDisplay').textContent = user.name || "Foliora User";
+            document.getElementById('profileEmailDisplay').textContent = user.email || "user@foliora.com";
+            document.getElementById('profileAvatarBig').textContent = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+
+            const mcqBadge = document.getElementById('profileBadgeMcq');
+            mcqBadge.textContent = FOLIORA_STATE.entitlements.mcq === 'pro' ? 'Pro Active' : 'Locked / Expired';
+            mcqBadge.className = FOLIORA_STATE.entitlements.mcq === 'pro'
+                ? "text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800"
+                : "text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800";
+
+            const ocrBadge = document.getElementById('profileBadgeOcr');
+            ocrBadge.textContent = FOLIORA_STATE.entitlements.ocr === 'pro' ? 'Pro (500 pgs/mo)' : '10 pgs/mo (Trial)';
+
+            document.getElementById('modalProfile').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('modalProfile').classList.add('hidden');
+        }
+
+        function handleLockAction(productId) {
+            if (!FOLIORA_STATE.user || !FOLIORA_STATE.user.isLoggedIn) {
+                openAuthModal('signin');
+            } else {
+                openEntitlementModal();
             }
         }
 
         function switchProduct(productId) {
             FOLIORA_STATE.activeProduct = productId;
 
-            // Update top product tabs
             document.querySelectorAll('.product-nav-btn').forEach(btn => {
                 btn.classList.remove('bg-white', 'text-indigo-700', 'border-indigo-600', 'shadow-xs');
                 btn.classList.add('text-slate-500', 'border-transparent');
@@ -820,55 +1095,35 @@
                 activeNav.classList.add('bg-white', 'text-indigo-700', 'border-indigo-600', 'shadow-xs');
             }
 
-            // Show active product pane
             document.querySelectorAll('.product-pane').forEach(p => p.classList.remove('active'));
             const activePane = document.getElementById('product-' + productId);
             if (activePane) activePane.classList.add('active');
 
-            // Handle Product Lock vs Auth Lock
-            const isAuth = FOLIORA_STATE.auth.isAuthenticated;
-
-            // MCQ Studio Gates
-            const authLockMcq = document.getElementById('auth-lock-mcq');
-            const licenseLockMcq = document.getElementById('lock-mcq');
-            const contentMcq = document.getElementById('content-mcq');
-
-            if (!isAuth) {
-                authLockMcq.classList.remove('hidden');
-                licenseLockMcq.classList.add('hidden');
-                contentMcq.classList.add('hidden');
-            } else if (FOLIORA_STATE.entitlements.mcq === 'locked') {
-                authLockMcq.classList.add('hidden');
-                licenseLockMcq.classList.remove('hidden');
-                contentMcq.classList.add('hidden');
-            } else {
-                authLockMcq.classList.add('hidden');
-                licenseLockMcq.classList.add('hidden');
-                contentMcq.classList.remove('hidden');
+            const isUserLoggedIn = FOLIORA_STATE.user && FOLIORA_STATE.user.isLoggedIn;
+            const isMcqLocked = !isUserLoggedIn || FOLIORA_STATE.entitlements.mcq === 'locked';
+            
+            document.getElementById('lock-mcq').classList.toggle('hidden', !isMcqLocked);
+            document.getElementById('content-mcq').classList.toggle('hidden', isMcqLocked);
+            
+            if (isMcqLocked) {
+                document.getElementById('lockMcqReason').textContent = isUserLoggedIn 
+                    ? "Your account currently does not have an active Foliora MCQ Studio license."
+                    : "Please sign in to your Foliora account to access MCQ Studio.";
+                document.getElementById('lockMcqBtnText').textContent = isUserLoggedIn ? "Upgrade Plan (Simulator)" : "Sign In to Unlock";
             }
 
-            // OCR Studio Gates
-            const authLockOcr = document.getElementById('auth-lock-ocr');
-            const licenseLockOcr = document.getElementById('lock-ocr');
-            const contentOcr = document.getElementById('content-ocr');
+            const isOcrLocked = !isUserLoggedIn || FOLIORA_STATE.entitlements.ocr === 'locked' || FOLIORA_STATE.ocrQuota.used >= FOLIORA_STATE.ocrQuota.limit;
+            document.getElementById('lock-ocr').classList.toggle('hidden', !isOcrLocked);
+            document.getElementById('content-ocr').classList.toggle('hidden', isOcrLocked);
 
-            if (!isAuth) {
-                authLockOcr.classList.remove('hidden');
-                licenseLockOcr.classList.add('hidden');
-                contentOcr.classList.add('hidden');
-            } else if (FOLIORA_STATE.entitlements.ocr === 'locked' || FOLIORA_STATE.ocrQuota.used >= FOLIORA_STATE.ocrQuota.limit) {
-                authLockOcr.classList.add('hidden');
-                licenseLockOcr.classList.remove('hidden');
-                contentOcr.classList.add('hidden');
-            } else {
-                authLockOcr.classList.add('hidden');
-                licenseLockOcr.classList.add('hidden');
-                contentOcr.classList.remove('hidden');
+            if (isOcrLocked) {
+                document.getElementById('lockOcrReason').textContent = isUserLoggedIn
+                    ? "You have reached your monthly OCR quota or your subscription has expired."
+                    : "Please sign in to your Foliora account to access AI Vision OCR.";
+                document.getElementById('lockOcrBtnText').textContent = isUserLoggedIn ? "Adjust Quota (Simulator)" : "Sign In to Unlock";
             }
 
             updateOcrQuotaDisplay();
-
-            // Converter is ALWAYS free and requires no login
             const helper = document.getElementById('helper-info');
             if (helper) helper.style.display = (productId === 'ocr') ? 'none' : 'flex';
         }
@@ -917,144 +1172,6 @@
             }
         }
 
-        // ====================================================================
-        // AUTH & PROFILE ACTIONS
-        // ====================================================================
-        function handleAccountClick() {
-            if (FOLIORA_STATE.auth.isAuthenticated) {
-                openAccountModal();
-            } else {
-                openAuthModal('signin');
-            }
-        }
-
-        function openAuthModal(defaultTab = 'signin') {
-            switchAuthTab(defaultTab);
-            document.getElementById('modalAuth').classList.remove('hidden');
-        }
-
-        function closeAuthModal() {
-            document.getElementById('modalAuth').classList.add('hidden');
-        }
-
-        function switchAuthTab(tab) {
-            const btnIn = document.getElementById('authTabBtnSignIn');
-            const btnUp = document.getElementById('authTabBtnSignUp');
-            const formIn = document.getElementById('formSignIn');
-            const formUp = document.getElementById('formSignUp');
-
-            if (tab === 'signin') {
-                btnIn.className = "flex-1 py-2.5 text-indigo-700 border-b-2 border-indigo-600 transition font-bold";
-                btnUp.className = "flex-1 py-2.5 text-slate-500 hover:text-slate-800 transition font-normal";
-                formIn.classList.remove('hidden');
-                formUp.classList.add('hidden');
-            } else {
-                btnUp.className = "flex-1 py-2.5 text-indigo-700 border-b-2 border-indigo-600 transition font-bold";
-                btnIn.className = "flex-1 py-2.5 text-slate-500 hover:text-slate-800 transition font-normal";
-                formUp.classList.remove('hidden');
-                formIn.classList.add('hidden');
-            }
-        }
-
-        function handleSignInSubmit(e) {
-            e.preventDefault();
-            const email = document.getElementById('signInEmail').value.trim();
-            const password = document.getElementById('signInPassword').value;
-
-            if (!email || !password) return;
-
-            // Mock successful sign-in
-            const name = email.split('@')[0];
-            FOLIORA_STATE.auth = {
-                isAuthenticated: true,
-                user: {
-                    name: name.charAt(0).toUpperCase() + name.slice(1),
-                    email: email,
-                    plan: "pro"
-                },
-                token: "token_" + Date.now()
-            };
-            FOLIORA_STATE.entitlements.mcq = 'pro';
-
-            saveFolioraPersistedState();
-            updateHeaderAccountUI();
-            closeAuthModal();
-            switchProduct(FOLIORA_STATE.activeProduct);
-            showStatus(`Welcome back, ${FOLIORA_STATE.auth.user.name}!`);
-        }
-
-        function handleSignUpSubmit(e) {
-            e.preventDefault();
-            const name = document.getElementById('signUpName').value.trim();
-            const email = document.getElementById('signUpEmail').value.trim();
-            const password = document.getElementById('signUpPassword').value;
-
-            if (!name || !email || !password) return;
-
-            // Mock successful sign-up
-            FOLIORA_STATE.auth = {
-                isAuthenticated: true,
-                user: {
-                    name: name,
-                    email: email,
-                    plan: "pro"
-                },
-                token: "token_" + Date.now()
-            };
-            FOLIORA_STATE.entitlements.mcq = 'pro';
-
-            saveFolioraPersistedState();
-            updateHeaderAccountUI();
-            closeAuthModal();
-            switchProduct(FOLIORA_STATE.activeProduct);
-            showStatus(`Account created! Welcome to Foliora, ${name}.`);
-        }
-
-        function continueAsGuest() {
-            closeAuthModal();
-            switchProduct('converter');
-            showStatus("Continuing as Guest with free Foliora Converter.");
-        }
-
-        function openAccountModal() {
-            const user = FOLIORA_STATE.auth.user || { name: "User", email: "guest@foliora.com" };
-            document.getElementById('accountUserName').textContent = user.name;
-            document.getElementById('accountUserEmail').textContent = user.email;
-            document.getElementById('accountAvatar').textContent = (user.name || "U")[0].toUpperCase();
-
-            // Sync statuses
-            const mcqStatus = document.getElementById('accountMcqStatus');
-            if (FOLIORA_STATE.entitlements.mcq === 'pro') {
-                mcqStatus.textContent = "Active (Pro)";
-                mcqStatus.className = "font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200";
-            } else {
-                mcqStatus.textContent = "Inactive";
-                mcqStatus.className = "font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200";
-            }
-
-            document.getElementById('modalAccount').classList.remove('hidden');
-        }
-
-        function closeAccountModal() {
-            document.getElementById('modalAccount').classList.add('hidden');
-        }
-
-        function handleLogout() {
-            FOLIORA_STATE.auth = {
-                isAuthenticated: false,
-                user: null,
-                token: null
-            };
-            saveFolioraPersistedState();
-            updateHeaderAccountUI();
-            closeAccountModal();
-            switchProduct(FOLIORA_STATE.activeProduct);
-            showStatus("Signed out of Foliora.");
-        }
-
-        // ====================================================================
-        // WORKSPACE CUSTOMIZATION LOGIC
-        // ====================================================================
         function openWorkspaceModal() {
             document.getElementById('wsCheckMcq').checked = FOLIORA_STATE.workspace.mcq;
             document.getElementById('wsCheckConverter').checked = FOLIORA_STATE.workspace.converter;
@@ -1095,10 +1212,9 @@
             showStatus("Workspace updated successfully!");
         }
 
-        // ====================================================================
-        // SIMULATOR / TIER CONTROLS
-        // ====================================================================
         function openEntitlementModal() {
+            document.getElementById('supabaseUrlInput').value = localStorage.getItem('foliora_supabase_url') || "";
+            document.getElementById('supabaseAnonKeyInput').value = localStorage.getItem('foliora_supabase_key') || "";
             document.getElementById('simMcqTier').value = FOLIORA_STATE.entitlements.mcq;
             document.getElementById('simOcrTier').value = FOLIORA_STATE.entitlements.ocr;
             document.getElementById('simOcrUsed').value = FOLIORA_STATE.ocrQuota.used;
@@ -1128,7 +1244,7 @@
         // ====================================================================
         // CORE ENGINES: MCQ FORMATTER, PARSER, SHUFFLE, CONVERTER, OCR
         // ====================================================================
-        const BENGALI_ALPHABET = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহ";
+        const BENGALI_ALPHABET = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎ";
         const BANGLA_DIGITS = {'0':'০','1':'১','2':'২','3':'৩','4':'৪','5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
         const OPTION_ORDER = ["ক", "খ", "গ", "ঘ"];
         const OPTION_EXPORT_MAP = {"ক":"K", "খ":"L", "গ":"M", "ঘ":"N"};
@@ -1186,40 +1302,51 @@
             if (style === "bn-alpha") return BENGALI_ALPHABET[index % BENGALI_ALPHABET.length] + ". ";
             return toBanglaNumber(index + 1) + ". ";
         }
+        
+        function getStandardOptionMarker(label, isUnicode) {
+            if (isUnicode) return label + ".";
+            const map = { "ক": "K", "খ": "L", "গ": "M", "ঘ": "N" };
+            return (map[label] || label) + ".";
+        }
 
-        // --- CONVERTER (BIJOY <-> UNICODE) CORE ---
+        function getStandardAnswerMarker(answer, isUnicode) {
+            if (isUnicode) return `উত্তর: ${answer}`;
+            const map = { "ক": "K", "খ": "L", "গ": "M", "ঘ": "N" };
+            return `DËi: ${map[answer] || answer}`;
+        }
+
         function convertUnicodeToBijoy(text) {
             if (!text) return "";
             let str = text;
             str = str.replace(/\u09AF\u09BC/g, 'য়').replace(/\u09A1\u09BC/g, 'ড়').replace(/\u09A2\u09BC/g, 'ঢ়');
-            str = str.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/ো/g, 'ো').replace(/ৌ/g, 'ৌ');
-            let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ"; 
-            str = str.replace(new RegExp("র\u09CD([" + cons + "](?:\u09CD[" + cons + "])*)", "g"), "$1©");
-            str = str.replace(new RegExp("([" + cons + "](?:\u09CD[" + cons + "])*(?:©)?)(ি|ে|ৈ)", "g"), "$2$1");
-            str = str.replace(/(^|[\s\(\[\{'"‘“\-])ে/g, "$1†").replace(/ে/g, "‡");
+            str = str.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/ে/g, 'ে').replace(/ো/g, 'ো');
+            let cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎ";
+            str = str.replace(new RegExp("ৰ\u09CD([" + cons + "](?:\u09CD[" + cons + "])*)", "g"), "$1র্");
+            str = str.replace(new RegExp("([" + cons + "](?:\u09CD[" + cons + "])*(?:্য)?)([িেৈ])", "g"), "$2$1");
+            str = str.replace(/(^|[\s\(\[\{'" \-])ো/g, "$1ো").replace(/ৌ/g, "ৌ");
             const u2bJukta = {
-                'ন্ট':'›U', 'প্ট':'Þ', 'ষ্ক':'®‹', 'ল্ক':'é', 'ল্গ':'ê', 'ল্ড':'ì', 'শ্চ':'ð', 'স্কৃ':'¯‹…',
-                'গ্ব':'M¦', 'ভু':'fz', 'খ্ব':'L¡', 'ক্ক':'°', 'ক্ট':'±', 'ক্ত':'³', 'ক্ব':'K¡', 'ক্স':'·', 'ক্ষ':'¶', 'ক্ষ্ম':'¶g', 'ক্ষ্য':'¶¨', 'ক্ষু':'¶z',
-                'জ্ঞ':'Á', 'ঙ্ক':'¼', 'ঙ্খ':'¼L', 'ঙ্গ':'½', 'ঙ্ঘ':'½N', 'ট্ট':'Æ', 'ঠ্ঠ':'V&V', 'ড্ড':'Ç', 'ণ্ট':'È', 'ণ্ঠ':'É', 'ণ্ড':'Û', 'ন্ড':'Û',
-                'ত্ত':'Ë', 'ত্থ':'Ì', 'ত্র':'Î', 'দ্দ':'Ï', 'দ্ধ':'×', 'দ্ব':'Ø', 'দ্ম':'Ù', 'ন্দ':'›`', 'ন্ধ':'Ü', 'ন্ন':'bœ', 'ন্ব':'b¦', 'ন্ম':'b¥', 'ন্দ্র':'›`«', 'দ্র':'`ª',
-                'ম্প':'¤ú', 'ম্ব':'¤^', 'ম্ম':'¤§', 'ম্ভ':'¤¢', 'ন্স':'Ý', 'ত্ম':'Z¥', 'ত্ন':'Zœ', 'ত্ম্য':'Z¥¨', 'স্ট':'÷', 'ষ্ট':'ó', 'ষ্ঠ':'ô', 'ষ্ণ':'ò', 'ষ্প':'®ú', 'ষ্ফ':'®ù', 'ষ্ম':'®§',
-                'স্ক':'¯‹', 'স্খ':'¯Œ', 'স্থ':'¯’', 'স্ন':'mœ', 'স্প':'¯ú', 'স্ফ':'ù', 'স্ম':'¯§', 'স্ব':'¯^', 'স্ত':'¯Í', 'স্স':'m&m',
-                'হ্ম':'þ', 'হু':'û', 'হৃ':'ü', 'হ্ন':'ý', 'হ্ব':'nŸ', 'প্ত':'ß', 'ব্দ':'ã', 'ব্ধ':'ä', 'ব্ব':'e&e', 'ব্জ':'e&R',
-                'শ্র':'kÖ', 'ক্র':'µ', 'গ্র':'MÖ', 'প্র':'cÖ', 'ড্র':'W«', 'ট্র':'U«', 'ফ্র':'d«', 'ব্র':'eª',
-                'ব্ল':'eø', 'ক্ল':'K¬', 'গ্ল':'Mø', 'প্ল':'cø', 'ফ্ল':'d¬', 'ম্ল':'gø', 'শ্ল':'kø', 'স্ল':'mø', 'হ্ল':'n&j',
-                'ঞ্চ':'Â', 'ঞ্ছ':'Ã', 'ঞ্জ':'Ä', 'রু':'iæ', 'রূ':'i~', 'শু':'ï', 'গু':'¸', 'ন্তু':'š‘', 'স্তু':'¯‘',
-                'চ্চ':'”P', 'চ্ছ':'”Q', 'জ্জ':'¾', 'ঝ্ঝ':'S&S', 'দ্ঘ':'`&N', 'ন্ত':'šÍ', 'ন্থ':'š’', 'ল্প':'í', 'ল্ব':'j&e', 'ল্ম':'j&g', 'ল্ল':'jø', 'ল্ফ':'j&d',
-                'ধ্ব':'aŸ', 'শ্ব':'k¦', 'ত্ব':'Z¡', 'থ্ব':'_¡', 'ম্ন':'gœ', 'শ্ম':'k&g', 'দ্য':'`¨', 'ন্ত্র':'š¿', 'ম্প্র':'¤cÖ', 'স্থ্য':'¯’¨', 'ষ্ট্র':'ó«', 
-                'শ্ন':'kœ', 'ব্য':'e¨', 'স্ত্র':'¯¿', 'ত্ত্ব':'Ë¡', 'ন্দ্ব':'›Ø', 'প্ন':'cœ', 'ত্য':'Z¨', 'স্ক্র':'¯‹«', 'স্ট্র':'÷«', 'থ্র':'_«', 'প্প':'c&c', 'প্স':'c&m',
-                'ঙ্ক্ষ':'¼¶', 'ঙ্ম':'O&g', 'গ্ধ':'\xBB', '্য':'¨', '্র':'«', '্':'&',
-                'কু':'Kz', 'কূ':'K‚', 'চু':'Pz', 'চূ':'P‚', 'ঝু':'Sz', 'ঝূ':'S‚', 'তু':'Zz', 'তূ':'Z‚', 'ভূ':'f‚', 'কৃ':'K…', 'তৃ':'Z…',
-                'ত্যু':'Zz¨', 'প্যু':'cz¨', 'ফ্যু':'dz¨', 'ভ্যু':'fz¨', 'হ্যু':'n~¨', 'ক্যু':'Ky¨', 'গ্যু':'My¨', 'চ্যু':'Py¨', 'জ্যু':'Ry¨', 'ড্যু':'Wy¨', 'দ্যু':'`y¨', 'ধ্যু':'ay¨', 'ব্যু':'ey¨', 'ল্যু':'jy¨', 'শ্যু':'k~¨', 'ত্যূ':'Z‚¨'
+                'ক্ক': '°', 'ক্ট': '±', 'ক্ত': '³', 'ক্ব': 'K¡', 'ক্ম': 'K¥', 'ক্য': 'K¨', 'ক্র': 'µ',
+                'ক্ল':'K¬', 'ক্ষ':'¶', 'ক্ষ্ণ':'²', 'ক্ষ্ম':'³', 'খ্য':'L¨', 'খ্র':'Lª', 'গ্ণ':'M&Y', 'গ্দ':'M&`', 'গ্ধ':'M&a', 'গ্ন':'Mœ', 'গ্ব':'M&e', 'গ্ম':'M&g',
+                'গ্য': 'M¨', 'গ্র': 'Mª', 'গ্ল': 'M&j', 'ঘ্ন': 'N&b', 'ঘ্য': 'N¨', 'ঘ্র': 'Nª', 'ঙ্ক': '¼', 'ঙ্ক্ষ': '•¶', 'ঙ্খ': '•L', 'ঙ্গ': '½', 'ঙ্ঘ': '•N', 'চ্চ': '”P', 'চ্ছ': '”Q', 'চ্ছ্ব': '”Q¡', 'চ্ঞ': 'P&T', 'চ্ব':'P¡', 'চ্য':'P¨', 'চ্র':'Pª', 'চ্ল':'P&j',
+                'জ্জ': '¾', 'জ্জ্ব': '¾¡', 'জ্ঞ': 'Á', 'জ্ব': 'R¡', 'জ্য': 'R¨', 'জ্র':'Rª', 'জ্র':'R«', 'জ্ল':'R¡', 'ঞ্চ': 'Â', 'ঞ্ছ': 'Ã', 'ঞ্জ': 'Ä', 'ট্ব': 'U&e', 'ট্ম':'U¥', 'ট্য': 'U¨', 'ট্র': 'U«', 'ট্ল': 'U&j', 'ড্ড':'W&W', 'ড্ব':'W&R',
+                'ণ্ক':'Y&K', 'ণ্ট': '›U', 'ণ্ঠ':'Y&V', 'ণ্ড':'Ê', 'ণ্ণ':'Y&Y', 'ণ্ব':'Y&e', 'ণ্ম':'Y&g', 'ণ্য':'Y¨', 'ণ্ল':'Y&j', 'ণ্স':'Y&m',
+                'ত্ক': 'Z&K', 'ত্ত': 'Ë', 'ত্ত্ব': 'Ë¡', 'ত্থ': 'Z&_', 'ত্ন': 'Z&b', 'ত্ব': 'Z¡', 'ত্ম': 'Z¥', 'ত্য': 'Z¨', 'ত্র': 'Î', 'থ্ব': '_&e', 'থ্য': '_¨', 'থ্র': '_ª',
+                'দ্গ': '`&M', 'দ্ঘ': '`&N', 'দ্দ': '`&`', 'দ্ধ': '×', 'দ্ব': 'Ø', 'দ্ম': 'Ù', 'দ্য': '`¨', 'দ্র': '`ª', 'ধ্ন': 'a&b', 'ধ্ব': 'a¡', 'ধ্ম': 'a&g', 'ধ্য': 'a¨', 'ধ্র': 'aª',
+                'ন্ট': '›U', 'ন্ঠ': 'Ú', 'ন্ড': 'Û', 'ন্ত': 'šÍ', 'ন্ত্ব': 'šÍ¡', 'ন্থ': 'š’', 'ন্দ': '›`', 'ন্দ্ব': '›Ø', 'ন্ধ': 'Ü', 'ন্ন': 'bœ', 'ন্ব': 'š^', 'ন্ম': 'b¥', 'ন্য': 'b¨', 'ন্র': 'bª', 'নস': 'b&m',
+                'প্ট': 'c&U', 'প্ত': 'ß', 'প্ন': 'c&b', 'প্প': 'c&c', 'প্ব': 'c&e', 'প্ম': 'c&g', 'প্য': 'c¨', 'প্র': 'cª', 'প্ল': 'cø', 'প্স': 'c&m', 'ফ্ট': 'd&U', 'ফ্ফ': 'd&d', 'ফ্ব': 'd&e', 'ফ্য': 'd¨',
+                'ফ্র': 'dª', 'ফ্ল': 'd¬', 'ব্জ': 'e&R', 'ব্দ': 'e&`', 'ব্ধ': 'e&a', 'ব্ব': 'e&e', 'ব্ম': 'e&g', 'ব্য': 'e¨', 'ব্র': 'eª', 'ব্ল': 'eø', 'ভ্ব': 'f&e', 'ভ্য': 'f¨', 'ভ্র': 'fª',
+                'ম্ন': 'g&b', 'ম্প': '¤ú', 'ম্ফ': '¤£', 'ম্ব': '¤^', 'ম্ভ': '¤¢', 'ম্ম': '¤§', 'ম্য': 'g¨', 'ম্র': 'gª', 'ম্ল': 'gø', 'য্য': 'h¨', 'ল্ক': 'j&K', 'ল্গ': 'j&M', 'ল্ট': 'j&U', 'ল্ড': 'j&W',
+                'ল্প': 'í', 'ল্ফ': 'j&d', 'ল্ব': 'j&e', 'ল্ম': 'j&g', 'ল্য': 'j¨', 'ল্ল': 'jø', 'ষ্ক': '®‹', 'ষ্ক্র': '®Œ', 'ষ্ট': 'ó', 'ষ্ট্র': 'óª', 'ষ্ঠ': 'ô', 'ষ্ণ': 'ò', 'ষ্প': '®ú', 'ষ্ফ': '®£', 'ষ্ম': '®§', 'ষ্য': 'l¨',
+                'স্ক': '¯‹', 'স্ক্র': '¯Œ', 'স্ট': '¯U', 'স্ট্র': '¯Uª', 'স্থ': '¯’', 'স্ন': '¯œ', 'স্প': '¯ú', 'স্ফ': '¯£', 'স্ব': '¯^', 'স্ম': '¯§', 'স্য': 'm¨', 'স্র': 'mª', 'স্ল': 'mø', 'হ্ণ': 'n&Y', 'হ্ন': 'ý', 'হ্ব': 'n¡', 'হ্ম': 'þ', 'হ্য': 'n¨',
+                'হ্র': 'nª', 'হ্ল': 'n¬', 'অ্যা':'A¨v', 'র্যা':'i¨v', 'র্য':'h©',
+                'ক্য':'K¨', 'গ্য':'M¨', 'চ্য':'P¨', 'জ্য':'R¨', 'ট্য':'U¨', 'ঠ্য':'V¨', 'ড্য':'W¨', 'ঢ্য':'X¨', 'ণ্য':'Y¨', 'ত্য':'Z¨', 'থ্য':'_¨', 'দ্য':'`¨', 'ধ্য':'a¨', 'ন্য':'b¨', 'প্য':'c¨', 'ফ্য':'d¨', 'ব্য':'e¨', 'ভ্য':'f¨', 'ম্য':'g¨', 'য্য':'h¨', 'ল্য':'j¨', 'শ্য':'k¨', 'ষ্য':'l¨', 'স্য':'m¨', 'হ্য':'n¨',
+                'ক্র':'µ', 'গ্র':'Mª', 'খ্র':'Lª', 'ঘ্র':'Nª', 'ত্র':'Î', 'থ্র':'_ª', 'দ্র':'`ª', 'ধ্র':'aª', 'প্র':'cª', 'ফ্র':'dª', 'ব্র':'eª', 'ভ্র':'fª', 'ম্র':'gª', 'শ্র':'kª', 'স্র':'mª', 'হ্র':'nª'
             };
             let keys = Object.keys(u2bJukta).sort((a, b) => b.length - a.length);
             for (let k of keys) { str = str.split(k).join(u2bJukta[k]); }
 
             const map = {
-                'অ':'A', 'আ':'Av', 'ই':'B', 'ঈ':'C', 'উ':'D', 'ঊ':'E', 'ঋ':'F', 'এ':'G', 'ঐ':'H', 'ও':'I', 'ঔ':'J', 'ক':'K', 'খ':'L', 'গ':'M', 'ঘ':'N', 'ঙ':'O', 'চ':'P', 'ছ':'Q', 'জ':'R', 'ঝ':'S', 'ঞ':'T', 'ট':'U', 'ঠ':'V', 'ড':'W', 'ঢ':'X', 'ণ':'Y', 'ত':'Z', 'থ':'_', 'দ':'`', 'ধ':'a', 'ন':'b', 'প':'c', 'ফ':'d', 'ব':'e', 'ভ':'f', 'ম':'g', 'য':'h', 'র':'i', 'ল':'j', 'শ':'k', 'ষ':'l', 'স':'m', 'হ':'n', 'ড়':'o', 'ঢ়':'p', 'য়':'q', 'ৎ':'r', 'ং':'s', 'ঃ':'t', 'ঁ':'u', 'া':'v', 'ি':'w', 'ী':'x', 'ু':'y', 'ূ':'~', 'ৃ':'„', 'ে':'‡', 'ৈ':'ˆ', 'ৗ':'Š', '।':'|', '০':'0', '১':'1', '২':'2', '৩':'3', '৪':'4', '৫':'5', '৬':'6', '৭':'৭', '৮':'8', '৯':'9', '©':'©' 
+                'অ':'A', 'আ':'Av', 'ই':'B', 'ঈ':'C', 'উ':'D', 'ঊ':'E', 'ঋ':'F', 'এ':'G', 'ঐ':'H', 'ও':'I', 'ঔ':'J', 'ক':'K', 'খ':'L', 'গ':'M', 'ঘ':'N', 'ঙ':'O', 'চ':'P', 'ছ':'Q', 'জ':'R', 'ঝ':'S', 'ঞ':'T', 'ট':'U', 'ঠ':'V', 'ড':'W', 'ঢ':'X', 'ণ':'Y', 'ত':'Z', 'থ':'_', 'দ':'`', 'ধ':'a', 'ন':'b', 'প':'c', 'ফ':'d', 'ব':'e', 'ভ':'f', 'ম':'g', 'য':'h', 'র':'i', 'ল':'j', 'শ':'k', 'ষ':'l', 'স':'m', 'হ':'n', 'ড়':'o', 'ঢ়':'p', 'য়':'q', 'ৎ':'r', 'ং':'s', 'ঃ':'t', 'ঁ':'u', 'া':'v', 'ি':'w', 'ী':'x', 'ু':'y', 'ূ':'~', 'ৃ':'…', 'ে':'‡', 'ৈ':'ˆ', 'ো':'†', 'ৌ':'Š', '্':'&', '।':'|', '০':'0', '১':'1', '২':'2', '৩':'3', '৪':'4', '৫':'5', '৬':'6', '৭':'7', '৮':'8', '৯':'9'
             };
             let out = "";
             for (let i = 0; i < str.length; i++) { out += map[str[i]] || str[i]; }
@@ -1228,51 +1355,27 @@
 
         function convertBijoyToUnicode(text) {
             if (!text) return "";
-
             let str = text.replace(/[\u200B-\u200D\uFEFF\+]/g, "");
 
             const b2uJukta = {
-                '›U':'ন্ট', 'Þ':'প্ট', '®‹':'ষ্ক', 'é':'ল্ক', 'ê':'ল্গ', 'ì':'ল্ড', 'ð':'শ্চ', '¯‹…':'স্কৃ',
-                'M¦':'গ্ব', 'fz':'ভু', 'L¡':'খ্ব', '°':'ক্ক', '±':'ক্ট', '³':'ক্ত', 'K¡':'ক্ব',
-                '·':'ক্স', '¶':'ক্ষ', '²':'ক্ষ্ম', '¶¨':'ক্ষ্য', '¶z':'ক্ষু',
-                'Á':'জ্ঞ', '¼':'ঙ্ক', '¼L':'ঙ্খ', '½':'ঙ্গ', '½N':'ঙ্ঘ', 'Æ':'ট্ট', 'Ç':'ড্ড',
-                'È':'ণ্ট', 'É':'ণ্ঠ', 'Û':'ণ্ড', '\xDB':'ণ্ড',
-                'Ë':'ত্ত', 'Ì':'ত্থ', 'Î':'ত্র', 'Ï':'দ্দ', '×':'দ্ধ', 'Ø':'দ্ব', 'Ù':'দ্ম',
-                '›`':'ন্দ', 'Ü':'ন্ধ', 'bœ':'ন্ন', 'b¦':'ন্ব', 'b¥':'ন্ম', '›`«':'ন্দ্র', '`ª':'দ্র',
-                '¤ú':'ম্প', '¤^':'ম্ব', '¤§':'ম্ম', '¤¢':'ম্ভ', 'Ý':'ন্স', 'Z¥':'ত্ম', 'Zœ':'ত্ন',
-                'Z¥¨':'ত্ম্য', '÷':'স্ট', 'ó':'ষ্ট', 'ô':'ষ্ঠ', 'ò':'ষ্ণ', '®ú':'ষ্প', '®ù':'ষ্ফ',
-                '®§':'ষ্ম', '¯‹':'স্ক', '¯Œ':'স্খ', '¯’':'স্থ', 'mœ':'স্ন', '¯ú':'স্প', 'ù':'স্ফ',
-                '¯§':'স্ম', '¯^':'স্ব', '¯Í':'স্ত', 'm&m':'স্স',
-                'þ':'হ্ম', 'û':'হু', 'ü':'হৃ', 'ý':'হ্ন', 'nŸ':'হ্ব', 'ß':'প্ত', 'ã':'ব্দ',
-                'ä':'ব্ধ', 'e&e':'ব্ব', 'e&R':'ব্জ',
-                'kÖ':'শ্র', 'µ':'ক্র', 'MÖ':'গ্র', 'cÖ':'প্র', 'W«':'ড্র', 'U«':'ট্র',
-                'd«':'ফ্র', 'eª':'ব্র',
-                'eø':'ব্ল', 'K¬':'ক্ল', 'Mø':'গ্ল', 'cø':'প্ল', 'd¬':'ফ্ল', 'gø':'ম্ল',
-                'kø':'শ্ল', 'mø':'স্ল', 'n&j':'হ্ল',
-                '\xC2':'ঞ্চ', 'Â':'ঞ্চ', '\xC3':'ঞ্ছ', 'Ã':'ঞ্ছ', '\xC4':'ঞ্জ', 'Ä':'ঞ্জ',
-                'iæ':'রু', 'i~':'রূ', 'ï':'শু', '¸':'গু', 'š‘':'ন্তু', '¯‘':'স্তু',
-                '”P':'চ্চ', '\x94P':'চ্চ', '”Q':'চ্ছ', '\x94Q':'চ্ছ', '”':'চ্', '\x94':'চ্',
-                '•':'চ্ছ', '¾':'জ্জ', 'S&S':'ঝ্ঝ', '`&N':'দ্ঘ', 'šÍ':'ন্ত', 'š’':'ন্থ',
-                'í':'ল্প', 'j&e':'ল্ব', 'j&g':'ল্ম', 'jø':'ল্ল', 'j&d':'ল্ফ',
-                'aŸ':'ধ্ব', 'k¦':'শ্ব', 'Z¡':'ত্ব', '_¡':'থ্ব', 'gœ':'ম্ন', 'k&g':'শ্ম',
-                '`¨':'দ্য', 'š¿':'ন্ত্র', '¤cÖ':'ম্প্র',
-                '¯’¨':'স্থ্য', 'ó«':'ষ্ট্র',
-                'kœ':'শ্ন', 'e¨':'ব্য', '¯¿':'স্ত্র', 'Ë¡':'ত্ত্ব', '›Ø':'ন্দ্ব',
-                'cœ':'প্ন', 'Z¨':'ত্য', '¯‹«':'স্ক্র', '÷«':'স্ট্র', '_«':'থ্র',
-                'c&c':'প্প', 'c&m':'প্স', '¼¶':'ঙ্ক্ষ', 'O&g':'ঙ্ম', '\xBB':'গ্ধ', '»':'গ্ধ',
-                '¨':'্য', '«':'্র', '&':'্',
-                'Kz':'কু', 'K‚':'কূ', 'Pz':'চু', 'P‚':'চূ', 'Sz':'ঝু', 'S‚':'ঝূ',
-                'Zz':'তু', 'Z‚':'তূ', 'f‚':'ভূ', 'K…':'কৃ', 'Z…':'তৃ',
-                'Zz¨':'ত্যু', 'cz¨':'প্যু', 'dz¨':'ফ্যু', 'fz¨':'ভ্যু', 'n~¨':'হ্যু',
-                'Ky¨':'ক্যু', 'My¨':'গ্যু', 'Py¨':'চ্যু', 'Ry¨':'জ্যু', 'Wy¨':'ড্যু',
-                '`y¨':'দ্যু', 'ay¨':'ধ্যু', 'ey¨':'ব্যু', 'jy¨':'ল্যু', 'k~¨':'শ্যু',
-                'Z‚¨':'ত্যূ'
+                '°': 'ক্ক', '±': 'ক্ট', '³': 'ক্ত', 'K¡': 'ক্ব', 'K¥': 'ক্ম', 'K¨': 'ক্য', 'µ': 'ক্র',
+                'K¬': 'ক্ল', '¶': 'ক্ষ', '²': 'ক্ষ্ণ', '³': 'ক্ষ্ম', 'L¨': 'খ্য', 'Lª': 'খ্র', 'M&Y': 'গ্ণ', 'M&`': 'গ্দ', 'M&a': 'গ্ধ', 'Mœ': 'গ্ন', 'M&e': 'গ্ব', 'M&g': 'গ্ম',
+                'M¨': 'গ্য', 'Mª': 'গ্র', 'M&j': 'গ্ল', 'N&b': 'ঘ্ন', 'N¨': 'ঘ্য', 'Nª': 'ঘ্র', '¼': 'ঙ্ক', '•¶': 'ঙ্ক্ষ', '•L': 'ঙ্খ', '½': 'ঙ্গ', '•N': 'ঙ্ঘ', '”P': 'চ্চ', '”Q': 'চ্ছ', '”Q¡': 'চ্ছ্ব', 'P&T': 'চ্ঞ', 'P¡':'চ্ব', 'P¨':'চ্য', 'Pª':'চ্র', 'P&j':'চ্ল',
+                '¾': 'জ্জ', '¾¡': 'জ্জ্ব', 'Á': 'জ্ঞ', 'R¡': 'জ্ব', 'R¨': 'জ্য', 'Rª':'জ্র', 'R«':'জ্র', 'R¡':'জ্ল', 'Â': 'ঞ্চ', 'Ã': 'ঞ্ছ', 'Ä': 'ঞ্জ', 'U&e': 'ট্ব', 'U¥':'ট্ম', 'U¨': 'ট্য', 'U«': 'ট্র', 'U&j': 'ট্ল', 'W&W':'ড্ড', 'W&R':'ড্ব',
+                'Y&K':'ণ্ক', '›U': 'ণ্ট', 'Y&V':'ণ্ঠ', 'Ê':'ণ্ড', 'Y&Y':'ণ্ণ', 'Y&e':'ণ্ব', 'Y&g':'ণ্ম', 'Y¨':'ণ্য', 'Y&j':'ণ্ল', 'Y&m':'ণ্স',
+                'Z&K': 'ত্ক', 'Ë': 'ত্ত', 'Ë¡': 'ত্ত্ব', 'Z&_': 'ত্থ', 'Z&b': 'ত্ন', 'Z¡': 'ত্ব', 'Z¥': 'ত্ম', 'Z¨': 'ত্য', 'Î': 'ত্র', '_&e': 'থ্ব', '_¨': 'থ্য', '_ª': 'থ্র',
+                '`&M': 'দ্গ', '`&N': 'দ্ঘ', '`&`': 'দ্দ', '×': 'দ্ধ', 'Ø': 'দ্ব', 'Ù': 'দ্ম', '`¨': 'দ্য', '`ª': 'দ্র', 'a&b': 'ধ্ন', 'a¡': 'ধ্ব', 'a&g': 'ধ্ম', 'a¨': 'ধ্য', 'aª': 'ধ্র',
+                '›U': 'ন্ট', 'Ú': 'ন্ঠ', 'Û': 'ন্ড', 'šÍ': 'ন্ত', 'šÍ¡': 'ন্ত্ব', 'š’': 'ন্থ', '›`': 'ন্দ', '›Ø': 'ন্দ্ব', 'Ü': 'ন্ধ', 'bœ': 'ন্ন', 'š^': 'ন্ব', 'b¥': 'ন্ম', 'b¨': 'ন্য', 'bª': 'ন্র', 'b&m': 'নস',
+                'c&U': 'প্ট', 'ß': 'প্ত', 'c&b': 'প্ন', 'c&c': 'প্প', 'c&e': 'প্ব', 'c&g': 'প্ম', 'c¨': 'প্য', 'cª': 'প্র', 'cø': 'প্ল', 'c&m': 'প্স', 'd&U': 'ফ্ট', 'd&d': 'ফ্ফ', 'd&e': 'ফ্ব', 'd¨': 'ফ্য',
+                'dª': 'ফ্র', 'd¬': 'ফ্ল', 'e&R': 'ব্জ', 'e&`': 'ব্দ', 'e&a': 'ব্ধ', 'e&e': 'ব্ব', 'e&g': 'ব্ম', 'e¨': 'ব্য', 'eª': 'ব্র', 'eø': 'ব্ল', 'f&e': 'ভ্ব', 'f¨': 'ভ্য', 'fª': 'ভ্র',
+                'g&b': 'ম্ন', '¤ú': 'ম্প', '¤£': 'ম্ফ', '¤^': 'ম্ব', '¤¢': 'ম্ভ', '¤§': 'ম্ম', 'g¨': 'ম্য', 'gª': 'ম্র', 'gø': 'ম্ল', 'h¨': 'য্য', 'j&K': 'ল্ক', 'j&M': 'ল্গ', 'j&U': 'ল্ড', 'j&W': 'ল্ড',
+                'í': 'ল্প', 'j&d': 'ল্ফ', 'j&e': 'ল্ব', 'j&g': 'ল্ম', 'j¨': 'ল্য', 'jø': 'ল্ল', '®‹': 'ষ্ক', '®Œ': 'ষ্ক্র', 'ó': 'ষ্ট', 'óª': 'ষ্ট্র', 'ô': 'ষ্ঠ', 'ò': 'ষ্ণ', '®ú': 'ষ্প', '®£': 'ষ্ফ', '®§': 'ষ্ম', 'l¨': 'ষ্য',
+                '¯‹': 'স্ক', '¯Œ': 'স্ক্র', '¯U': 'স্ট', '¯Uª': 'স্ট্র', '¯’': 'স্থ', '¯œ': 'স্ন', '¯ú': 'স্প', '¯£': 'স্ফ', '¯^': 'স্ব', '¯§': 'স্ম', 'm¨': 'স্য', 'mª': 'স্র', 'mø': 'স্ল', 'n&Y': 'হ্ণ', 'ý': 'হ্ন', 'n¡': 'হ্ব', 'þ': 'হ্ম', 'n¨': 'হ্য',
+                'nª': 'হ্র', 'n¬': 'হ্ল', 'A¨v':'অ্যা', 'i¨v':'র্যা', 'h©':'র্য',
+                'K¨':'ক্য', 'M¨':'গ্য', 'P¨':'চ্য', 'R¨':'জ্য', 'U¨':'ট্য', 'V¨':'ঠ্য', 'W¨':'ড্য', 'X¨':'ঢ্য', 'Y¨':'ণ্য', 'Z¨':'ত্য', '_¨':'থ্য', '`¨':'দ্য', 'a¨':'ধ্য', 'b¨':'ন্য', 'c¨':'প্য', 'd¨':'ফ্য', 'e¨':'ব্য', 'f¨':'ভ্য', 'g¨':'ম্য', 'h¨':'য্য', 'j¨':'ল্য', 'k¨':'শ্য', 'l¨':'ষ্য', 'm¨':'স্য', 'n¨':'হ্য'
             };
-
             const keys = Object.keys(b2uJukta).sort((a, b) => b.length - a.length);
-            for (const key of keys) {
-                str = str.split(key).join(b2uJukta[key]);
-            }
+            for (const key of keys) { str = str.split(key).join(b2uJukta[key]); }
 
             const b2u = {
                 'A':'অ', 'B':'ই', 'C':'ঈ', 'D':'উ', 'E':'ঊ', 'F':'ঋ', 'G':'এ', 'H':'ঐ',
@@ -1281,46 +1384,34 @@
                 'Y':'ণ', 'Z':'ত', '_':'থ', '`':'দ', 'a':'ধ', 'b':'ন', 'c':'প', 'd':'ফ',
                 'e':'ব', 'f':'ভ', 'g':'ম', 'h':'য', 'i':'র', 'j':'ল', 'k':'শ', 'l':'ষ',
                 'm':'স', 'n':'হ', 'o':'ড়', 'p':'ঢ়', 'q':'য়', 'r':'ৎ', 's':'ং', 't':'ঃ',
-                'u':'ঁ', 'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', 'z':'ু', '‚':'ূ',
-                '\x82':'ূ', '\x85':'ৃ', '…':'ৃ', '„':'ৃ', '\x84':'ৃ',
-                '\x86':'ে', '†':'ে', '\x87':'ে', '‡':'ে',
-                '\x88':'ৈ', 'ˆ':'ৈ', '\x8A':'ৗ', 'Š':'ৗ',
-                '|':'।',
+                'u':'ঁ', 'v':'া', 'w':'ি', 'x':'ী', 'y':'ু', '~':'ূ', '…':'ৃ', '‡':'ে',
+                'ˆ':'ৈ', '†':'ো', 'Š':'ৌ', '&':'্', '|':'।',
                 '0':'০', '1':'১', '2':'২', '3':'৩', '4':'৪',
-                '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯',
-                '©':'©'
+                '5':'৫', '6':'৬', '7':'৭', '8':'৮', '9':'৯'
             };
-
             str = str.replace(/Av/g, 'আ');
-
             let out = "";
-            for (let i = 0; i < str.length; i++) {
-                out += b2u[str[i]] || str[i];
-            }
-
+            for (let i = 0; i < str.length; i++) { out += b2u[str[i]] || str[i]; }
             str = out;
 
-            const cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎংঃঁ";
+            const cons = "কখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়ৎ";
             const regexOrder = new RegExp(
-                "([িেৈ])?([" + cons + "](?:\u09CD[" + cons + "])*)(©)?([াীুূৃৗ])?",
+                "([িেৈ])?([" + cons + "](?:\u09CD[" + cons + "])*)([াীুূৃোৌ])?([্য])?",
                 "g"
             );
-
             str = str.replace(regexOrder, function(match, preKar, cluster, ref, postKar) {
-                return (ref ? "র্" : "") + cluster + (preKar || "") + (postKar || "");
+                return (ref ? "র" : "") + cluster + (preKar || "") + (postKar || "");
             });
 
             str = str
-                .replace(/অা/g, 'আ')
-                .replace(/েৃ/g, 'ৃ')
-                .replace(/ৌ/g, 'ৌ')
-                .replace(/ো/g, 'ো')
-                .replace(/([ুূৃ])্য/g, '্য$1');
-
+                .replace(/ো/g, 'ো')
+                .replace(/ৌ/g, 'ৌ')
+                .replace(/ে/g, 'ে')
+                .replace(/ৈ/g, 'ৈ')
+                .replace(/([াীুূৃেৈোৌ])্য/g, '্য$1');
             return str.normalize("NFC");
         }
 
-        // --- MCQ PARSER & SHUFFLE ---
         function sanitizeQuestionAnswers(q) {
             if (!q || !q.options) return;
             for (let j = 0; j < q.options.length; j++) {
@@ -1357,10 +1448,10 @@
                 let line = lines[i].trim();
                 if (!line) continue;
 
-                let expMatch = line.match(/^\s*(?:ব্যাখ্যা|Explanation|e¨vL¨v)\s*[:：\-\u2013\u2014]\s*(.+)$/i);
+                let expMatch = line.match(/^\s*(?:ব্যাখ্যা|Explanation|e¨vL¨v)\s*[: \-\u2013\u2014]\s*(.+)$/i);
                 if (expMatch && current) { current.explanation = expMatch[1].trim(); continue; }
 
-                let ansMatch = line.match(/^\s*(?:সঠিক উত্তর|উত্তর|Ans|Answer|mwVK DËi|DËi)\s*[:：]?\s*(.*)$/i);
+                let ansMatch = line.match(/^\s*(?:সঠিক উত্তর|উত্তর|উ|Ans|Answer|mwVK DËi|DËi)\s*[:\. ]?\s*(.*)$/i);
                 if (ansMatch && current) {
                     let ansExtr = ansMatch[1].match(/[\(\[]?([ক-ঘA-DK-Na-dk-n])[\)\]]?/);
                     if (ansExtr) {
@@ -1370,15 +1461,15 @@
                     continue;
                 }
 
-                let qMatch = line.match(/^\s*((?:\d+|[০-৯]+))\s*[\.।\)\]]\s*(.*)$/);
+                let qMatch = line.match(/^\s*((?:\d+|[০-৯]+))\s*[\. \)\]]\s*(.*)$/);
                 if (qMatch || /^[^\(]+?\?$/.test(line)) {
                     flush();
                     let rawQ = qMatch ? qMatch[2] : line;
-                    let optPattern = /([কখগঘK-N])[\.\)।:]\s*(.+?)(?=\s+[কখগঘK-N][\.\)।:]|$)/g;
+                    let optPattern = /([ক-ঘK-N])[\.\) :]\s*(.+?)(?=\s+[ক-ঘK-N][\.\) :]|$)/g;
                     let optionsFound = [];
                     let questionText = rawQ;
                     
-                    let firstOptIndex = rawQ.search(/(?:\s+|^)([কখগঘK-N])[\.\)।:]/);
+                    let firstOptIndex = rawQ.search(/(?:\s+|^)([ক-ঘK-N])[\.\) :]/);
                     if(firstOptIndex !== -1) {
                         questionText = rawQ.substring(0, firstOptIndex).trim();
                         let optionsPart = rawQ.substring(firstOptIndex).trim();
@@ -1401,8 +1492,7 @@
                 }
 
                 if (!current) continue;
-
-                let optPattern = /([কখগঘK-N])[\.\)।:]\s*(.+?)(?=\s+[কখগঘK-N][\.\)।:]|$)/g;
+                let optPattern = /([ক-ঘK-N])[\.\) :]\s*(.+?)(?=\s+[ক-ঘK-N][\.\) :]|$)/g;
                 let match;
                 let foundInline = false;
                 while ((match = optPattern.exec(line)) !== null) {
@@ -1411,12 +1501,11 @@
                 }
                 if (foundInline) continue;
 
-                let singleOptMatch = line.match(/^\s*\(?([কখগঘA-DKLMNa-dklmn])\)?[.।:]?\s*(.+?)$/);
+                let singleOptMatch = line.match(/^\s*\(?([ক-ঘA-DKLMNa-dklmn])\)?[. :]?\s*(.+?)$/);
                 if (singleOptMatch) {
                     current.options.push([normalizeAnswerLabel(singleOptMatch[1]), singleOptMatch[2].trim()]);
                     continue;
                 }
-
                 if (current.options.length > 0) {
                     current.options[current.options.length - 1][1] += " " + line;
                 } else {
@@ -1429,8 +1518,10 @@
 
         function shuffleOptions(question) {
             if (!question.options || question.options.length < 2 || !question.answer) return question;
+            
             let originalAns = question.original_answer || question.answer;
             let correctText = null;
+            
             for (let i = 0; i < question.options.length; i++) {
                 if (question.options[i][0] === originalAns) { correctText = question.options[i][1]; break; }
             }
@@ -1449,12 +1540,12 @@
                 newOptions.push([newLabel, shuffled[i][1]]);
                 if (shuffled[i][1] === correctText) { newAnswer = newLabel; }
             }
+            
             question.options = newOptions;
             question.answer = newAnswer;
             return question;
         }
 
-        // --- LAYOUT & MEASUREMENT ---
         function mcqReadTabStopsFromOOXML(ooxml) {
             const result = [];
             if (!ooxml) return result;
@@ -1537,32 +1628,33 @@
             return ctx.measureText(text).width * (72 / 96);
         }
 
-        function mcqMeasureOptionWidth(option, optionFont, optionSize, textFont, textSize, bold) {
-            const label = option[0] || "", marker = OPTION_EXPORT_MAP[label] || label;
+        function mcqMeasureOptionWidth(option, optionFont, optionSize, textFont, textSize, bold, useSymbols, isUnicode) {
+            const labelText = option[0] || "";
+            const marker = useSymbols ? (OPTION_EXPORT_MAP[labelText] || labelText) : getStandardOptionMarker(labelText, isUnicode);
+            const markerFont = useSymbols ? optionFont : textFont;
+            const markerSize = useSymbols ? optionSize : textSize;
             const text = String(option[1] || "").replace(/[\r\n\v]/g, " ").trim();
-            return mcqMeasureTextPoints(marker, optionFont, optionSize, bold) + mcqMeasureTextPoints(` ${text}`, textFont, textSize, bold) + 2;
+            return mcqMeasureTextPoints(marker, markerFont, markerSize, bold) + mcqMeasureTextPoints(` ${text}`, textFont, textSize, bold) + 2;
         }
 
-        function mcqOptionFitsSlot(option, slotWidth, optionFont, optionSize, targetFont, targetSize, bold) {
+        function mcqOptionFitsSlot(option, slotWidth, optionFont, optionSize, targetFont, targetSize, bold, useSymbols, isUnicode) {
             if (!option || !Number.isFinite(slotWidth) || slotWidth <= 0) return false;
-            return (mcqMeasureOptionWidth(option, optionFont, optionSize, targetFont, targetSize, bold) * 1.08) <= slotWidth;
+            return (mcqMeasureOptionWidth(option, optionFont, optionSize, targetFont, targetSize, bold, useSymbols, isUnicode) * 1.08) <= slotWidth;
         }
 
-        function mcqDetectAutoOptionLayout(options, tabStops, columnWidth, optionFont, optionSize, targetFont, targetSize, bold) {
+        function mcqDetectAutoOptionLayout(options, tabStops, columnWidth, optionFont, optionSize, targetFont, targetSize, bold, useSymbols, isUnicode) {
             if (!options || options.length < 4) return { mode: "one-per-line" };
             const slots = mcqGetOptionSlots(tabStops, columnWidth);
             if (!slots) return { mode: "one-per-line" };
             
             const allFit = 
-                mcqOptionFitsSlot(options[0], slots.firstSlot, optionFont, optionSize, targetFont, targetSize, bold) &&
-                mcqOptionFitsSlot(options[1], slots.secondSlot, optionFont, optionSize, targetFont, targetSize, bold) &&
-                mcqOptionFitsSlot(options[2], slots.firstSlot, optionFont, optionSize, targetFont, targetSize, bold) &&
-                mcqOptionFitsSlot(options[3], slots.secondSlot, optionFont, optionSize, targetFont, targetSize, bold);
-
+                mcqOptionFitsSlot(options[0], slots.firstSlot, optionFont, optionSize, targetFont, targetSize, bold, useSymbols, isUnicode) &&
+                mcqOptionFitsSlot(options[1], slots.secondSlot, optionFont, optionSize, targetFont, targetSize, bold, useSymbols, isUnicode) &&
+                mcqOptionFitsSlot(options[2], slots.firstSlot, optionFont, optionSize, targetFont, targetSize, bold, useSymbols, isUnicode) &&
+                mcqOptionFitsSlot(options[3], slots.secondSlot, optionFont, optionSize, targetFont, targetSize, bold, useSymbols, isUnicode);
             return { mode: allFit ? "two-per-line" : "one-per-line" };
         }
 
-        // --- FORMATTER INSERTERS ---
         function mcqApplyFontSafe(range, fontName, fontSize, bold, italic) {
             if (fontName) range.font.name = fontName;
             if (fontSize) range.font.size = fontSize;
@@ -1570,52 +1662,50 @@
             range.font.italic = italic === true;
         }
 
-        function mcqInsertOption(paragraph, option, optionFont, optionSize, targetFont, targetSize, origBold, origItalic, leadingTab = true) {
+        function mcqInsertOption(paragraph, option, optionFont, optionSize, targetFont, targetSize, origBold, origItalic, leadingTab = true, useSymbols, isUnicode) {
             if (!option) return;
-            const label = OPTION_EXPORT_MAP[option[0]] || option[0] || "";
+            const labelText = option[0] || "";
+            const label = useSymbols ? (OPTION_EXPORT_MAP[labelText] || labelText) : getStandardOptionMarker(labelText, isUnicode);
+            
             let text = String(option[1] || "").replace(/[\r\n\v]/g, " ").trim();
-
             const match = text.match(/\s+([PQRS])\s*$/i);
             if (match) text = text.replace(/\s+([PQRS])\s*$/i, "").trim();
-
+            
             if (leadingTab) {
                 let tabRange = paragraph.insertText("\t", "End");
                 mcqApplyFontSafe(tabRange, targetFont, targetSize, false, false);
             }
-
+            
             const markerRange = paragraph.insertText(label, "End");
-            mcqApplyFontSafe(markerRange, optionFont, optionSize, origBold, origItalic);
-
+            mcqApplyFontSafe(markerRange, useSymbols ? optionFont : targetFont, useSymbols ? optionSize : targetSize, origBold, origItalic);
+            
             const textRange = paragraph.insertText(` ${text}`, "End");
             mcqApplyFontSafe(textRange, targetFont, targetSize, origBold, origItalic);
         }
 
-        function mcqInsertNormalAnswer(paragraph, answer, answerSize, origItalic) {
+        function mcqInsertNormalAnswer(paragraph, answer, answerSize, origItalic, useSymbols, targetFont, targetSize, isUnicode) {
             if (!answer) return;
-            const marker = ANSWER_EXPORT_MAP[answer] || answer;
+            const marker = useSymbols ? (ANSWER_EXPORT_MAP[answer] || answer) : getStandardAnswerMarker(answer, isUnicode);
             paragraph.insertText("\t", "End");
             const answerRange = paragraph.insertText(marker, "End");
-            mcqApplyFontSafe(answerRange, "ProshnaP", answerSize, false, origItalic);
+            mcqApplyFontSafe(answerRange, useSymbols ? "ProshnaP" : targetFont, useSymbols ? answerSize : targetSize, false, origItalic);
         }
 
-        function mcqInsertNormalOptions(anchorRange, question, layout, optionFont, optionSize, targetFont, targetSize, origAlign, origBold, origItalic, answerSize) {
+        function mcqInsertNormalOptions(anchorRange, question, layout, optionFont, optionSize, targetFont, targetSize, origAlign, origBold, origItalic, answerSize, useSymbols, isUnicode) {
             const count = Math.min(4, question.options.length);
-
             if (layout.mode === "two-per-line") {
                 for (let j = 0; j < count; j += 2) {
                     const paragraph = anchorRange.insertParagraph("", "Before");
                     paragraph.alignment = origAlign;
                     
-                    mcqInsertOption(paragraph, question.options[j], optionFont, optionSize, targetFont, targetSize, origBold, origItalic, true);
-
+                    mcqInsertOption(paragraph, question.options[j], optionFont, optionSize, targetFont, targetSize, origBold, origItalic, true, useSymbols, isUnicode);
                     if (question.options[j + 1]) {
                         let midTab = paragraph.insertText("\t", "End");
                         mcqApplyFontSafe(midTab, targetFont, targetSize, false, false);
-                        mcqInsertOption(paragraph, question.options[j + 1], optionFont, optionSize, targetFont, targetSize, origBold, origItalic, false);
+                        mcqInsertOption(paragraph, question.options[j + 1], optionFont, optionSize, targetFont, targetSize, origBold, origItalic, false, useSymbols, isUnicode);
                     }
-
                     if (j + 1 >= 3 || j + 1 === count - 1) {
-                        if (j + 1 === 3) mcqInsertNormalAnswer(paragraph, question.answer, answerSize, origItalic);
+                        if (j + 1 === 3) mcqInsertNormalAnswer(paragraph, question.answer, answerSize, origItalic, useSymbols, targetFont, targetSize, isUnicode);
                     }
                 }
             } else {
@@ -1623,33 +1713,31 @@
                     const paragraph = anchorRange.insertParagraph("", "Before");
                     paragraph.alignment = origAlign;
                     
-                    mcqInsertOption(paragraph, question.options[j], optionFont, optionSize, targetFont, targetSize, origBold, origItalic, true);
-                    if (j === 3) mcqInsertNormalAnswer(paragraph, question.answer, answerSize, origItalic);
+                    mcqInsertOption(paragraph, question.options[j], optionFont, optionSize, targetFont, targetSize, origBold, origItalic, true, useSymbols, isUnicode);
+                    if (j === 3) mcqInsertNormalAnswer(paragraph, question.answer, answerSize, origItalic, useSymbols, targetFont, targetSize, isUnicode);
                 }
             }
         }
 
-        function mcqInsertSmartOptions(anchorRange, question, layout, optionFont, optionSize, targetFont, targetSize, origAlign, origBold, origItalic) {
+        function mcqInsertSmartOptions(anchorRange, question, layout, optionFont, optionSize, targetFont, targetSize, origAlign, origBold, origItalic, useSymbols, isUnicode) {
             const count = Math.min(4, question.options.length);
-
             if (layout.mode === "two-per-line") {
                 for (let j = 0; j < count; j += 2) {
                     const paragraph = anchorRange.insertParagraph("", "Before");
                     paragraph.alignment = origAlign;
                     
-                    mcqInsertOption(paragraph, question.options[j], optionFont, optionSize, targetFont, targetSize, origBold, origItalic, true);
-
+                    mcqInsertOption(paragraph, question.options[j], optionFont, optionSize, targetFont, targetSize, origBold, origItalic, true, useSymbols, isUnicode);
                     if (question.options[j + 1]) {
                         let midTab = paragraph.insertText("\t", "End");
                         mcqApplyFontSafe(midTab, targetFont, targetSize, false, false);
-                        mcqInsertOption(paragraph, question.options[j + 1], optionFont, optionSize, targetFont, targetSize, origBold, origItalic, false);
+                        mcqInsertOption(paragraph, question.options[j + 1], optionFont, optionSize, targetFont, targetSize, origBold, origItalic, false, useSymbols, isUnicode);
                     }
                 }
             } else {
                 for (let j = 0; j < count; j++) {
                     const paragraph = anchorRange.insertParagraph("", "Before");
                     paragraph.alignment = origAlign;
-                    mcqInsertOption(paragraph, question.options[j], optionFont, optionSize, targetFont, targetSize, origBold, origItalic, true);
+                    mcqInsertOption(paragraph, question.options[j], optionFont, optionSize, targetFont, targetSize, origBold, origItalic, true, useSymbols, isUnicode);
                 }
             }
         }
@@ -1663,22 +1751,21 @@
             paragraph.alignment = origAlign;
         }
 
-        function mcqInsertSmartAnswerPage(anchorRange, questions, isUnicode, targetFont, origSize, origAlign, origBold, origItalic, answerSize) {
+        function mcqInsertSmartAnswerPage(anchorRange, questions, isUnicode, targetFont, origSize, origAlign, origBold, origItalic, answerSize, useSymbols) {
             anchorRange.insertBreak("Page", "Before");
             const header = isUnicode ? "সঠিক উত্তর ও ব্যাখ্যা" : "mwVK DËi I e¨vL¨v";
             const headerPara = anchorRange.insertParagraph(header, "Before");
             mcqApplyFontSafe(headerPara, targetFont, 12, true, false);
             headerPara.alignment = "Centered";
-
+            
             for (let i = 0; i < questions.length; i++) {
                 const q = questions[i];
                 const number = isUnicode ? toBanglaNumber(i + 1) : i + 1;
-                const label = isUnicode ? "সঠিক উত্তর: " : "mwVK DËi: ";
-
+                const label = isUnicode ? "উত্তর: " : "DËi: ";
                 const answerPara = anchorRange.insertParagraph(`${number}. ${label}`, "Before");
                 mcqApplyFontSafe(answerPara, targetFont, origSize, origBold, origItalic);
                 answerPara.alignment = origAlign;
-
+                
                 let detectedAnswer = q.answer;
                 if (q.options && q.options.length > 0) {
                     const lastOpt = q.options[q.options.length - 1];
@@ -1690,16 +1777,21 @@
                         }
                     }
                 }
-
                 if (detectedAnswer) {
-                    const ansMap = { "P": "K", "Q": "L", "R": "M", "S": "N", "ক": "P", "খ": "Q", "গ": "R", "ঘ": "S" };
-                    const marker = ansMap[detectedAnswer] || detectedAnswer;
-                    const range = answerPara.insertText(marker, "End");
-                    mcqApplyFontSafe(range, "ProshnaP", answerSize, false, origItalic);
+                    if (useSymbols) {
+                        const ansMap = { "P": "K", "Q": "L", "R": "M", "S": "N", "ক": "P", "খ": "Q", "গ": "R", "ঘ": "S" };
+                        const marker = ansMap[detectedAnswer] || detectedAnswer;
+                        const range = answerPara.insertText(marker, "End");
+                        mcqApplyFontSafe(range, "ProshnaP", answerSize, false, origItalic);
+                    } else {
+                        const valMap = { "ক": "K", "খ": "L", "গ": "M", "ঘ": "N" };
+                        const finalVal = isUnicode ? detectedAnswer : (valMap[detectedAnswer] || detectedAnswer);
+                        const range = answerPara.insertText(finalVal, "End");
+                        mcqApplyFontSafe(range, targetFont, origSize, false, origItalic);
+                    }
                 }
-
                 if (q.explanation) {
-                    const expLabel = isUnicode ? "ব্যাখ্যা: " : "e¨vL¨v: ";
+                    const expLabel = isUnicode ? " ব্যাখ্যা: " : " e¨vL¨v: ";
                     const safe = String(q.explanation).replace(/[\r\n\v]/g, " ").trim();
                     const expPara = anchorRange.insertParagraph(`${expLabel}${safe}`, "Before");
                     mcqApplyFontSafe(expPara, targetFont, origSize, origBold, origItalic);
@@ -1725,60 +1817,64 @@
                         origBold = originalParagraph.font.bold === true;
                         origItalic = originalParagraph.font.italic === true;
                     }
-
+                    
                     selection.load("text, font/size");
                     await context.sync();
                     const text = selection.text || "";
                     const origSize = Number(selection.font.size) || 10.5;
-
+                    
                     if (!text.trim()) { showStatus("Please select some text in the document first!", true); return; }
-
                     let tabStops = [];
                     if (originalParagraph) tabStops = await mcqReadSelectedParagraphTabStops(context, originalParagraph);
                     const columnWidth = await mcqGetCurrentColumnWidth(context);
-
+                    
                     const isUnicode = /[\u0980-\u09FF]/.test(text);
                     const targetFont = isUnicode ? "Kalpurush" : "SutonnyMJ";
+                    
                     let questions = parseQuestions(text);
-
                     if (!questions.length) { showStatus("No valid questions found in selection!", true); return; }
-
+                    
                     const shuffleElement = document.getElementById("shuffleCheck");
                     if (shuffleElement && shuffleElement.checked) questions = questions.map(q => shuffleOptions(q));
+                    
+                    const normStyle = document.getElementById("norm-marker-style");
+                    const smartStyle = document.getElementById("smart-marker-style");
+                    const useSymbols = type === "normal" 
+                        ? (!normStyle || normStyle.value !== "text") 
+                        : (!smartStyle || smartStyle.value !== "text");
 
                     const optFontElement = document.getElementById("norm-opt-font");
                     const optSizeElement = document.getElementById("norm-opt-size");
                     const normalAnswerElement = document.getElementById("norm-ans-size");
                     const smartAnswerElement = document.getElementById("smart-ans-size");
-
+                    
                     const optionFont = optFontElement && optFontElement.value.trim() ? optFontElement.value.trim() : "BanglaOMR";
                     const optionSize = optSizeElement && parseFloat(optSizeElement.value) > 0 ? parseFloat(optSizeElement.value) : 9;
                     const normalAnswerSize = normalAnswerElement && parseFloat(normalAnswerElement.value) > 0 ? parseFloat(normalAnswerElement.value) : 10;
                     const smartAnswerSize = smartAnswerElement && parseFloat(smartAnswerElement.value) > 0 ? parseFloat(smartAnswerElement.value) : 10;
-
+                    
                     const anchorRange = selection.insertText(" ", "Replace");
-
+                    
                     for (let i = 0; i < questions.length; i++) {
                         const q = questions[i];
                         const safeQuestion = String(q.question || "").replace(/[\r\n\v]/g, " ").trim();
                         const qNum = isUnicode ? toBanglaNumber(i + 1) : i + 1;
-
-                        const qPara = anchorRange.insertParagraph(`${qNum}.${safeQuestion}`, "Before");
+                        
+                        const qPara = anchorRange.insertParagraph(`${qNum}. ${safeQuestion}`, "Before");
                         mcqApplyFontSafe(qPara, targetFont, origSize, origBold, origItalic);
                         qPara.alignment = origAlign;
-
-                        const layout = mcqDetectAutoOptionLayout(q.options, tabStops, columnWidth, optionFont, optionSize, targetFont, origSize, origBold);
-
+                        
+                        const layout = mcqDetectAutoOptionLayout(q.options, tabStops, columnWidth, optionFont, optionSize, targetFont, origSize, origBold, useSymbols, isUnicode);
+                        
                         if (type === "normal") {
-                            mcqInsertNormalOptions(anchorRange, q, layout, optionFont, optionSize, targetFont, origSize, origAlign, origBold, origItalic, normalAnswerSize);
+                            mcqInsertNormalOptions(anchorRange, q, layout, optionFont, optionSize, targetFont, origSize, origAlign, origBold, origItalic, normalAnswerSize, useSymbols, isUnicode);
                             mcqInsertNormalExplanation(anchorRange, q.explanation, isUnicode, targetFont, origSize, origAlign, origBold, origItalic);
                         } else if (type === "smart") {
-                            mcqInsertSmartOptions(anchorRange, q, layout, optionFont, optionSize, targetFont, origSize, origAlign, origBold, origItalic);
+                            mcqInsertSmartOptions(anchorRange, q, layout, optionFont, optionSize, targetFont, origSize, origAlign, origBold, origItalic, useSymbols, isUnicode);
                         }
                     }
-
-                    if (type === "smart") mcqInsertSmartAnswerPage(anchorRange, questions, isUnicode, targetFont, origSize, origAlign, origBold, origItalic, smartAnswerSize);
-
+                    if (type === "smart") mcqInsertSmartAnswerPage(anchorRange, questions, isUnicode, targetFont, origSize, origAlign, origBold, origItalic, smartAnswerSize, useSymbols);
+                    
                     anchorRange.delete();
                     await context.sync();
                     showStatus(`${questions.length} MCQs formatted successfully!`);
@@ -1793,24 +1889,25 @@
                     const paragraphs = selection.paragraphs;
                     paragraphs.load("items");
                     await context.sync();
-
+                    
                     if (paragraphs.items.length === 0) { showStatus("Please select text first.", true); return; }
                     
                     let numStyle = document.getElementById("num-style").value;
                     let matchingParagraphs = [];
-
                     for (let i = 0; i < paragraphs.items.length; i++) { paragraphs.items[i].load("text"); }
                     await context.sync();
-
+                    
                     for (let i = 0; i < paragraphs.items.length; i++) {
                         let p = paragraphs.items[i];
                         let text = p.text.trim();
                         if (text.length < 2) continue;
                         if (/^\s*\(?[কখগঘA-D]\)?[\.\)।:]\s+/i.test(text)) continue;
-                        if (/^\s*(?:সঠিক উত্তর|উত্তর|Ans|Answer|mwVK DËi|DËi|ব্যাখ্যা|Explanation|e¨vL¨v)/i.test(text)) continue;
+                        if (/^\s*(?:সঠিক উত্তর|উত্তর|উ|Ans|Answer|mwVK DËi|DËi|ব্যাখ্যা|Explanation|e¨vL¨v)/i.test(text)) continue;
+                        
                         let hasNumber = /^\s*(?:\d+|[০-৯]+|[a-zA-Z]|[iIvVxXlLcCdDmMoO]+)\s*[\.\)।]/.test(text);
                         let lastChar = text.slice(-1);
-                        let endsWithPunctuation = ["?", "\u061F", "\u2014", "-", ":"].includes(lastChar);
+                        let endsWithPunctuation = ["?", "؟", "—", "-", ":"].includes(lastChar);
+                        
                         if (hasNumber || endsWithPunctuation || text.includes("?")) matchingParagraphs.push(p);
                     }
 
@@ -1820,13 +1917,13 @@
                         let list = matchingParagraphs[0].startNewList();
                         list.load("id");
                         await context.sync();
-
+                        
                         let listLevelType = Word.ListNumbering.arabic;
                         if (numStyle === "auto-roman") listLevelType = Word.ListNumbering.lowerRoman;
                         if (numStyle === "auto-alpha") listLevelType = Word.ListNumbering.lowerLetter;
-
+                        
                         list.setLevelNumbering(0, listLevelType);
-
+                        
                         for (let i = 0; i < matchingParagraphs.length; i++) {
                             let p = matchingParagraphs[i];
                             p.font.bold = true;
@@ -1838,8 +1935,10 @@
                         for (let i = 0; i < matchingParagraphs.length; i++) {
                             let p = matchingParagraphs[i];
                             p.font.bold = true; 
+                            
                             let text = p.text.trim();
                             let hasNumber = /^\s*(?:\d+|[০-৯]+|[a-zA-Z]|[iIvVxXlLcCdDmMoO]+)\s*[\.\)।]/.test(text);
+                            
                             if (!hasNumber) {
                                 let numText = getSequenceString(qCount, numStyle);
                                 let numRange = p.insertText(numText, "Start");
@@ -1854,7 +1953,6 @@
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
-        // --- SMART CONVERTER ENGINE ---
         async function runSmartConverter(direction) {
             try {
                 await Word.run(async (context) => {
@@ -1863,7 +1961,7 @@
                     const paras = selection.paragraphs;
                     paras.load("items");
                     await context.sync();
-
+                    
                     const rawText = selection.text;
                     if (!rawText || !rawText.trim()) { showStatus("Select text to convert!", true); return; }
 
@@ -1873,7 +1971,7 @@
                         await context.sync();
                         origAlign = paras.items[0].alignment || "Left";
                     }
-
+                    
                     let origBold = selection.font.bold === true;
                     let origItalic = selection.font.italic === true;
                     let origSize = selection.font.size || 10.5;
@@ -1882,7 +1980,7 @@
                     let prefix = targetDirection === "UniToBijoy" ? "u2b" : "b2u";
                     let customFontName = document.getElementById(`${prefix}-font`).value.trim();
                     let customFontSize = document.getElementById(`${prefix}-size`).value.trim();
-
+                    
                     let defaultFont = targetDirection === "UniToBijoy" ? "SutonnyMJ" : "Kalpurush";
                     let finalFontName = customFontName !== "" ? customFontName : defaultFont;
                     let finalFontSize = customFontSize !== "" ? parseFloat(customFontSize) : origSize;
@@ -1910,17 +2008,18 @@
                     } else {
                         let protectedEng = [];
                         let protectRegex = /(\([A-Za-z0-9\s\-\.\_]+\)|\[[A-Za-z0-9\s\-\.\_]+\]|"[A-Za-z0-9\s\-\.\_]+"|'[A-Za-z0-9\s\-\.\_]+')/g;
-                        let safeText = rawText.replace(protectRegex, function(match) { protectedEng.push(match); return "▲" + (protectedEng.length - 1) + "▲"; });
-
+                        
+                        let safeText = rawText.replace(protectRegex, function(match) { protectedEng.push(match); return " #ENG_" + (protectedEng.length - 1) + "_# "; });
                         let converted = convertBijoyToUnicode(safeText);
+                        
                         let chunkRegex = /([ \t\r\n\v\(\)\[\]\{\}\'\"‘“’”\.\,\:\;\!\?\-\/\$\%\+\=\<\>°_@#&\*\\]+)/g;
-                        let textChunks = converted.split(/(▲\d+▲)/g);
+                        let textChunks = converted.split(/( #ENG_\d+_# )/g);
 
                         for (let i = 0; i < textChunks.length; i++) {
                             let chunk = textChunks[i];
                             if (!chunk) continue;
                             
-                            let match = chunk.match(/^▲(\d+)▲$/);
+                            let match = chunk.match(/^ #ENG_(\d+)_# $/);
                             if (match) {
                                 let engText = protectedEng[parseInt(match[1])];
                                 let rng = cursor.insertText(engText, "Before");
@@ -1942,32 +2041,31 @@
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
-        // --- ENGLISH FONT FIXER ENGINE ---
         async function fixEnglishFont() {
             try {
                 await Word.run(async (context) => {
                     const selection = context.document.getSelection();
                     selection.load("text");
                     await context.sync();
-
+                    
                     const rawText = selection.text;
                     if (!rawText || !rawText.trim()) { showStatus("Please select text first!", true); return; }
-
+                    
                     let fixFontName = document.getElementById("fix-font").value.trim() || "Times New Roman";
                     let fixFontSize = document.getElementById("fix-size").value.trim();
 
                     const chunkRegex = /[ \t\(\)\[\]\{\}\'\"‘“’”\.\,\:\;\!\?\-\/\$\%\+\=\<\>°_@#&\*\\a-zA-Z0-9]+/g;
                     let matches = rawText.match(chunkRegex);
                     if (!matches) { showStatus("No English text found.", false); return; }
-
+                    
                     let uniqueMatches = [...new Set(matches)].filter(m => /[a-zA-Z0-9]/.test(m)).map(m => m.length > 255 ? m.substring(0, 255) : m).sort((a, b) => b.length - a.length);
-
+                                        
                     for (let i = 0; i < uniqueMatches.length; i++) {
                         let chunk = uniqueMatches[i];
                         let searchResults = selection.search(chunk, { matchCase: true });
                         searchResults.load("items/font/name");
                         await context.sync();
-
+                        
                         for (let j = 0; j < searchResults.items.length; j++) {
                             let item = searchResults.items[j];
                             if (item.font.name === "BanglaOMR" || item.font.name === "ProshnaP") continue;
@@ -1993,11 +2091,12 @@
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
-        // --- MCQ DUPLICATE FINDER ENGINE ---
+        // ==========================================
+        // DUPLICATE FINDER LOGIC
+        // ==========================================
         function dupNormalizeUnicode(text) { return String(text || "").normalize("NFC").replace(/[\u200B-\u200D\uFEFF]/g, ""); }
         function dupNormalizeDigits(text) { return text.replace(/[০-৯]/g, ch => ({"০":"0","১":"1","২":"2","৩":"3","৪":"4","৫":"5","৬":"6","৭":"7","৮":"8","৯":"9"}[ch])); }
         function dupNormalizeWhitespace(text) { return text.replace(/[\t\r\n\v\u00A0]+/g, " ").replace(/\s{2,}/g, " ").trim(); }
-        function dupStripQuestionNumber(text) { return text.replace(/^\s*(?:\d+|[০-৯]+|[A-Za-z])\s*[\.\)\]\}।:]\s*/, ""); }
         function dupStripPunctuation(text) { return text.replace(/[?!?।,:;؛'"“”‘’`~|\/\\()[\]{}<>+=*_\-–—]/g, " "); }
         function dupNormalizeText(text, opts = {}) {
             let out = dupNormalizeUnicode(text);
@@ -2083,7 +2182,7 @@
         }
         function dupCandidateSignature(mcq, opts) {
             const tokens = dupTokenize(dupNormalizeText(mcq.question, {ignorePunctuation: true, ignoreNumbers: false})).filter(t => t.length > 1);
-            return `${tokens.length}|${tokens.slice(0, 4).join(" ")}`;
+            return `${tokens.length}\vert{}${tokens.slice(0, 4).join(" ")}`;
         }
         function dupMakeGroups(matches, count) {
             const parent = Array.from({length: count}, (_, i) => i);
@@ -2157,7 +2256,7 @@
                 const label = type === "exact" ? "Exact Duplicate" : type === "conflict" ? "Answer Conflict" : type === "very-high" ? "Very High Similarity" : "Potential Duplicate";
                 const cards = group.ids.map(id => `<div class="border border-slate-200/80 rounded p-2 bg-white cursor-pointer hover:border-blue-400" onclick="navigateToDuplicateQuestion(${id})">${dupRenderQuestionSummary(mcqs[id])}</div>`).join("");
                 return `<details class="dup-result-card bg-${color}-50 border border-${color}-200 rounded-lg p-2" open>
-                    <summary class="cursor-pointer list-none flex items-center justify-between"><span class="text-xs font-bold text-${color}-800"><i class="fas ${type === 'conflict' ? 'fa-exclamation-triangle' : type === 'exact' ? 'fa-copy' : 'fa-clone'} mr-1"></i>Group ${group.id} · ${label}</span><span class="text-xs font-extrabold text-${color}-800">${pct}%</span></summary>
+                    <summary class="cursor-pointer list-none flex items-center justify-between"><span class="text-xs font-bold text-${color}-800"><i class="fas ${type === 'conflict' ? 'fa-exclamation-triangle' : type === 'exact' ? 'fa-copy' : 'fa-clone'} mr-1"></i>Group ${group.id} —${label}</span><span class="text-xs font-extrabold text-${color}-800">${pct}%</span></summary>
                     <div class="mt-2 space-y-2">${cards}<div class="flex gap-2"><button class="flex-1 text-[11px] bg-white border border-slate-200 rounded py-1 hover:bg-slate-50 font-medium" onclick="event.stopPropagation(); compareDuplicateQuestions(${group.strongest.a},${group.strongest.b})"><i class="fas fa-columns mr-1"></i>Compare</button></div></div>
                 </details>`;
             }).join("");
@@ -2219,7 +2318,6 @@
             const old = document.getElementById("duplicateComparePanel"); if (old) old.remove(); document.body.insertAdjacentHTML("beforeend", compareHtml);
         }
 
-        // --- QUESTION BANK LOGIC ---
         function updateBankCount() {
             let bank = JSON.parse(localStorage.getItem("mcq_studio_bank") || "[]");
             let countEl = document.getElementById("bank-count");
@@ -2234,8 +2332,10 @@
                     await context.sync();
                     const text = selection.text;
                     if (!text || !text.trim()) { showStatus("Please select MCQs to add to Bank!", true); return; }
+                    
                     let questions = parseQuestions(text);
                     if (questions.length === 0) { showStatus("No valid questions found to add!", true); return; }
+                    
                     let bank = JSON.parse(localStorage.getItem("mcq_studio_bank") || "[]");
                     let added = 0;
                     questions.forEach(q => {
@@ -2247,6 +2347,7 @@
                             added++;
                         }
                     });
+                    
                     localStorage.setItem("mcq_studio_bank", JSON.stringify(bank));
                     updateBankCount();
                     if(added > 0) { showStatus(`Added ${added} new MCQs to Bank!`); } else { showStatus(`Selected MCQs already exist in Bank!`, true); }
@@ -2294,6 +2395,7 @@
         function openBankViewer() {
             const old = document.getElementById("bankViewerPanel");
             if (old) old.remove();
+            
             const panelHtml = `
             <div id="bankViewerPanel" class="fixed inset-x-3 top-16 bottom-3 bg-white border border-slate-300 rounded-xl shadow-2xl z-50 flex flex-col p-3.5 animate-[fadeIn_0.15s_ease-out]">
                 <div class="flex items-center justify-between mb-2">
@@ -2307,6 +2409,7 @@
                 <div id="bankListContainer" class="flex-1 overflow-y-auto space-y-2 p-1"></div>
             </div>`;
             document.body.insertAdjacentHTML("beforeend", panelHtml);
+            
             document.getElementById("bankSearchInput").addEventListener("input", (e) => renderBankItems(e.target.value));
             
             document.getElementById("bankListContainer").addEventListener("click", (e) => {
@@ -2330,18 +2433,21 @@
                 }
             });
             if (idsChanged) localStorage.setItem("mcq_studio_bank", JSON.stringify(bank));
-
+            
             let container = document.getElementById("bankListContainer");
+            
             if (query) {
                 const lowerQ = query.toLowerCase();
                 bank = bank.filter(q => q.question.toLowerCase().includes(lowerQ) || (q.options && q.options.some(o => o[1].toLowerCase().includes(lowerQ))));
             }
+            
             if (bank.length === 0) {
                 container.innerHTML = `<div class="text-center text-slate-400 text-xs mt-10"><i class="fas fa-box-open text-3xl mb-2 opacity-40"></i><br>${query ? "No questions match your search." : "Bank is empty. Add some MCQs!"}</div>`;
                 return;
             }
+
             container.innerHTML = bank.slice().reverse().map((q, i) => {
-                let optionsHtml = (q.options || []).map((opt, idx) => `<div class="mt-0.5 text-slate-600">${OPTION_ORDER[idx] || (idx+1)+'.'} ${dupEscapeHtml(opt[1])}</div>`).join('');
+                let optionsHtml = (q.options || []).map((opt, idx) => `<div class="mt-0.5 text-slate-600">${OPTION_ORDER[idx] \vert{}\vert{} (idx+1)+'.'}${dupEscapeHtml(opt[1])}</div>`).join('');
                 let answerHtml = q.answer ? `<div class="mt-1 font-semibold text-emerald-600 text-[11px]"><i class="fas fa-check-circle mr-1"></i>Ans: ${q.answer}</div>` : '';
                 return `
                 <div class="border border-slate-200 rounded-lg p-2.5 bg-slate-50/70 relative group hover:border-emerald-300 transition">
@@ -2364,13 +2470,16 @@
                 }, 3000);
                 return;
             }
+            
             let bank = JSON.parse(localStorage.getItem("mcq_studio_bank") || "[]");
             const before = bank.length;
             bank = bank.filter(q => String(q.id || "") !== String(id));
+            
             if (bank.length === before) {
                 showStatus("Could not find this MCQ in the Question Bank.", true);
                 return;
             }
+            
             localStorage.setItem("mcq_studio_bank", JSON.stringify(bank));
             updateBankCount();
             let searchInput = document.getElementById("bankSearchInput");
@@ -2378,23 +2487,22 @@
             showStatus("Question removed from Bank!");
         }
 
-        // --- SET GENERATOR & EXAM PAPER GENERATOR ---
-        function mcqInsertSetOptionsWithAnswer(anchorRange, question, layout, optionFont, optionSize, targetFont, targetSize, origAlign, answerSize) {
+        function mcqInsertSetOptionsWithAnswer(anchorRange, question, layout, optionFont, optionSize, targetFont, targetSize, origAlign, answerSize, useSymbols, isUnicode) {
             const count = Math.min(4, (question.options || []).length);
             let lastParagraph = null;
-
             const insertOptionRun = (paragraph, option, leadingTab) => {
                 if (!option) return;
-                const label = OPTION_EXPORT_MAP[option[0]] || option[0] || "";
+                const labelText = option[0] || "";
+                const label = useSymbols ? (OPTION_EXPORT_MAP[labelText] || labelText) : getStandardOptionMarker(labelText, isUnicode);
+                
                 let text = String(option[1] || "").replace(/[\r\n\v]/g, " ").trim();
                 text = text.replace(/\s+([PQRS])\s*$/i, "").trim();
-
                 if (leadingTab) {
                     const r = paragraph.insertText("\t", "End");
                     mcqApplyFontSafe(r, targetFont, targetSize, false, false);
                 }
                 const marker = paragraph.insertText(label, "End");
-                mcqApplyFontSafe(marker, optionFont, optionSize, false, false);
+                mcqApplyFontSafe(marker, useSymbols ? optionFont : targetFont, useSymbols ? optionSize : targetSize, false, false);
                 const body = paragraph.insertText(" " + text, "End");
                 mcqApplyFontSafe(body, targetFont, targetSize, false, false);
             };
@@ -2410,13 +2518,12 @@
                         mcqApplyFontSafe(midTab, targetFont, targetSize, false, false);
                         insertOptionRun(p, question.options[j + 1], false);
                     }
-
                     if (j + 2 >= count && question.answer) {
-                        const ans = ANSWER_EXPORT_MAP[question.answer] || question.answer;
+                        const ansMarker = useSymbols ? (ANSWER_EXPORT_MAP[question.answer] || question.answer) : getStandardAnswerMarker(question.answer, isUnicode);
                         const tab = p.insertText("\t", "End");
                         mcqApplyFontSafe(tab, targetFont, targetSize, false, false);
-                        const ansRange = p.insertText(ans, "End");
-                        mcqApplyFontSafe(ansRange, "ProshnaP", answerSize, false, false);
+                        const ansRange = p.insertText(ansMarker, "End");
+                        mcqApplyFontSafe(ansRange, useSymbols ? "ProshnaP" : targetFont, useSymbols ? answerSize : targetSize, false, false);
                     }
                 }
             } else {
@@ -2426,11 +2533,11 @@
                     p.alignment = origAlign;
                     insertOptionRun(p, question.options[j], true);
                     if (j === count - 1 && question.answer) {
-                        const ans = ANSWER_EXPORT_MAP[question.answer] || question.answer;
+                        const ansMarker = useSymbols ? (ANSWER_EXPORT_MAP[question.answer] || question.answer) : getStandardAnswerMarker(question.answer, isUnicode);
                         const tab = p.insertText("\t", "End");
                         mcqApplyFontSafe(tab, targetFont, targetSize, false, false);
-                        const ansRange = p.insertText(ans, "End");
-                        mcqApplyFontSafe(ansRange, "ProshnaP", answerSize, false, false);
+                        const ansRange = p.insertText(ansMarker, "End");
+                        mcqApplyFontSafe(ansRange, useSymbols ? "ProshnaP" : targetFont, useSymbols ? answerSize : targetSize, false, false);
                     }
                 }
             }
@@ -2442,12 +2549,13 @@
                 await Word.run(async (context) => {
                     let bank = JSON.parse(localStorage.getItem("mcq_studio_bank") || "[]");
                     if (!bank.length) { showStatus("Question Bank is empty! Add MCQs first.", true); return; }
-
+                    
                     let count = parseInt(document.getElementById("set-count")?.value, 10) || 25;
                     let startNum = parseInt(document.getElementById("set-start")?.value, 10) || 1;
                     let setCount = parseInt(document.getElementById("set-number-of-sets")?.value, 10) || 1;
                     const shuffleQ = !!document.getElementById("set-shuffle-q")?.checked;
                     const shuffleO = !!document.getElementById("set-shuffle-o")?.checked;
+                    
                     count = Math.max(1, Math.min(count, bank.length));
                     setCount = Math.max(1, Math.min(setCount, 10));
 
@@ -2471,18 +2579,22 @@
                     const columnWidth = await mcqGetCurrentColumnWidth(context);
                     const isUnicode = bank.some(q => /[\u0980-\u09FF]/.test(String(q.question || "")));
                     const targetFont = isUnicode ? "Kalpurush" : "SutonnyMJ";
+
                     const optFont = (document.getElementById("norm-opt-font")?.value || "BanglaOMR").trim() || "BanglaOMR";
                     const optSize = parseFloat(document.getElementById("norm-opt-size")?.value) || 9;
                     const ansSize = parseFloat(document.getElementById("norm-ans-size")?.value) || 10;
+                    
+                    const setMarkerStyle = document.getElementById("set-marker-style");
+                    const useSymbols = !setMarkerStyle || setMarkerStyle.value !== "text";
 
                     const anchorRange = selection.insertText("", "Replace");
 
                     for (let setIdx = 0; setIdx < setCount; setIdx++) {
                         if (setIdx > 0) anchorRange.insertBreak("Page", "Before");
-
-                        const setTitle = setCount > 1
-                            ? (isUnicode ? `প্রশ্ন সেট ${toBanglaNumber(setIdx + 1)}` : `Question Set ${setIdx + 1}`)
+                        const setTitle = setCount > 1 
+                            ? (isUnicode ? `সেট  ${toBanglaNumber(setIdx + 1)}` : `Question Set ${setIdx + 1}`) 
                             : "";
+                        
                         if (setTitle) {
                             const tp = anchorRange.insertParagraph(setTitle, "Before");
                             mcqApplyFontSafe(tp, targetFont, origSize + 2, true, false);
@@ -2497,25 +2609,25 @@
                                 [pool[i], pool[j]] = [pool[j], pool[i]];
                             }
                         }
+                        
                         const selectedQs = pool.slice(0, count);
-
                         for (let i = 0; i < selectedQs.length; i++) {
                             let q = JSON.parse(JSON.stringify(selectedQs[i]));
                             sanitizeQuestionAnswers(q);
                             if (shuffleO) q = shuffleOptions(q);
-
+                            
                             const qNum = startNum + i;
                             const qNumStr = isUnicode ? toBanglaNumber(qNum) : qNum;
                             const safeQuestion = String(q.question || "").replace(/[\r\n\v]/g, " ").trim();
-                            const qPara = anchorRange.insertParagraph(`${qNumStr}. ${safeQuestion}`, "Before");
+                            
+                            const qPara = anchorRange.insertParagraph(`${qNumStr}.${safeQuestion}`, "Before");
                             mcqApplyFontSafe(qPara, targetFont, origSize, false, false);
                             qPara.alignment = origAlign;
-
-                            const layout = mcqDetectAutoOptionLayout(q.options, tabStops, columnWidth, optFont, optSize, targetFont, origSize, false);
-                            mcqInsertSetOptionsWithAnswer(anchorRange, q, layout, optFont, optSize, targetFont, origSize, origAlign, ansSize);
+                            
+                            const layout = mcqDetectAutoOptionLayout(q.options, tabStops, columnWidth, optFont, optSize, targetFont, origSize, false, useSymbols, isUnicode);
+                            mcqInsertSetOptionsWithAnswer(anchorRange, q, layout, optFont, optSize, targetFont, origSize, origAlign, ansSize, useSymbols, isUnicode);
                         }
                     }
-
                     await context.sync();
                     showStatus(`${setCount} set${setCount > 1 ? "s" : ""} generated successfully with inline answers.`);
                 });
@@ -2528,13 +2640,12 @@
             try {
                 await Word.run(async (context) => {
                     let bank = JSON.parse(localStorage.getItem("mcq_studio_bank") || "[]");
-                    if (bank.length === 0) { showStatus("Question Bank is empty! Add MCQs to bank first.", true); return; }
+                    if (bank.length === 0) { showStatus("Question Bank is empty! Add MCQs first.", true); return; }
 
                     let title = document.getElementById("exam-title").value.trim() || "Exam Paper";
                     let numSets = parseInt(document.getElementById("exam-sets").value) || 1;
                     if (numSets < 1) numSets = 1;
                     if (numSets > 10) numSets = 10;
-
                     let doShuffle = document.getElementById("exam-shuffle").checked;
                     let showKey = document.getElementById("exam-ans-key").checked;
 
@@ -2547,7 +2658,6 @@
                     let origAlign = "Left";
                     let origSize = selection.font.size || 10.5;
                     let originalParagraph = null;
-
                     if (selParas.items.length > 0) {
                         originalParagraph = selParas.items[0];
                         originalParagraph.load("alignment");
@@ -2567,13 +2677,16 @@
                     let optFont = document.getElementById("norm-opt-font").value.trim() || "BanglaOMR";
                     let optSize = parseFloat(document.getElementById("norm-opt-size").value.trim()) || 9;
 
+                    const examMarkerStyle = document.getElementById("exam-marker-style");
+                    const useSymbols = !examMarkerStyle || examMarkerStyle.value !== "text";
+
                     let anchorRange = selection.insertText("", "Replace");
+
                     const setLabelsBN = ["ক", "খ", "গ", "ঘ", "ঙ", "চ", "ছ", "জ", "ঝ", "ঞ"];
                     const setLabelsEN = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
 
                     for (let setIdx = 0; setIdx < numSets; setIdx++) {
                         let pool = JSON.parse(JSON.stringify(bank));
-
                         if (doShuffle) {
                             for (let i = pool.length - 1; i > 0; i--) {
                                 let j = Math.floor(Math.random() * (i + 1));
@@ -2584,9 +2697,9 @@
                         let answerKey = [];
                         if (setIdx > 0) { anchorRange.insertBreak("Page", "Before"); }
 
-                        let setSuffix = numSets > 1 ? ` - ${isUnicode ? 'সেট ' + setLabelsBN[setIdx] : 'Set ' + setLabelsEN[setIdx]}` : "";
+                        let setSuffix = numSets > 1 ? ` - ${isUnicode ? 'সেট  ' + setLabelsBN[setIdx] : 'Set ' + setLabelsEN[setIdx]}` : "";
                         let setTitle = title + setSuffix;
-
+                        
                         let titlePara = anchorRange.insertParagraph(setTitle, "Before");
                         mcqApplyFontSafe(titlePara, targetFont, origSize + 4, true, false);
                         titlePara.alignment = "Centered";
@@ -2602,12 +2715,12 @@
                             let qNumStr = isUnicode ? toBanglaNumber(currentNum) : currentNum;
                             let safeQuestion = q.question.replace(/[\r\n\v]/g, "").trim();
                             
-                            let qPara = anchorRange.insertParagraph(`${qNumStr}. ${safeQuestion}`, "Before");
+                            let qPara = anchorRange.insertParagraph(`${qNumStr}.${safeQuestion}`, "Before");
                             mcqApplyFontSafe(qPara, targetFont, origSize, false, false);
                             qPara.alignment = origAlign;
 
                             const layout = mcqDetectAutoOptionLayout(
-                                q.options, tabStops, columnWidth, optFont, optSize, targetFont, origSize, false
+                                q.options, tabStops, columnWidth, optFont, optSize, targetFont, origSize, false, useSymbols, isUnicode
                             );
 
                             const count = Math.min(4, q.options.length);
@@ -2619,16 +2732,20 @@
                                     
                                     let tab1 = p.insertText("\t", "End");
                                     mcqApplyFontSafe(tab1, targetFont, origSize, false, false);
-                                    let mk1 = p.insertText(OPTION_EXPORT_MAP[q.options[j][0]] || q.options[j][0], "End");
-                                    mcqApplyFontSafe(mk1, optFont, optSize, false, false);
+                                    
+                                    let mk1Label = useSymbols ? (OPTION_EXPORT_MAP[q.options[j][0]] || q.options[j][0]) : getStandardOptionMarker(q.options[j][0], isUnicode);
+                                    let mk1 = p.insertText(mk1Label, "End");
+                                    mcqApplyFontSafe(mk1, useSymbols ? optFont : targetFont, useSymbols ? optSize : origSize, false, false);
                                     let txt1 = p.insertText(` ${q.options[j][1].trim()}`, "End");
                                     mcqApplyFontSafe(txt1, targetFont, origSize, false, false);
 
                                     if (q.options[j + 1]) {
                                         let tab2 = p.insertText("\t", "End");
                                         mcqApplyFontSafe(tab2, targetFont, origSize, false, false);
-                                        let mk2 = p.insertText(OPTION_EXPORT_MAP[q.options[j+1][0]] || q.options[j+1][0], "End");
-                                        mcqApplyFontSafe(mk2, optFont, optSize, false, false);
+                                        
+                                        let mk2Label = useSymbols ? (OPTION_EXPORT_MAP[q.options[j+1][0]] || q.options[j+1][0]) : getStandardOptionMarker(q.options[j+1][0], isUnicode);
+                                        let mk2 = p.insertText(mk2Label, "End");
+                                        mcqApplyFontSafe(mk2, useSymbols ? optFont : targetFont, useSymbols ? optSize : origSize, false, false);
                                         let txt2 = p.insertText(` ${q.options[j+1][1].trim()}`, "End");
                                         mcqApplyFontSafe(txt2, targetFont, origSize, false, false);
                                     }
@@ -2640,23 +2757,25 @@
 
                                     let tab1 = p.insertText("\t", "End");
                                     mcqApplyFontSafe(tab1, targetFont, origSize, false, false);
-                                    let mk1 = p.insertText(OPTION_EXPORT_MAP[q.options[j][0]] || q.options[j][0], "End");
-                                    mcqApplyFontSafe(mk1, optFont, optSize, false, false);
+
+                                    let mk1Label = useSymbols ? (OPTION_EXPORT_MAP[q.options[j][0]] || q.options[j][0]) : getStandardOptionMarker(q.options[j][0], isUnicode);
+                                    let mk1 = p.insertText(mk1Label, "End");
+                                    mcqApplyFontSafe(mk1, useSymbols ? optFont : targetFont, useSymbols ? optSize : origSize, false, false);
                                     let txt1 = p.insertText(` ${q.options[j][1].trim()}`, "End");
                                     mcqApplyFontSafe(txt1, targetFont, origSize, false, false);
                                 }
                             }
                             
                             if (q.answer) {
-                                const ansMap = { "P": "ক", "Q": "খ", "R": "গ", "S": "ঘ", "K": "ক", "L": "খ", "M": "গ", "N": "ঘ", "A":"ক", "B":"খ", "C":"গ", "D":"ঘ", "ক":"ক", "খ":"খ", "গ":"গ", "ঘ":"ঘ" };
-                                let finalAns = ansMap[q.answer.toUpperCase()] || q.answer;
-                                answerKey.push(`${qNumStr}. ${finalAns}`);
+                                const ansMapUni = { "P": "ক", "Q": "খ", "R": "গ", "S": "ঘ", "K": "ক", "L": "খ", "M": "গ", "N": "ঘ", "A":"ক", "B":"খ", "C":"গ", "D":"ঘ", "ক": "ক", "খ": "খ", "গ": "গ", "ঘ": "ঘ" };
+                                const ansMapBijoy = { "P": "K", "Q": "L", "R": "M", "S": "N", "ক": "K", "খ": "L", "গ": "M", "ঘ": "N", "K": "K", "L": "L", "M": "M", "N": "N" };
+                                let finalAns = isUnicode ? (ansMapUni[q.answer.toUpperCase()] || q.answer) : (ansMapBijoy[q.answer.toUpperCase()] || q.answer);
+                                answerKey.push(`${qNumStr}.${finalAns}`);
                             }
                         }
 
                         if (showKey && answerKey.length > 0) {
-                            anchorRange.insertParagraph("", "Before");
-                            anchorRange.insertBreak("Page", "Before"); 
+                            anchorRange.insertBreak("Page", "Before");
                             
                             let keyTitleStr = (isUnicode ? "উত্তরমালা" : "DËigvjv") + setSuffix;
                             let keyTitle = anchorRange.insertParagraph(keyTitleStr, "Before");
@@ -2696,9 +2815,7 @@
             } catch (error) { showStatus("Error: " + (error.message || "Unknown"), true); }
         }
 
-        // --- BUTTON EVENT WIRING ---
         let _eventsBound = false;
-
         function bindAppEvents() {
             if (_eventsBound) return;
             _eventsBound = true;
@@ -2711,12 +2828,14 @@
             bind("btnNormal", async () => { setLoading("btnNormal", true); try { await formatSelectedText("normal"); } finally { setLoading("btnNormal", false); } });
             bind("btnSmart", async () => { setLoading("btnSmart", true); try { await formatSelectedText("smart"); } finally { setLoading("btnSmart", false); } });
             bind("btnFormatQuestions", async () => { setLoading("btnFormatQuestions", true); try { await formatQuestionsMacro(); } finally { setLoading("btnFormatQuestions", false); } });
+            
             bind("btnUniToBijoy", async () => { setLoading("btnUniToBijoy", true); try { await runSmartConverter("UniToBijoy"); } finally { setLoading("btnUniToBijoy", false); } });
             bind("btnBijoyToUni", async () => { setLoading("btnBijoyToUni", true); try { await runSmartConverter("BijoyToUni"); } finally { setLoading("btnBijoyToUni", false); } });
+            
             bind("btnFixEnglishFont", async () => { setLoading("btnFixEnglishFont", true); try { await fixEnglishFont(); } finally { setLoading("btnFixEnglishFont", false); } });
+
             bind("btnDuplicateFinder", async () => { setLoading("btnDuplicateFinder", true); try { await runMCQDuplicateFinder(); } finally { setLoading("btnDuplicateFinder", false); } });
             bind("btnAddBank", async () => { setLoading("btnAddBank", true); try { await addSelectedToBank(); } finally { setLoading("btnAddBank", false); } });
-
             bind("btnManageBank", () => openBankViewer());
             bind("btnExportBank", () => exportBankJSON());
             
@@ -2737,12 +2856,11 @@
                     }, 3000);
                     return;
                 }
-
                 localStorage.removeItem("mcq_studio_bank"); 
                 updateBankCount();
                 const container = document.getElementById("bankListContainer");
-                if (container) renderBankItems(""); 
-                
+                if (container) renderBankItems("");
+                  
                 btn.innerHTML = btn.dataset.originalHtml;
                 btn.dataset.confirming = "false";
                 showStatus("Question Bank cleared successfully!");
@@ -2757,14 +2875,14 @@
             const threshInput = document.getElementById("duplicateThreshold");
             if (threshInput) threshInput.addEventListener("input", (e) => { document.getElementById("duplicateThresholdValue").textContent = e.target.value + "%"; });
 
-            // Initialize Foliora Ecosystem
             loadFolioraPersistedState();
-            updateHeaderAccountUI();
+            initSupabase();
+            checkLiveSession();
 
             document.getElementById('pnav-mcq').style.display = FOLIORA_STATE.workspace.mcq ? 'flex' : 'none';
             document.getElementById('pnav-converter').style.display = FOLIORA_STATE.workspace.converter ? 'flex' : 'none';
             document.getElementById('pnav-ocr').style.display = FOLIORA_STATE.workspace.ocr ? 'flex' : 'none';
-
+            
             switchProduct('mcq');
             updateBankCount();
 
@@ -2779,7 +2897,6 @@
             window.onload = bindAppEvents;
         }
 
-        // --- VISION AI ENGINE ---
         document.getElementById("btnSaveApiKey").onclick = () => {
             const key = document.getElementById("gemini-api-key").value.trim();
             if(key) {
@@ -2817,10 +2934,8 @@
                     showStatus("Could not read the selected image.", true);
                     return;
                 }
-
                 currentVisionImageMime = mimeMatch[1];
                 currentVisionImageBase64 = parts[1];
-
                 btnExtractText.disabled = false;
                 btnExtractText.classList.remove("opacity-50", "cursor-not-allowed");
             };
@@ -2855,18 +2970,68 @@
 
         btnExtractText.onclick = async () => {
             let apiKey = localStorage.getItem("gemini_api_key");
-            if(!apiKey) { showStatus("Please save your Gemini API Key first!", true); toggleSettings('api-key-settings'); return; }
-            if (!currentVisionImageBase64 || !currentVisionImageMime) { showStatus("Please upload or paste an image first.", true); return; }
-            if (currentVisionImageBase64.length > 12 * 1024 * 1024) { showStatus("This image is very large. Please use a smaller image.", true); return; }
-
-            if (FOLIORA_STATE.ocrQuota.used >= FOLIORA_STATE.ocrQuota.limit) {
-                showStatus("Monthly OCR quota reached! Please upgrade your tier.", true);
-                switchProduct('ocr');
-                return;
+            if(!apiKey) { 
+                showStatus("Please save your Gemini API Key first!", true); 
+                toggleSettings('api-key-settings'); 
+                return; 
+            }
+            if (!currentVisionImageBase64 || !currentVisionImageMime) { 
+                showStatus("Please upload or paste an image first.", true); 
+                return; 
+            }
+            if (currentVisionImageBase64.length > 12 * 1024 * 1024) { 
+                showStatus("This image is very large. Please use a smaller image.", true); 
+                return; 
             }
 
             setLoading("btnExtractText", true);
-            
+
+            // 1. Server-Authoritative Quota Check via Supabase RPC
+            if (supabaseClient && FOLIORA_STATE.user && FOLIORA_STATE.user.isLoggedIn) {
+                try {
+                    const { data: quotaAuth, error: rpcError } = await supabaseClient.rpc('consume_ocr_page');
+
+                    if (rpcError) {
+                        showStatus("Server verification failed: " + rpcError.message, true);
+                        setLoading("btnExtractText", false);
+                        return;
+                    }
+
+                    if (!quotaAuth.allowed) {
+                        showStatus("Monthly OCR limit reached (" + quotaAuth.used + "/" + quotaAuth.limit + "). Please upgrade your plan.", true);
+                        FOLIORA_STATE.ocrQuota.used = quotaAuth.used;
+                        FOLIORA_STATE.ocrQuota.limit = quotaAuth.limit;
+                        updateOcrQuotaDisplay();
+                        switchProduct('ocr');
+                        setLoading("btnExtractText", false);
+                        return;
+                    }
+
+                    // Authoritative values from PostgreSQL
+                    FOLIORA_STATE.ocrQuota.used = quotaAuth.used;
+                    FOLIORA_STATE.ocrQuota.limit = quotaAuth.limit;
+                    saveFolioraPersistedState();
+                    updateOcrQuotaDisplay();
+
+                } catch (e) {
+                    showStatus("Error verifying quota with server.", true);
+                    setLoading("btnExtractText", false);
+                    return;
+                }
+            } else {
+                // Fallback for offline/guest simulator mode
+                if (FOLIORA_STATE.ocrQuota.used >= FOLIORA_STATE.ocrQuota.limit) {
+                    showStatus("Monthly OCR quota reached! Please sign in or upgrade.", true);
+                    switchProduct('ocr');
+                    setLoading("btnExtractText", false);
+                    return;
+                }
+                FOLIORA_STATE.ocrQuota.used += 1;
+                saveFolioraPersistedState();
+                updateOcrQuotaDisplay();
+            }
+
+            // 2. Perform Extraction & Document Reconstruction
             try {
                 const prompt = `You are the document understanding and formatting engine of Foliora OCR Studio.
 
@@ -2931,14 +3096,18 @@ Use this exact structure:
   }
 }
 If answer or explanation does not exist, use null.`;
-                
+
                 const requestBody = {
                     contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: currentVisionImageMime, data: currentVisionImageBase64 } }] }],
                     generationConfig: { responseMimeType: "application/json" }
                 };
 
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${encodeURIComponent(apiKey)}`;
-                const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(requestBody) });
+                const response = await fetch(url, { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify(requestBody) 
+                });
                 const responseText = await response.text();
 
                 if (!response.ok) {
@@ -2950,7 +3119,7 @@ If answer or explanation does not exist, use null.`;
                 let rawJsonOutput = JSON.parse(responseText).candidates?.[0]?.content?.parts?.[0]?.text;
                 if (!rawJsonOutput) throw new Error("AI returned an empty response.");
                 rawJsonOutput = rawJsonOutput.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-                
+
                 let parsedDocument;
                 try { parsedDocument = JSON.parse(rawJsonOutput); } catch(e) { throw new Error("Failed to parse AI output."); }
 
@@ -2984,14 +3153,14 @@ If answer or explanation does not exist, use null.`;
                     }
                     targetRange.delete();
                     await context.sync();
-                    
-                    FOLIORA_STATE.ocrQuota.used += 1;
-                    saveFolioraPersistedState();
-                    updateOcrQuotaDisplay();
-                    
+
                     showStatus("Smart AI Extraction Completed!");
                 });
-            } catch (error) { showStatus("Error: " + (error.message || "Unknown issue"), true); } finally { setLoading("btnExtractText", false); }
+            } catch (error) { 
+                showStatus("Error: " + (error.message || "Unknown issue"), true); 
+            } finally { 
+                setLoading("btnExtractText", false); 
+            }
         };
     </script>
 </body>
